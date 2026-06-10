@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鴨侍 — Duck Samurai</title>
+<style>
+  :root {
+    --gold: #f0c987;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #0d0716; }
+  body { cursor: crosshair; user-select: none; -webkit-user-select: none; }
+
+  #stage { position: fixed; inset: 0; }
+  #stage.shake { animation: shake .26s linear; }
+  @keyframes shake {
+    0%   { transform: translate(0, 0); }
+    20%  { transform: translate(-7px, 4px); }
+    40%  { transform: translate(6px, -5px); }
+    60%  { transform: translate(-4px, 3px); }
+    80%  { transform: translate(3px, -2px); }
+    100% { transform: translate(0, 0); }
+  }
+
+  svg#scene { width: 100%; height: 100%; display: block; }
+
+  /* ---- cinematic frame ---- */
+  .bar { position: fixed; left: 0; right: 0; height: 5.5vh; background: #000; z-index: 10; pointer-events: none; }
+  .bar.top { top: 0; } .bar.bottom { bottom: 0; }
+  #vignette {
+    position: fixed; inset: 0; z-index: 9; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(8,3,14,.55) 100%);
+  }
+  #title {
+    position: fixed; left: 4vw; bottom: 10vh; z-index: 11; pointer-events: none;
+    color: var(--gold); font-family: "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
+  }
+  #title .kanji { font-size: clamp(28px, 4.4vw, 56px); letter-spacing: .18em; display: block; }
+  #title .latin { font-size: clamp(12px, 1.2vw, 16px); font-weight: 600; letter-spacing: .45em; opacity: .85; text-transform: uppercase; }
+  #hint {
+    position: fixed; left: 50%; bottom: 10vh; transform: translateX(-50%); z-index: 11; pointer-events: none;
+    color: #f3e6cc; font-family: Georgia, serif; font-style: italic;
+    font-size: clamp(11px, 1.2vw, 15px); letter-spacing: .35em; text-transform: uppercase;
+    text-shadow: 0 1px 8px rgba(0,0,0,.8);
+    animation: hintPulse 2.6s ease-in-out infinite;
+    transition: opacity .8s ease;
+  }
+  #hint.hide { opacity: 0 !important; animation: none; }
+  @keyframes hintPulse { 0%,100% { opacity: .45; } 50% { opacity: .95; } }
+
+  /* ---- idle animations ---- */
+  #breath { animation: bob 4.2s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+  #scarf  { animation: scarfWave 2.3s ease-in-out infinite; }
+  #scarf2 { animation: scarfWave 2.3s ease-in-out infinite reverse; }
+  @keyframes scarfWave {
+    0%, 100% { transform: rotate(0deg) ; }
+    50%      { transform: rotate(6deg) translateY(-3px); }
+  }
+  #scarf, #scarf2 { transform-box: fill-box; transform-origin: 0% 50%; }
+
+  #eyelid {
+    transform-box: fill-box; transform-origin: 50% 0%;
+    animation: blink 6.5s linear infinite; transform: scaleY(0);
+  }
+  @keyframes blink { 0%, 91%, 100% { transform: scaleY(0); } 94%, 96% { transform: scaleY(1); } }
+
+  .grass-sway   { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 3.4s ease-in-out infinite; }
+  .grass-sway.alt { animation-duration: 4.1s; animation-delay: -1.7s; }
+  @keyframes sway { 0%,100% { transform: skewX(0deg); } 50% { transform: skewX(6deg); } }
+
+  .star { animation: twinkle 3.5s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
+
+  #sunGlowPulse { animation: sunPulse 7s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+  @keyframes sunPulse { 0%,100% { transform: scale(1); opacity: .85; } 50% { transform: scale(1.05); opacity: 1; } }
+
+  /* ---- duck pose / slash choreography ---- */
+  #duckInner { transition: transform .18s ease-out; transform-box: fill-box; transform-origin: 50% 100%; }
+  #duck.crouch   #duckInner { transform: translateY(10px) scaleY(.92); transition-duration: .09s; }
+  #duck.slashing #duckInner { transform: translateX(-10px) rotate(-4deg); transition-duration: .07s; }
+
+  #poseDrawn { display: none; }
+  #duck.slashing #poseIdle  { display: none; }
+  #duck.slashing #poseDrawn { display: inline; }
+
+  #slashFx { opacity: 0; pointer-events: none; }
+  #slashFx.go { animation: slashAnim .42s ease-out; }
+  @keyframes slashAnim {
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    60%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #slashFx.go .arc {
+    stroke-dasharray: 100;
+    animation: slashDraw .42s ease-out;
+  }
+  @keyframes slashDraw {
+    0%   { stroke-dashoffset: 100; }
+    35%  { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  #flash { opacity: 0; pointer-events: none; }
+  #flash.go { animation: flashAnim .2s ease-out; }
+  @keyframes flashAnim { 0% { opacity: 0; } 20% { opacity: .8; } 100% { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    #flash.go, #stage.shake { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+<svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="A duck samurai standing in a windswept field at sunset, cherry blossom petals drifting by. Click to make him draw his katana.">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#160d2e"/>
+      <stop offset=".32" stop-color="#451d4a"/>
+      <stop offset=".58" stop-color="#8e2f44"/>
+      <stop offset=".78" stop-color="#d4583a"/>
+      <stop offset="1"   stop-color="#f2a04e"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0"  stop-color="#ffd9a0" stop-opacity=".9"/>
+      <stop offset=".4" stop-color="#ff9e55" stop-opacity=".45"/>
+      <stop offset="1"  stop-color="#ff9e55" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sunDisc" cx=".5" cy=".42" r=".6">
+      <stop offset="0"  stop-color="#ffe9c4"/>
+      <stop offset=".7" stop-color="#ff9544"/>
+      <stop offset="1"  stop-color="#f56b35"/>
+    </radialGradient>
+    <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#241129"/>
+      <stop offset="1" stop-color="#0f0716"/>
+    </linearGradient>
+    <linearGradient id="bladeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"  stop-color="#94a3b8"/>
+      <stop offset=".5" stop-color="#ffffff"/>
+      <stop offset="1"  stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="slashGrad" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0"  stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#ffffff"/>
+      <stop offset="1"  stop-color="#ffd9a0" stop-opacity=".1"/>
+    </linearGradient>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+
+    <!-- reusable grass clump: 6 blades, ~70 wide, anchored at y=0 -->
+    <g id="clump">
+      <path d="M0 0 Q 3 -34 12 -46 Q 6 -30 8 0 Z"/>
+      <path d="M14 0 Q 14 -44 26 -58 Q 19 -36 22 0 Z"/>
+      <path d="M30 0 Q 33 -52 46 -64 Q 38 -40 38 0 Z"/>
+      <path d="M46 0 Q 48 -40 60 -50 Q 52 -30 54 0 Z"/>
+      <path d="M60 0 Q 64 -30 74 -38 Q 66 -22 68 0 Z"/>
+      <path d="M8 0 Q -2 -24 -10 -28 Q -2 -16 0 0 Z"/>
+    </g>
+  </defs>
+
+  <!-- sky -->
+  <rect width="1600" height="900" fill="url(#skyGrad)"/>
+
+  <!-- stars -->
+  <g fill="#ffeedd">
+    <circle class="star" cx="150"  cy="90"  r="1.6"/>
+    <circle class="star" cx="420"  cy="60"  r="1.2" style="animation-delay:-1.2s"/>
+    <circle class="star" cx="700"  cy="120" r="1.5" style="animation-delay:-2.4s"/>
+    <circle class="star" cx="980"  cy="55"  r="1.1" style="animation-delay:-.6s"/>
+    <circle class="star" cx="1240" cy="100" r="1.6" style="animation-delay:-1.8s"/>
+    <circle class="star" cx="1460" cy="65"  r="1.2" style="animation-delay:-3s"/>
+    <circle class="star" cx="260"  cy="170" r="1.1" style="animation-delay:-2s"/>
+    <circle class="star" cx="1100" cy="185" r="1.3" style="animation-delay:-.9s"/>
+  </g>
+
+  <!-- sun -->
+  <circle id="sunGlowPulse" cx="600" cy="585" r="360" fill="url(#sunGlow)"/>
+  <circle cx="600" cy="585" r="185" fill="url(#sunDisc)"/>
+  <!-- cloud streaks across the sun -->
+  <g fill="#4d1f3d" opacity=".75">
+    <path d="M380 520 Q 600 508 870 518 Q 980 522 1010 528 Q 760 534 520 532 Q 410 530 380 520 Z"/>
+    <path d="M450 565 Q 640 556 820 562 Q 900 565 930 570 Q 700 576 540 573 Q 470 571 450 565 Z"/>
+    <path d="M650 480 Q 800 472 930 478 Q 980 480 1000 484 Q 850 490 740 487 Q 680 485 650 480 Z"/>
+  </g>
+
+  <!-- mountains -->
+  <path d="M0 660 L 180 575 L 340 645 L 520 560 L 700 648 L 900 580 L 1080 650 L 1280 585 L 1450 645 L 1600 600 L 1600 720 L 0 720 Z"
+        fill="#3a1b42" opacity=".95"/>
+  <path d="M0 700 L 240 640 L 460 690 L 720 635 L 980 695 L 1220 645 L 1440 690 L 1600 655 L 1600 760 L 0 760 Z"
+        fill="#2a1230"/>
+
+  <!-- cherry tree, right side -->
+  <g id="tree">
+    <path d="M1295 765 C 1290 700 1288 640 1300 560 C 1306 510 1290 470 1255 430 L 1268 424 C 1300 458 1318 500 1314 552
+             C 1330 540 1352 532 1382 534 L 1380 548 C 1346 548 1326 560 1316 580 C 1308 640 1310 700 1322 765 Z"
+          fill="#150a18"/>
+    <path d="M1300 560 C 1280 540 1250 532 1212 540 L 1214 528 C 1252 520 1286 530 1306 548 Z" fill="#150a18"/>
+    <g opacity=".9">
+      <ellipse cx="1240" cy="415" rx="85" ry="48" fill="#8e3e55"/>
+      <ellipse cx="1390" cy="520" rx="75" ry="42" fill="#8e3e55"/>
+      <ellipse cx="1205" cy="525" rx="62" ry="36" fill="#8e3e55"/>
+      <ellipse cx="1255" cy="398" rx="70" ry="38" fill="#c4647e"/>
+      <ellipse cx="1398" cy="505" rx="60" ry="32" fill="#c4647e"/>
+      <ellipse cx="1212" cy="512" rx="48" ry="26" fill="#c4647e"/>
+      <ellipse cx="1280" cy="380" rx="34" ry="18" fill="#dd8298"/>
+      <ellipse cx="1416" cy="492" rx="28" ry="15" fill="#dd8298"/>
+    </g>
+  </g>
+
+  <!-- ground -->
+  <path d="M0 730 C 300 700 500 686 660 698 C 900 716 1200 736 1600 724 L 1600 900 L 0 900 Z" fill="url(#groundGrad)"/>
+
+  <!-- petals behind the duck -->
+  <g id="petalsBack"></g>
+
+  <!-- back grass -->
+  <g fill="#1d0c22">
+    <g transform="translate(90 724) scale(.9)"><use href="#clump" class="grass-sway"/></g>
+    <g transform="translate(330 712)"><use href="#clump" class="grass-sway alt"/></g>
+    <g transform="translate(520 706) scale(.8)"><use href="#clump" class="grass-sway"/></g>
+    <g transform="translate(860 716)"><use href="#clump" class="grass-sway alt"/></g>
+    <g transform="translate(1060 724) scale(1.1)"><use href="#clump" class="grass-sway"/></g>
+    <g transform="translate(1420 722) scale(.95)"><use href="#clump" class="grass-sway alt"/></g>
+  </g>
+
+  <!-- ================= THE DUCK SAMURAI ================= -->
+  <g id="duck" transform="translate(640,702) scale(1.06)">
+    <g id="breath">
+      <g id="duckInner">
+
+        <!-- scarf strands (behind body, flowing right with the wind) -->
+        <g id="scarf2">
+          <path d="M28 -160 C 95 -135 150 -158 208 -128 L 198 -114 L 212 -102 L 190 -94 C 138 -116 92 -98 32 -132 Z"
+                fill="#8e1f2e"/>
+        </g>
+        <g id="scarf">
+          <path d="M24 -168 C 92 -150 152 -180 218 -150 L 206 -135 L 222 -122 L 200 -112 C 140 -130 95 -110 30 -142 Z"
+                fill="#b3293a"/>
+        </g>
+
+        <!-- tail tuft poking out the back of the robe -->
+        <path d="M50 -36 C 68 -42 73 -58 62 -64 C 67 -50 60 -42 47 -40 Z" fill="#efdfc2"/>
+
+        <!-- feet -->
+        <path d="M-34 0 Q -22 -10 -10 0 L -2 2 Q -20 8 -40 3 Z" fill="#d98032"/>
+        <path d="M8 2 Q 20 -8 32 2 L 40 4 Q 22 10 4 5 Z" fill="#c9722a"/>
+
+        <!-- kimono robe -->
+        <path d="M-52 -8 C -60 -60 -50 -120 -28 -150 L 30 -152 C 58 -120 64 -55 54 -8 Q 0 8 -52 -8 Z"
+              fill="#25324f"/>
+        <!-- cream chest at the collar V -->
+        <path d="M-28 -150 L -4 -118 L 18 -151 Z" fill="#e7d6b6"/>
+        <!-- collar lines -->
+        <path d="M-28 -150 L -4 -118 L 18 -151" fill="none" stroke="#16203a" stroke-width="4" stroke-linejoin="round"/>
+        <!-- obi belt -->
+        <path d="M-54 -80 C -20 -70 22 -70 56 -80 L 55 -60 C 20 -52 -18 -52 -53 -60 Z" fill="#161e33"/>
+        <circle cx="44" cy="-70" r="7" fill="#0f1626"/>
+        <!-- sunset rim light on the front edge -->
+        <path d="M-50 -18 C -58 -66 -49 -118 -28 -148" fill="none" stroke="#ff9a55" stroke-width="3"
+              stroke-linecap="round" opacity=".55"/>
+
+        <!-- shoulder armor (sode) -->
+        <g transform="translate(-30,-148) rotate(-14)">
+          <rect x="-22" y="0"  width="46" height="13" rx="6" fill="#1f2a44" stroke="#caa84e" stroke-width="1.2"/>
+          <rect x="-19" y="14" width="42" height="13" rx="6" fill="#1b2540" stroke="#caa84e" stroke-width="1.2"/>
+          <rect x="-16" y="28" width="38" height="13" rx="6" fill="#17203a" stroke="#caa84e" stroke-width="1.2"/>
+        </g>
+
+        <!-- IDLE POSE: hand resting on the sheathed katana -->
+        <g id="poseIdle">
+          <!-- sheathed katana at the hip, handle forward -->
+          <g transform="translate(-18,-92) rotate(-14)">
+            <rect x="2" y="-5" width="92" height="11" rx="5" fill="#141821"/>
+            <rect x="88" y="-6" width="8" height="13" rx="3" fill="#0d1118"/>
+            <circle cx="2" cy="0" r="8.5" fill="#4d4435"/>
+            <rect x="-54" y="-5" width="50" height="10" rx="4" fill="#3a2d22"/>
+            <path d="M-46 -5 L -41 5 M -34 -5 L -29 5 M -22 -5 L -17 5 M -10 -5 L -5 5"
+                  stroke="#caa84e" stroke-width="2.2"/>
+          </g>
+          <!-- wing resting on the handle -->
+          <path d="M-10 -142 C -38 -136 -52 -118 -44 -100 C -32 -90 -16 -96 -8 -112 C -4 -124 -2 -136 -10 -142 Z"
+                fill="#e7d6b6"/>
+        </g>
+
+        <!-- DRAWN POSE: blade out, mid-strike -->
+        <g id="poseDrawn">
+          <!-- empty sheath swings back -->
+          <g transform="translate(-16,-88) rotate(8)">
+            <rect x="2" y="-5" width="92" height="11" rx="5" fill="#141821"/>
+            <rect x="88" y="-6" width="8" height="13" rx="3" fill="#0d1118"/>
+          </g>
+          <!-- extended wing gripping the katana -->
+          <path d="M-8 -144 C -44 -146 -74 -152 -94 -164 C -101 -169 -98 -178 -90 -176 C -66 -166 -36 -158 -6 -154 Z"
+                fill="#e7d6b6"/>
+          <!-- katana in the wing, blade sweeping up-left -->
+          <g transform="translate(-94,-166) rotate(27)">
+            <rect x="2" y="-5" width="34" height="10" rx="4" fill="#3a2d22"/>
+            <path d="M8 -5 L 13 5 M 19 -5 L 24 5 M 29 -5 L 33 5" stroke="#caa84e" stroke-width="2"/>
+            <circle cx="2" cy="0" r="8" fill="#4d4435"/>
+            <!-- blade -->
+            <path d="M-4 -4.5 L -146 -14 L -151 -7.5 L -4 4.5 Z" fill="url(#bladeGrad)"/>
+            <path d="M-4 -4.5 L -147 -13.5" stroke="#ffffff" stroke-width="1.4" opacity=".9"/>
+          </g>
+        </g>
+
+        <!-- head -->
+        <g id="head">
+          <circle cx="-6" cy="-196" r="52" fill="#efdfc2"/>
+          <!-- shading on the away-from-sun side -->
+          <path d="M14 -243 A 52 52 0 0 1 14 -149 A 66 66 0 0 0 14 -243 Z" fill="#dcc69e" opacity=".8"/>
+          <!-- beak -->
+          <path d="M-54 -200 L -100 -192 Q -106 -186 -98 -180 L -52 -178 Z" fill="#e8923a"/>
+          <path d="M-56 -180 L -94 -181 Q -82 -172 -58 -174 Z" fill="#c9722b"/>
+          <circle cx="-88" cy="-189" r="1.6" fill="#9c581f"/>
+          <!-- fierce brow + eye -->
+          <path d="M-44 -224 L -14 -217" stroke="#3a2a18" stroke-width="4.5" stroke-linecap="round"/>
+          <ellipse cx="-28" cy="-206" rx="5" ry="7.5" fill="#2a1d12"/>
+          <circle cx="-30" cy="-209" r="1.6" fill="#fff"/>
+          <rect id="eyelid" x="-35" y="-215" width="14" height="17" rx="5" fill="#efdfc2"/>
+          <!-- topknot -->
+          <path d="M-2 -244 C 2 -266 20 -266 22 -246 C 14 -254 4 -254 -2 -244 Z" fill="#1b1410"/>
+          <rect x="2" y="-250" width="14" height="5" rx="2" fill="#caa84e" transform="rotate(-8 9 -247)"/>
+          <path d="M20 -248 C 28 -244 30 -236 26 -230" fill="none" stroke="#1b1410" stroke-width="3" stroke-linecap="round"/>
+        </g>
+
+      </g><!-- /duckInner -->
+    </g><!-- /breath -->
+  </g><!-- /duck -->
+
+  <!-- foreground grass (darker than the ground so it reads as silhouette) -->
+  <g fill="#060309">
+    <g transform="translate(-20 905) scale(1.9)"><use href="#clump" class="grass-sway alt"/></g>
+    <g transform="translate(240 900) scale(1.6)"><use href="#clump" class="grass-sway"/></g>
+    <g transform="translate(700 908) scale(2.1)"><use href="#clump" class="grass-sway alt"/></g>
+    <g transform="translate(1150 902) scale(1.7)"><use href="#clump" class="grass-sway"/></g>
+    <g transform="translate(1450 906) scale(1.9)"><use href="#clump" class="grass-sway alt"/></g>
+  </g>
+
+  <!-- petals in front of the duck -->
+  <g id="petalsFront"></g>
+
+  <!-- slash effect -->
+  <g id="slashFx">
+    <path class="arcGlow" d="M 760 280 Q 480 300 350 620" fill="none" stroke="#fff" stroke-width="26"
+          stroke-linecap="round" opacity=".5" filter="url(#softGlow)"/>
+    <path class="arc" pathLength="100" d="M 760 280 Q 480 300 350 620" fill="none"
+          stroke="url(#slashGrad)" stroke-width="9" stroke-linecap="round"/>
+    <path class="arc" pathLength="100" d="M 740 310 Q 500 330 390 600" fill="none"
+          stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".85"/>
+  </g>
+
+  <!-- white flash -->
+  <rect id="flash" width="1600" height="900" fill="#fff"/>
+</svg>
+</div>
+
+<div id="vignette"></div>
+<div class="bar top"></div>
+<div class="bar bottom"></div>
+<div id="title"><span class="kanji">鴨侍</span><span class="latin">Duck Samurai</span></div>
+<div id="hint" role="status">Click to strike</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const stage   = $('#stage');
+  const duck    = $('#duck');
+  const slashFx = $('#slashFx');
+  const flash   = $('#flash');
+  const hint    = $('#hint');
+
+  /* ============ petals ============ */
+  const PETAL_COUNT = 24;
+  const PETAL_D = 'M0 -7 C 6 -4 6 4 0 8 C -6 4 -6 -4 0 -7 Z';
+  const PETAL_COLORS = ['#f5aabe', '#e98ca6', '#d97b9a', '#f3c1cf'];
+  const backG  = $('#petalsBack');
+  const frontG = $('#petalsFront');
+  const petals = [];
+  const shards = [];
+
+  function spawnPetal(onScreen) {
+    const front = Math.random() < 0.4;
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    el.setAttribute('d', PETAL_D);
+    el.setAttribute('fill', PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)]);
+    el.setAttribute('opacity', front ? 0.9 : 0.65);
+    (front ? frontG : backG).appendChild(el);
+    const fromTree = Math.random() < 0.3;
+    const p = {
+      el,
+      x: onScreen ? Math.random() * 1600 : (fromTree ? 1150 + Math.random() * 300 : -40 - Math.random() * 200),
+      y: onScreen ? Math.random() * 650 : (fromTree ? 120 + Math.random() * 220 : 40 + Math.random() * 560),
+      vx: 0.6 + Math.random() * 1.1,
+      vy: 0.25 + Math.random() * 0.5,
+      rot: Math.random() * 360,
+      vr: (Math.random() - 0.5) * 2.4,
+      phase: Math.random() * Math.PI * 2,
+      freq: 0.8 + Math.random() * 1.4,
+      scale: 0.7 + Math.random() * 0.7,
+    };
+    petals.push(p);
+    return p;
+  }
+
+  function respawn(p) {
+    const fromTree = Math.random() < 0.3;
+    if (fromTree) { p.x = 1150 + Math.random() * 300; p.y = 120 + Math.random() * 220; }
+    else          { p.x = -40 - Math.random() * 120;  p.y = 40 + Math.random() * 560; }
+    p.vx = 0.6 + Math.random() * 1.1;
+    p.vy = 0.25 + Math.random() * 0.5;
+  }
+
+  function spawnShard(x, y, dir) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    el.setAttribute('d', 'M0 -5 C 4 -3 4 3 0 5 L 0 -5 Z'); // half a petal
+    el.setAttribute('fill', '#f3c1cf');
+    frontG.appendChild(el);
+    shards.push({
+      el, x, y,
+      vx: dir * (2 + Math.random() * 3),
+      vy: -2 - Math.random() * 2,
+      rot: Math.random() * 360,
+      vr: dir * (6 + Math.random() * 6),
+      life: 55,
+    });
+  }
+
+  for (let i = 0; i < PETAL_COUNT; i++) spawnPetal(true);
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min((now - last) / 16.67, 3); // normalize to ~60fps steps, clamp tab-switch jumps
+    last = now;
+    const t = now / 1000;
+
+    for (const p of petals) {
+      p.x += p.vx * dt;
+      p.y += (p.vy + Math.sin(t * p.freq + p.phase) * 0.45) * dt;
+      p.rot += p.vr * dt;
+      if (p.x > 1650 || p.y > 950) respawn(p);
+      p.el.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${p.rot}) scale(${p.scale})`);
+    }
+
+    for (let i = shards.length - 1; i >= 0; i--) {
+      const s = shards[i];
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy += 0.14 * dt;
+      s.rot += s.vr * dt;
+      s.life -= dt;
+      if (s.life <= 0) { s.el.remove(); shards.splice(i, 1); continue; }
+      s.el.setAttribute('opacity', Math.max(s.life / 55, 0));
+      s.el.setAttribute('transform', `translate(${s.x} ${s.y}) rotate(${s.rot})`);
+    }
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  /* ============ sound (synthesized, no files) ============ */
+  let actx = null;
+  function audio() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+
+  function noiseBuffer(ctx, seconds) {
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  function shing() {
+    const ctx = audio();
+    const t0 = ctx.currentTime;
+    // metallic noise sweep
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx, 0.3);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.Q.value = 2.5;
+    bp.frequency.setValueAtTime(7500, t0);
+    bp.frequency.exponentialRampToValueAtTime(2200, t0 + 0.22);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.4, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.26);
+    src.connect(bp).connect(g).connect(ctx.destination);
+    src.start(t0); src.stop(t0 + 0.3);
+    // bright ring on top
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(3100, t0);
+    osc.frequency.exponentialRampToValueAtTime(850, t0 + 0.18);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.1, t0);
+    og.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+    osc.connect(og).connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + 0.22);
+  }
+
+  function sheathClick() {
+    const ctx = audio();
+    const t0 = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx, 0.06);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 750;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.3, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
+    src.connect(lp).connect(g).connect(ctx.destination);
+    src.start(t0); src.stop(t0 + 0.07);
+  }
+
+  /* ============ the strike ============ */
+  const SLASH_CX = 500, SLASH_CY = 460, SLASH_R = 300;
+  let canSlash = true;
+
+  function cutPetals() {
+    for (let i = petals.length - 1; i >= 0; i--) {
+      const p = petals[i];
+      const dx = p.x - SLASH_CX, dy = p.y - SLASH_CY;
+      if (dx * dx + dy * dy < SLASH_R * SLASH_R) {
+        spawnShard(p.x, p.y, -1);
+        spawnShard(p.x, p.y, 1);
+        p.el.remove();
+        petals.splice(i, 1);
+        setTimeout(() => spawnPetal(false), 2500 + Math.random() * 2000);
+      }
+    }
+  }
+
+  function restartAnim(el, cls) {
+    el.classList.remove(cls);
+    void el.getBoundingClientRect(); // force reflow so the animation can restart
+    el.classList.add(cls);
+  }
+
+  function slash() {
+    if (!canSlash) return;
+    canSlash = false;
+    hint.classList.add('hide');
+
+    duck.classList.add('crouch');                     // wind up
+
+    setTimeout(() => {                                // strike
+      duck.classList.remove('crouch');
+      duck.classList.add('slashing');
+      restartAnim(slashFx, 'go');
+      restartAnim(flash, 'go');
+      restartAnim(stage, 'shake');
+      shing();
+      cutPetals();
+    }, 110);
+
+    setTimeout(() => duck.classList.remove('slashing'), 800);  // re-sheath
+    setTimeout(sheathClick, 880);
+    setTimeout(() => { canSlash = true; }, 1150);
+  }
+
+  addEventListener('pointerdown', slash);
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); slash(); }
+  });
+})();
+</script>
+</body>
+</html>
