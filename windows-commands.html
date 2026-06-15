@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Smart Commands — Cheat Sheet</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #131a30;
+    --panel-2: #1a2440;
+    --border: #283357;
+    --text: #e8edf8;
+    --muted: #9aa6c4;
+    --accent: #4f9dff;
+    --accent-2: #38d39f;
+    --kbd-bg: #1f2a47;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: radial-gradient(1200px 600px at 80% -10%, #1a2752 0%, transparent 60%),
+                radial-gradient(900px 500px at -10% 10%, #102045 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(11,16,32,.82);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 18px 22px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 42px; height: 42px; border-radius: 11px; flex: none;
+    background: linear-gradient(135deg, var(--accent), #7a5cff);
+    display: grid; place-items: center; font-size: 22px; box-shadow: var(--shadow);
+  }
+  .brand h1 { font-size: 20px; font-weight: 700; letter-spacing: .2px; }
+  .brand p { font-size: 12.5px; color: var(--muted); }
+
+  .search-wrap { flex: 1 1 280px; position: relative; min-width: 220px; }
+  #search {
+    width: 100%; padding: 12px 14px 12px 42px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 12px;
+    font-size: 15px; outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  #search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,157,255,.18); }
+  .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .search-hint {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: var(--muted); pointer-events: none;
+  }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 22px 0; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .tab {
+    padding: 8px 15px; border-radius: 999px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--muted); font-size: 13.5px; font-weight: 600;
+    transition: all .15s; user-select: none;
+  }
+  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab.active { background: var(--accent); color: #06112a; border-color: var(--accent); }
+
+  .section-title {
+    display: flex; align-items: baseline; gap: 10px; margin: 32px 0 14px;
+  }
+  .section-title h2 { font-size: 17px; font-weight: 700; }
+  .section-title span { font-size: 12.5px; color: var(--muted); }
+
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 15px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 9px;
+    transition: transform .12s, border-color .12s;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+  .cmd {
+    font-family: "Cascadia Code", "Consolas", ui-monospace, monospace;
+    font-size: 14px; color: var(--accent-2);
+    background: #0a1124; border: 1px solid var(--border);
+    padding: 5px 9px; border-radius: 8px; word-break: break-word;
+  }
+  .keys { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  kbd {
+    font-family: "Segoe UI", monospace; font-size: 12.5px; font-weight: 600;
+    background: var(--kbd-bg); color: var(--text);
+    border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 6px; padding: 3px 8px; min-width: 24px; text-align: center;
+  }
+  .plus { color: var(--muted); font-size: 12px; }
+  .desc { font-size: 13.5px; color: var(--muted); }
+
+  .copy {
+    flex: none; cursor: pointer; background: var(--panel-2);
+    border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; padding: 5px 8px; font-size: 12px;
+    display: inline-flex; align-items: center; gap: 5px; transition: all .12s;
+  }
+  .copy:hover { color: var(--text); border-color: var(--accent); }
+  .copy.copied { color: var(--accent-2); border-color: var(--accent-2); }
+
+  .empty {
+    text-align: center; color: var(--muted); padding: 60px 20px; display: none;
+  }
+  .empty.show { display: block; }
+  .empty svg { opacity: .5; margin-bottom: 12px; }
+
+  footer {
+    max-width: 1180px; margin: 40px auto 0; padding: 20px 22px;
+    border-top: 1px solid var(--border); color: var(--muted); font-size: 12.5px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--accent-2); color: #06251a; font-weight: 700; font-size: 13.5px;
+    padding: 10px 18px; border-radius: 10px; box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none; transition: all .25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 560px) {
+    .header-inner { padding: 14px; }
+    .brand p { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">⊞</div>
+      <div>
+        <h1>Windows Smart Commands</h1>
+        <p>Run shortcuts, hotkeys &amp; terminal tricks to make life easier</p>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="Search commands, shortcuts, descriptions…" autocomplete="off" spellcheck="false">
+      <span class="search-hint">Press /</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
+  <div class="empty" id="empty">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <p>No commands match your search.</p>
+  </div>
+</main>
+
+<footer>
+  <span>Click any command or hotkey to copy it. Tip: <kbd>⊞ Win</kbd> + <kbd>R</kbd> opens the Run dialog.</span>
+  <span id="count"></span>
+</footer>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---- data -------------------------------------------------------------
+  const DATA = [
+    {
+      cat: 'Run Dialog',
+      note: 'Win + R, then type these',
+      items: [
+        { cmd: 'cmd',           desc: 'Command Prompt' },
+        { cmd: 'powershell',    desc: 'Windows PowerShell' },
+        { cmd: 'wt',            desc: 'Windows Terminal' },
+        { cmd: 'control',       desc: 'Classic Control Panel' },
+        { cmd: 'ms-settings:',  desc: 'Settings app' },
+        { cmd: 'appwiz.cpl',    desc: 'Programs & Features (uninstall apps)' },
+        { cmd: 'ncpa.cpl',      desc: 'Network adapters / connections' },
+        { cmd: 'devmgmt.msc',   desc: 'Device Manager' },
+        { cmd: 'diskmgmt.msc',  desc: 'Disk Management (partitions)' },
+        { cmd: 'services.msc',  desc: 'Services manager' },
+        { cmd: 'taskmgr',       desc: 'Task Manager' },
+        { cmd: 'msconfig',      desc: 'System Configuration / startup' },
+        { cmd: 'regedit',       desc: 'Registry Editor' },
+        { cmd: 'cleanmgr',      desc: 'Disk Cleanup' },
+        { cmd: 'snippingtool',  desc: 'Snipping Tool (screenshots)' },
+        { cmd: 'calc',          desc: 'Calculator' },
+        { cmd: 'notepad',       desc: 'Notepad' },
+        { cmd: 'mstsc',         desc: 'Remote Desktop Connection' },
+        { cmd: 'dxdiag',        desc: 'DirectX diagnostics (specs)' },
+        { cmd: 'sysdm.cpl',     desc: 'System Properties (env vars, etc.)' },
+        { cmd: '%temp%',        desc: 'Open the temp files folder' },
+        { cmd: 'shell:startup', desc: 'Your Startup programs folder' },
+      ],
+    },
+    {
+      cat: 'Keyboard Shortcuts',
+      note: 'Everyday productivity hotkeys',
+      items: [
+        { keys: ['⊞ Win', 'L'],          desc: 'Lock the PC instantly' },
+        { keys: ['⊞ Win', 'D'],          desc: 'Show / hide the desktop' },
+        { keys: ['⊞ Win', 'E'],          desc: 'Open File Explorer' },
+        { keys: ['⊞ Win', 'I'],          desc: 'Open Settings' },
+        { keys: ['⊞ Win', 'V'],          desc: 'Clipboard history' },
+        { keys: ['⊞ Win', '.'],          desc: 'Emoji & symbol picker' },
+        { keys: ['⊞ Win', 'Shift', 'S'], desc: 'Screenshot a region' },
+        { keys: ['⊞ Win', 'Tab'],        desc: 'Task view / virtual desktops' },
+        { keys: ['⊞ Win', '←'],          desc: 'Snap window to left' },
+        { keys: ['⊞ Win', '→'],          desc: 'Snap window to right' },
+        { keys: ['⊞ Win', 'Up'],         desc: 'Maximize window' },
+        { keys: ['⊞ Win', 'Number'],     desc: 'Launch pinned taskbar app' },
+        { keys: ['Alt', 'Tab'],          desc: 'Switch between open windows' },
+        { keys: ['Ctrl', 'Shift', 'Esc'],desc: 'Open Task Manager directly' },
+        { keys: ['Ctrl', 'Shift', 'T'],  desc: 'Reopen last closed browser tab' },
+        { keys: ['Win', 'Ctrl', 'D'],    desc: 'New virtual desktop' },
+        { keys: ['F2'],                  desc: 'Rename selected file' },
+        { keys: ['Alt', 'F4'],           desc: 'Close the active window' },
+      ],
+    },
+    {
+      cat: 'Command Prompt',
+      note: 'Handy CMD one-liners',
+      items: [
+        { cmd: 'ipconfig /all',            desc: 'Full network configuration' },
+        { cmd: 'ipconfig /flushdns',       desc: 'Clear DNS cache (fix sites)' },
+        { cmd: 'ping google.com',          desc: 'Test internet connectivity' },
+        { cmd: 'tracert google.com',       desc: 'Trace network route to a host' },
+        { cmd: 'sfc /scannow',             desc: 'Scan & repair system files' },
+        { cmd: 'DISM /Online /Cleanup-Image /RestoreHealth', desc: 'Repair the Windows image' },
+        { cmd: 'chkdsk C: /f',             desc: 'Check & fix drive errors' },
+        { cmd: 'tasklist',                 desc: 'List all running processes' },
+        { cmd: 'taskkill /IM chrome.exe /F', desc: 'Force-kill a process by name' },
+        { cmd: 'shutdown /r /t 0',         desc: 'Restart immediately' },
+        { cmd: 'shutdown /s /t 0',         desc: 'Shut down immediately' },
+        { cmd: 'systeminfo',               desc: 'Detailed system specs' },
+        { cmd: 'powercfg /batteryreport',  desc: 'Generate a battery health report' },
+        { cmd: 'getmac',                   desc: 'Show MAC addresses' },
+        { cmd: 'netstat -ano',             desc: 'Active connections + PIDs' },
+        { cmd: 'assoc',                    desc: 'List file-type associations' },
+      ],
+    },
+    {
+      cat: 'PowerShell',
+      note: 'Power-user PowerShell snippets',
+      items: [
+        { cmd: 'Get-Process | Sort CPU -Desc | Select -First 10', desc: 'Top 10 CPU-hungry processes' },
+        { cmd: 'Get-Service | Where Status -eq "Running"', desc: 'List running services' },
+        { cmd: 'Get-ComputerInfo',          desc: 'Comprehensive system info' },
+        { cmd: 'winget upgrade --all',      desc: 'Update all installed apps' },
+        { cmd: 'winget install <name>',     desc: 'Install an app by name' },
+        { cmd: 'Get-Command *network*',     desc: 'Discover related cmdlets' },
+        { cmd: 'Test-Connection google.com',desc: 'Ping a host (PS-style)' },
+        { cmd: 'Get-ChildItem -Recurse',    desc: 'List files recursively' },
+        { cmd: 'Clear-RecycleBin',          desc: 'Empty the Recycle Bin' },
+        { cmd: 'Get-Help <cmdlet> -Examples', desc: 'Show usage examples' },
+        { cmd: 'Restart-Computer',          desc: 'Reboot the machine' },
+        { cmd: 'Get-NetIPAddress',          desc: 'Show all IP addresses' },
+      ],
+    },
+  ];
+
+  // ---- render -----------------------------------------------------------
+  const tabsEl    = document.getElementById('tabs');
+  const contentEl = document.getElementById('content');
+  const emptyEl   = document.getElementById('empty');
+  const searchEl  = document.getElementById('search');
+  const countEl   = document.getElementById('count');
+  const toastEl   = document.getElementById('toast');
+
+  let activeCat = 'All';
+  let query = '';
+
+  // tabs
+  const cats = ['All', ...DATA.map(d => d.cat)];
+  cats.forEach(cat => {
+    const t = document.createElement('div');
+    t.className = 'tab' + (cat === 'All' ? ' active' : '');
+    t.textContent = cat;
+    t.onclick = () => { activeCat = cat; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t)); render(); };
+    tabsEl.appendChild(t);
+  });
+
+  const totalItems = DATA.reduce((n, d) => n + d.items.length, 0);
+
+  function matches(item, q) {
+    if (!q) return true;
+    const hay = ((item.cmd || '') + ' ' + (item.keys ? item.keys.join(' ') : '') + ' ' + item.desc).toLowerCase();
+    return hay.includes(q);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function render() {
+    contentEl.innerHTML = '';
+    let shown = 0;
+
+    DATA.forEach(group => {
+      if (activeCat !== 'All' && activeCat !== group.cat) return;
+      const visible = group.items.filter(it => matches(it, query));
+      if (!visible.length) return;
+      shown += visible.length;
+
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.innerHTML = `<h2>${escapeHtml(group.cat)}</h2><span>${escapeHtml(group.note)}</span>`;
+      contentEl.appendChild(title);
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+
+      visible.forEach(it => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const copyText = it.cmd || it.keys.join(' + ');
+        let body;
+        if (it.cmd) {
+          body = `<span class="cmd">${escapeHtml(it.cmd)}</span>`;
+        } else {
+          body = '<div class="keys">' + it.keys.map((k, i) =>
+            (i ? '<span class="plus">+</span>' : '') + `<kbd>${escapeHtml(k)}</kbd>`
+          ).join('') + '</div>';
+        }
+        card.innerHTML = `
+          <div class="card-top">
+            ${body}
+            <button class="copy" title="Copy">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="desc">${escapeHtml(it.desc)}</div>`;
+        card.querySelector('.copy').onclick = e => copy(copyText, e.currentTarget);
+        grid.appendChild(card);
+      });
+
+      contentEl.appendChild(grid);
+    });
+
+    emptyEl.classList.toggle('show', shown === 0);
+    countEl.textContent = query || activeCat !== 'All'
+      ? `${shown} shown · ${totalItems} total`
+      : `${totalItems} commands`;
+  }
+
+  function copy(text, btn) {
+    const done = () => {
+      btn.classList.add('copied');
+      btn.querySelector('span').textContent = 'Copied';
+      showToast(text);
+      setTimeout(() => { btn.classList.remove('copied'); btn.querySelector('span').textContent = 'Copy'; }, 1300);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  let toastTimer;
+  function showToast(text) {
+    toastEl.textContent = 'Copied: ' + text;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1500);
+  }
+
+  searchEl.addEventListener('input', () => { query = searchEl.value.trim().toLowerCase(); render(); });
+
+  // "/" focuses search; Esc clears it
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== searchEl) { e.preventDefault(); searchEl.focus(); }
+    if (e.key === 'Escape' && document.activeElement === searchEl) { searchEl.value = ''; query = ''; render(); searchEl.blur(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
