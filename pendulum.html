@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balancing Pendulum</title>
+<style>
+  :root {
+    --bg: #0e1220;
+    --panel: #161c2e;
+    --line: #2a3350;
+    --text: #e8ecf5;
+    --muted: #8a94ad;
+    --accent: #5db0ff;
+    --good: #4ee0a0;
+    --bad: #ff6b6b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  body { display: flex; flex-direction: column; align-items: center; min-height: 100%; }
+
+  header { text-align: center; padding: 22px 16px 8px; }
+  header h1 { font-size: clamp(20px, 3vw, 30px); font-weight: 650; letter-spacing: .02em; }
+  header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  #wrap {
+    width: min(920px, 94vw);
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 8px 0 40px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+
+  #stageCard { padding: 0; overflow: hidden; }
+  canvas { display: block; width: 100%; height: auto; background: linear-gradient(#131a2c, #0d1120); }
+
+  #controls {
+    display: flex; flex-wrap: wrap; gap: 18px 26px;
+    padding: 16px 20px; align-items: center;
+  }
+  .ctrl { display: flex; flex-direction: column; gap: 6px; min-width: 150px; flex: 1; }
+  .ctrl label { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+  .ctrl label span { color: var(--text); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: var(--accent); color: #06101e; border: none;
+    padding: 9px 16px; border-radius: 9px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: filter .15s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+  #status {
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    padding: 12px 20px; font-size: 13px; color: var(--muted);
+    border-top: 1px solid var(--line);
+  }
+  #status b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+  #stateDot { font-weight: 700; }
+
+  footer { color: var(--muted); font-size: 12px; text-align: center; padding-bottom: 24px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Balancing Pendulum</h1>
+    <p>A cart-pole under an active controller. Click the canvas to shove the pole and watch it recover.</p>
+  </header>
+
+  <div id="wrap">
+    <div class="card" id="stageCard">
+      <canvas id="c" width="1840" height="720"></canvas>
+      <div id="status">
+        <div>angle <b id="sAngle">0.0°</b></div>
+        <div>cart x <b id="sCart">0.00</b></div>
+        <div>force <b id="sForce">0.0</b></div>
+        <div>controller <b id="stateDot">—</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="controls">
+        <div class="ctrl">
+          <label>Gravity <span id="vGrav">9.8</span></label>
+          <input id="grav" type="range" min="2" max="25" step="0.1" value="9.8">
+        </div>
+        <div class="ctrl">
+          <label>Pole length <span id="vLen">1.0</span></label>
+          <input id="len" type="range" min="0.4" max="1.8" step="0.05" value="1.0">
+        </div>
+        <div class="ctrl">
+          <label>Controller strength <span id="vGain">1.0</span></label>
+          <input id="gain" type="range" min="0" max="2" step="0.05" value="1.0">
+        </div>
+        <div class="ctrl">
+          <label>Disturbance <span id="vDist">0.4</span></label>
+          <input id="dist" type="range" min="0" max="2" step="0.05" value="0.4">
+        </div>
+      </div>
+      <div id="controls" style="border-top:1px solid var(--line)">
+        <div class="btns">
+          <button id="nudge">Nudge pole</button>
+          <button id="reset" class="ghost">Reset</button>
+        </div>
+        <label class="toggle"><input id="control" type="checkbox" checked> Controller on</label>
+      </div>
+    </div>
+
+    <footer>Physics: inverted pendulum on a cart. Controller: PD stabilizer that drives angle → 0 and cart → center.</footer>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // ---- physics state (SI-ish units) ----
+  // theta = angle of pole from vertical (rad), positive = leaning right
+  const P = {
+    M: 1.0,     // cart mass
+    m: 0.25,    // pole mass
+    l: 1.0,     // half-length of pole (set from slider)
+    g: 9.8,
+    x: 0,       // cart position (m)
+    xdot: 0,
+    theta: 0.04,
+    thetadot: 0,
+    trackHalf: 4.0, // metres from centre to wall
+  };
+
+  const cfg = {
+    gain: 1.0,
+    disturb: 0.4,
+    control: true,
+    windTimer: 0,
+  };
+
+  let lastForce = 0;
+  let fell = false;
+
+  // ---- controls wiring ----
+  const el = id => document.getElementById(id);
+  const bind = (id, valId, fn) => {
+    const s = el(id), v = el(valId);
+    const upd = () => { v.textContent = (+s.value).toFixed(2).replace(/\.00$/, '.0'); fn(+s.value); };
+    s.addEventListener('input', upd); upd();
+  };
+  bind('grav', 'vGrav', v => P.g = v);
+  bind('len',  'vLen',  v => P.l = v);
+  bind('gain', 'vGain', v => cfg.gain = v);
+  bind('dist', 'vDist', v => cfg.disturb = v);
+  el('control').addEventListener('change', e => cfg.control = e.target.checked);
+
+  function reset() {
+    P.x = 0; P.xdot = 0; P.theta = 0.04; P.thetadot = 0;
+    fell = false; lastForce = 0;
+  }
+  el('reset').addEventListener('click', reset);
+  el('nudge').addEventListener('click', () => nudge((Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)));
+
+  function nudge(impulse) {
+    P.thetadot += impulse;
+  }
+
+  // click the canvas to shove
+  canvas.addEventListener('pointerdown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width; // 0..1
+    // shove away from where you clicked relative to the pivot
+    const dir = px < 0.5 ? 1 : -1;
+    nudge(dir * (3 + Math.random() * 2.5));
+  });
+
+  // ---- controller: PD on angle + PD on cart position ----
+  function controlForce() {
+    if (!cfg.control) return 0;
+    // Gains tuned so default sim balances comfortably; user gain scales them.
+    const kTh = 120, kThd = 24;   // keep pole upright
+    const kX = 6,   kXd = 9;      // gently return cart to centre
+    const f = cfg.gain * (
+        kTh  * P.theta
+      + kThd * P.thetadot
+      + kX   * P.x
+      + kXd  * P.xdot
+    );
+    return Math.max(-220, Math.min(220, f));
+  }
+
+  // ---- equations of motion for cart-pole ----
+  function derivatives(F) {
+    const { M, m, l, g, theta, thetadot } = P;
+    const s = Math.sin(theta), c = Math.cos(theta);
+    const total = M + m;
+    // standard inverted pendulum on a cart
+    const denom = l * (4/3 - (m * c * c) / total);
+    const thetaAcc = (g * s + c * ((-F - m * l * thetadot * thetadot * s) / total)) / denom;
+    const xAcc = (F + m * l * (thetadot * thetadot * s - thetaAcc * c)) / total;
+    return { xAcc, thetaAcc };
+  }
+
+  function step(dt) {
+    if (fell) return;
+
+    // ambient wind disturbance
+    cfg.windTimer -= dt;
+    if (cfg.windTimer <= 0 && cfg.disturb > 0) {
+      cfg.windTimer = 0.6 + Math.random() * 1.6;
+      nudge((Math.random() - 0.5) * 2 * cfg.disturb);
+    }
+
+    const F = controlForce();
+    lastForce = F;
+
+    const k = derivatives(F);
+    P.xdot += k.xAcc * dt;
+    P.x    += P.xdot * dt;
+    P.thetadot += k.thetaAcc * dt;
+    P.theta    += P.thetadot * dt;
+
+    // track walls: bounce the cart
+    if (P.x < -P.trackHalf) { P.x = -P.trackHalf; P.xdot *= -0.3; }
+    if (P.x >  P.trackHalf) { P.x =  P.trackHalf; P.xdot *= -0.3; }
+
+    // fell over?
+    if (Math.abs(P.theta) > Math.PI / 2) fell = true;
+  }
+
+  // ---- rendering ----
+  const scale = 150; // pixels per metre
+  const groundY = H * 0.72;
+  const cx = W / 2;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // track
+    ctx.strokeStyle = '#2a3350'; ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx - P.trackHalf * scale - 60, groundY);
+    ctx.lineTo(cx + P.trackHalf * scale + 60, groundY);
+    ctx.stroke();
+
+    // centre marker
+    ctx.strokeStyle = '#39466b';
+    ctx.setLineDash([6, 10]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, groundY - 30); ctx.lineTo(cx, groundY + 26); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // walls
+    ctx.fillStyle = '#233';
+    for (const sgn of [-1, 1]) {
+      const wx = cx + sgn * P.trackHalf * scale;
+      ctx.fillStyle = '#2a3350';
+      ctx.fillRect(wx + sgn * 6 - (sgn < 0 ? 12 : 0), groundY - 46, 12, 52);
+    }
+
+    const cartX = cx + P.x * scale;
+    const cartY = groundY;
+    const cw = 150, ch = 54;
+
+    // wheels
+    ctx.fillStyle = '#0d1120';
+    ctx.strokeStyle = '#4a5680'; ctx.lineWidth = 3;
+    for (const wx of [-cw/2 + 30, cw/2 - 30]) {
+      ctx.beginPath(); ctx.arc(cartX + wx, cartY + 2, 14, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    }
+
+    // cart body
+    const grad = ctx.createLinearGradient(0, cartY - ch, 0, cartY);
+    grad.addColorStop(0, '#3f7fd6'); grad.addColorStop(1, '#2b5aa0');
+    ctx.fillStyle = grad;
+    roundRect(cartX - cw/2, cartY - ch - 6, cw, ch, 12); ctx.fill();
+
+    // pivot
+    const pivotX = cartX, pivotY = cartY - ch - 6;
+
+    // pole
+    const px = pivotX + Math.sin(P.theta) * (P.l * 2) * scale;
+    const py = pivotY - Math.cos(P.theta) * (P.l * 2) * scale;
+
+    const upright = Math.abs(P.theta) < 0.25;
+    const poleColor = fell ? '#ff6b6b' : (upright ? '#4ee0a0' : '#ffd166');
+
+    ctx.strokeStyle = poleColor; ctx.lineWidth = 12; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(px, py); ctx.stroke();
+
+    // bob
+    ctx.fillStyle = poleColor;
+    ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.25)';
+    ctx.beginPath(); ctx.arc(px - 6, py - 6, 7, 0, Math.PI * 2); ctx.fill();
+
+    // pivot cap
+    ctx.fillStyle = '#0d1120';
+    ctx.beginPath(); ctx.arc(pivotX, pivotY, 8, 0, Math.PI * 2); ctx.fill();
+
+    // force arrow on cart
+    if (Math.abs(lastForce) > 2) {
+      const dir = Math.sign(lastForce);
+      const len = Math.min(90, Math.abs(lastForce) * 0.4);
+      const ay = cartY - ch/2 - 6;
+      ctx.strokeStyle = '#5db0ff'; ctx.fillStyle = '#5db0ff'; ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(cartX, ay); ctx.lineTo(cartX + dir * len, ay); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cartX + dir * len, ay);
+      ctx.lineTo(cartX + dir * (len - 12), ay - 7);
+      ctx.lineTo(cartX + dir * (len - 12), ay + 7);
+      ctx.closePath(); ctx.fill();
+    }
+
+    if (fell) {
+      ctx.fillStyle = 'rgba(255,107,107,.9)';
+      ctx.font = '600 34px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Pole fell — press Reset', cx, H * 0.28);
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---- status HUD ----
+  const sAngle = el('sAngle'), sCart = el('sCart'), sForce = el('sForce'), stateDot = el('stateDot');
+  function updateHUD() {
+    sAngle.textContent = (P.theta * 180 / Math.PI).toFixed(1) + '°';
+    sCart.textContent = P.x.toFixed(2);
+    sForce.textContent = lastForce.toFixed(0);
+    if (fell) { stateDot.textContent = 'fell'; stateDot.style.color = 'var(--bad)'; }
+    else if (!cfg.control) { stateDot.textContent = 'off'; stateDot.style.color = 'var(--muted)'; }
+    else { stateDot.textContent = 'balancing'; stateDot.style.color = 'var(--good)'; }
+  }
+
+  // ---- fixed-timestep loop ----
+  let acc = 0, prev = performance.now();
+  const DT = 1 / 240; // physics substep
+  function frame(now) {
+    let elapsed = (now - prev) / 1000;
+    prev = now;
+    if (elapsed > 0.1) elapsed = 0.1; // clamp tab-switch jumps
+    acc += elapsed;
+    while (acc >= DT) { step(DT); acc -= DT; }
+    draw();
+    updateHUD();
+    requestAnimationFrame(frame);
+  }
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
