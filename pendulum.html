@@ -152,6 +152,7 @@
     windTimer: 0,
     gust: 0,         // current wind angular accel (rad/s^2)
     gustTarget: 0,
+    xInt: 0,         // integral of cart position (drives cart back to centre)
   };
 
   let lastForce = 0;
@@ -171,10 +172,10 @@
 
   function reset() {
     P.x = 0; P.xdot = 0; P.theta = 0.04; P.thetadot = 0;
-    cfg.gust = 0; cfg.gustTarget = 0; lastForce = 0;
+    cfg.gust = 0; cfg.gustTarget = 0; cfg.xInt = 0; lastForce = 0;
   }
   el('reset').addEventListener('click', reset);
-  el('nudge').addEventListener('click', () => nudge((Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 1.6)));
+  el('nudge').addEventListener('click', () => nudge((Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.6)));
 
   function nudge(impulse) {
     P.thetadot += impulse;
@@ -184,9 +185,9 @@
   canvas.addEventListener('pointerdown', e => {
     const rect = canvas.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width; // 0..1
-    // shove away from where you clicked relative to the pivot
-    const dir = px < 0.5 ? 1 : -1;
-    nudge(dir * (1.8 + Math.random() * 1.3));
+    // push the pole toward the side you tap
+    const dir = px < 0.5 ? -1 : 1;
+    nudge(dir * (0.6 + Math.random() * 0.45));
   });
 
   // ---- controller: PD on angle + PD on cart position ----
@@ -195,9 +196,9 @@
     // The controller only has authority near upright — past ~35° it can't
     // catch the pole and lets it fall, just like a real balancing act.
     if (Math.abs(P.theta) > 0.6) return 0;
-    const kTh = 140, kThd = 26;   // keep pole upright
-    const kX = 5,   kXd = 8;      // gently return cart to centre
-    const f = cfg.gain * (kTh*P.theta + kThd*P.thetadot + kX*P.x + kXd*P.xdot);
+    const kTh = 140, kThd = 28;              // keep the pole upright
+    const kX = 8, kXd = 15, kXi = 1.5;       // glide the cart back to centre
+    const f = cfg.gain * (kTh*P.theta + kThd*P.thetadot + kX*P.x + kXd*P.xdot + kXi*cfg.xInt);
     return Math.max(-260, Math.min(260, f));
   }
 
@@ -223,6 +224,13 @@
     }
     cfg.gust += (cfg.gustTarget - cfg.gust) * Math.min(1, dt * 5);
     cfg.gustTarget *= Math.max(0, 1 - dt * 1.4);
+
+    // accumulate cart-position error so the controller drives it back to centre
+    if (cfg.control && Math.abs(P.theta) < 0.6) {
+      cfg.xInt = Math.max(-4, Math.min(4, cfg.xInt + P.x * dt)); // clamped (anti-windup)
+    } else {
+      cfg.xInt = 0;
+    }
 
     const F = controlForce();
     lastForce = F;
