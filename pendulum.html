@@ -13,6 +13,7 @@
     --muted: #8a94ad;
     --accent: #5db0ff;
     --good: #4ee0a0;
+    --warn: #ffd166;
     --bad: #ff6b6b;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -149,10 +150,11 @@
     disturb: 0.4,
     control: true,
     windTimer: 0,
+    gust: 0,         // current wind angular accel (rad/s^2)
+    gustTarget: 0,
   };
 
   let lastForce = 0;
-  let fell = false;
 
   // ---- controls wiring ----
   const el = id => document.getElementById(id);
@@ -169,10 +171,10 @@
 
   function reset() {
     P.x = 0; P.xdot = 0; P.theta = 0.04; P.thetadot = 0;
-    fell = false; lastForce = 0;
+    cfg.gust = 0; cfg.gustTarget = 0; lastForce = 0;
   }
   el('reset').addEventListener('click', reset);
-  el('nudge').addEventListener('click', () => nudge((Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)));
+  el('nudge').addEventListener('click', () => nudge((Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 1.6)));
 
   function nudge(impulse) {
     P.thetadot += impulse;
@@ -184,22 +186,19 @@
     const px = (e.clientX - rect.left) / rect.width; // 0..1
     // shove away from where you clicked relative to the pivot
     const dir = px < 0.5 ? 1 : -1;
-    nudge(dir * (3 + Math.random() * 2.5));
+    nudge(dir * (1.8 + Math.random() * 1.3));
   });
 
   // ---- controller: PD on angle + PD on cart position ----
   function controlForce() {
     if (!cfg.control) return 0;
-    // Gains tuned so default sim balances comfortably; user gain scales them.
-    const kTh = 120, kThd = 24;   // keep pole upright
-    const kX = 6,   kXd = 9;      // gently return cart to centre
-    const f = cfg.gain * (
-        kTh  * P.theta
-      + kThd * P.thetadot
-      + kX   * P.x
-      + kXd  * P.xdot
-    );
-    return Math.max(-220, Math.min(220, f));
+    // The controller only has authority near upright — past ~35° it can't
+    // catch the pole and lets it fall, just like a real balancing act.
+    if (Math.abs(P.theta) > 0.6) return 0;
+    const kTh = 140, kThd = 26;   // keep pole upright
+    const kX = 5,   kXd = 8;      // gently return cart to centre
+    const f = cfg.gain * (kTh*P.theta + kThd*P.thetadot + kX*P.x + kXd*P.xdot);
+    return Math.max(-260, Math.min(260, f));
   }
 
   // ---- equations of motion for cart-pole ----
@@ -215,35 +214,42 @@
   }
 
   function step(dt) {
-    if (fell) return;
-
-    // ambient wind disturbance
+    // Ambient wind as a smooth gust: eases in as an angular push, then fades.
+    // (A real breeze pushes the pole over time — it doesn't teleport its speed.)
     cfg.windTimer -= dt;
-    if (cfg.windTimer <= 0 && cfg.disturb > 0) {
-      cfg.windTimer = 0.6 + Math.random() * 1.6;
-      nudge((Math.random() - 0.5) * 2 * cfg.disturb);
+    if (cfg.windTimer <= 0) {
+      cfg.windTimer = 1.4 + Math.random() * 2.6;
+      cfg.gustTarget = (Math.random() - 0.5) * 2 * cfg.disturb * 5;
     }
+    cfg.gust += (cfg.gustTarget - cfg.gust) * Math.min(1, dt * 5);
+    cfg.gustTarget *= Math.max(0, 1 - dt * 1.4);
 
     const F = controlForce();
     lastForce = F;
 
     const k = derivatives(F);
-    P.xdot += k.xAcc * dt;
-    P.x    += P.xdot * dt;
-    P.thetadot += k.thetaAcc * dt;
-    P.theta    += P.thetadot * dt;
+    P.thetadot += (k.thetaAcc + cfg.gust) * dt;
+    P.xdot     += k.xAcc * dt;
 
-    // track walls: bounce the cart
+    // viscous friction so the motion settles instead of ringing forever
+    P.thetadot *= Math.max(0, 1 - 0.5 * dt);
+    P.xdot     *= Math.max(0, 1 - 0.9 * dt);
+
+    P.theta += P.thetadot * dt;
+    P.x     += P.xdot * dt;
+
+    // track walls: bump the cart
     if (P.x < -P.trackHalf) { P.x = -P.trackHalf; P.xdot *= -0.3; }
     if (P.x >  P.trackHalf) { P.x =  P.trackHalf; P.xdot *= -0.3; }
 
-    // fell over?
-    if (Math.abs(P.theta) > Math.PI / 2) fell = true;
+    // let the pole swing all the way round like a real pendulum
+    if (P.theta >  Math.PI) P.theta -= 2 * Math.PI;
+    if (P.theta < -Math.PI) P.theta += 2 * Math.PI;
   }
 
   // ---- rendering ----
   const scale = 150; // pixels per metre
-  const groundY = H * 0.72;
+  const groundY = H * 0.6; // raised so a hanging pole stays on-stage
   const cx = W / 2;
 
   function draw() {
@@ -295,8 +301,8 @@
     const px = pivotX + Math.sin(P.theta) * (P.l * 2) * scale;
     const py = pivotY - Math.cos(P.theta) * (P.l * 2) * scale;
 
-    const upright = Math.abs(P.theta) < 0.25;
-    const poleColor = fell ? '#ff6b6b' : (upright ? '#4ee0a0' : '#ffd166');
+    const dev = Math.abs(P.theta);
+    const poleColor = dev > 0.6 ? '#ff6b6b' : (dev < 0.22 ? '#4ee0a0' : '#ffd166');
 
     ctx.strokeStyle = poleColor; ctx.lineWidth = 12; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(px, py); ctx.stroke();
@@ -326,10 +332,10 @@
       ctx.closePath(); ctx.fill();
     }
 
-    if (fell) {
-      ctx.fillStyle = 'rgba(255,107,107,.9)';
-      ctx.font = '600 34px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('Pole fell — press Reset', cx, H * 0.28);
+    if (dev > 2.2) {   // pole has swung down and is hanging
+      ctx.fillStyle = 'rgba(160,172,196,.75)';
+      ctx.font = '500 26px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Press Reset to stand it back up', cx, H * 0.20);
     }
   }
 
@@ -349,9 +355,11 @@
     sAngle.textContent = (P.theta * 180 / Math.PI).toFixed(1) + '°';
     sCart.textContent = P.x.toFixed(2);
     sForce.textContent = lastForce.toFixed(0);
-    if (fell) { stateDot.textContent = 'fell'; stateDot.style.color = 'var(--bad)'; }
-    else if (!cfg.control) { stateDot.textContent = 'off'; stateDot.style.color = 'var(--muted)'; }
-    else { stateDot.textContent = 'balancing'; stateDot.style.color = 'var(--good)'; }
+    const dev = Math.abs(P.theta);
+    if (!cfg.control)    { stateDot.textContent = 'off';        stateDot.style.color = 'var(--muted)'; }
+    else if (dev > 0.6)  { stateDot.textContent = 'toppled';    stateDot.style.color = 'var(--bad)'; }
+    else if (dev > 0.22) { stateDot.textContent = 'correcting'; stateDot.style.color = 'var(--warn)'; }
+    else                 { stateDot.textContent = 'balancing';  stateDot.style.color = 'var(--good)'; }
   }
 
   // ---- fixed-timestep loop ----
