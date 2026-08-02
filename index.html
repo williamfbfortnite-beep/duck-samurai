@@ -48,6 +48,18 @@
     transition: opacity .8s ease;
   }
   #hint.hide { opacity: 0 !important; animation: none; }
+
+  #playLink {
+    position: fixed; right: 4vw; bottom: 10vh; z-index: 11;
+    color: var(--gold); text-decoration: none; text-align: right;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
+    border: 1px solid rgba(240,201,135,.35); border-radius: 4px;
+    padding: .5em .9em; transition: background .25s, border-color .25s, transform .15s;
+  }
+  #playLink .kanji { font-size: clamp(20px, 2.6vw, 32px); letter-spacing: .18em; display: block; }
+  #playLink .latin { font-size: clamp(9px, .95vw, 12px); font-weight: 600; letter-spacing: .3em; opacity: .8; text-transform: uppercase; }
+  #playLink:hover { background: rgba(240,201,135,.1); border-color: var(--gold); transform: translateY(-2px); }
   @keyframes hintPulse { 0%,100% { opacity: .45; } 50% { opacity: .95; } }
 
   /* ---- idle animations ---- */
@@ -366,6 +378,7 @@
 <div class="bar bottom"></div>
 <div id="title"><span class="kanji">鴨侍</span><span class="latin">Duck Samurai</span></div>
 <div id="hint" role="status">Click to strike</div>
+<a id="playLink" href="game.html"><span class="kanji">出陣</span><span class="latin">Play the siege</span></a>
 
 <script>
 (() => {
