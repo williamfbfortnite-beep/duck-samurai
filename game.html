@@ -243,8 +243,24 @@
   </div>
 
   <div id="screens">
+    <!-- Shown until the script boots. If a viewer blocks inline scripts this
+         stays up and says so, instead of faking a menu with dead buttons. -->
+    <div class="screen on" id="scBoot">
+      <h1 class="title">鴨侍</h1>
+      <div class="sub">Siege of the Rotting Reeds</div>
+      <div class="hint" style="max-width:46em">
+        <b>Loading…</b><br><br>
+        If this message does not disappear, the page you are viewing this in is
+        blocking the game's script.<br>
+        Open <b>game.html</b> directly in a browser tab and it will run.
+      </div>
+      <noscript>
+        <div class="hint" style="color:#ff8a7a"><b>JavaScript is disabled in this browser.</b></div>
+      </noscript>
+    </div>
+
     <!-- MENU -->
-    <div class="screen on" id="scMenu">
+    <div class="screen" id="scMenu">
       <h1 class="title">鴨侍</h1>
       <div class="sub">Siege of the Rotting Reeds</div>
       <div class="bank"><span>点 <b id="mSp">0</b></span><span style="opacity:.6">BEST WAVE <b id="mBest">—</b></span></div>
@@ -1795,7 +1811,7 @@ addEventListener('keydown', ev => {
 /* ══════════════════════════════════════════════════════════════════════
    SCREENS
    ══════════════════════════════════════════════════════════════════════ */
-const SCREENS = ['scMenu', 'scBarracks', 'scUpgrades', 'scPause', 'scOver'];
+const SCREENS = ['scBoot', 'scMenu', 'scBarracks', 'scUpgrades', 'scPause', 'scOver'];
 function show(id) {
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('on', s === id));
 }
