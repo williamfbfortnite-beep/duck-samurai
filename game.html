@@ -25,7 +25,10 @@
     position: relative;
     /* bound by BOTH axes: capping height alone let a short, wide window
        stretch the board off-ratio */
-    width: min(100%, calc(100vh * var(--arn, 1.778)));
+    /* --cap lets JS trim the board to a width where one art pixel covers a
+       whole number of screen pixels; without it the browser resamples the
+       whole canvas and the pixel art goes soft */
+    width: min(100%, calc(100vh * var(--arn, 1.778)), var(--cap, 100vw));
     aspect-ratio: var(--ar, 16 / 9);
     max-width: 100vw;
     box-shadow: 0 0 calc(var(--u) * 60) rgba(0,0,0,.9);
@@ -341,7 +344,7 @@
 </head>
 <body>
 <div id="stage">
-  <!-- size is authoritative in script (cv.width = VW), these are the pre-boot values -->
+  <!-- pre-boot values only; fit() sizes the buffer to the display -->
   <canvas id="cv" width="1122" height="765"></canvas>
   <!-- BGM-SRC: the artifact build replaces this src with an inlined data URI -->
   <audio id="bgm" src="assets/music.mp3" loop preload="auto" playsinline></audio>
@@ -1366,7 +1369,7 @@ const cv = document.getElementById('cv');
    pointer maths divided by a height 18% larger than the one being drawn to,
    so the cursor picked the lane below the one under it. One number, three
    bugs. Setting it here means the two can never disagree again. */
-cv.width = VW; cv.height = VH;
+cv.width = VW; cv.height = VH;                 // fit() resizes this to the display
 const ctx = cv.getContext('2d');
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -2180,17 +2183,35 @@ mapImg.onload = () => { mapReady = true; };
 mapImg.onerror = () => { mapReady = false; };
 mapImg.src = 'assets/map.png';          // artifact build swaps in a data URI
 
+/* Compositing the field means a full-surface scaled blit plus a full-surface
+   fill. At one screen pixel per art pixel that was cheap; at a retina buffer it
+   is most of the frame budget, and on a 4K display it cost twenty frames a
+   second. The hour's light crawls — a full day takes 165s — so bake the map and
+   its wash together and reuse the result until the light has visibly moved.
+   240 steps across the cycle is one rebuild every 0.7s, far below anything the
+   eye reads as banding. */
+let fieldCv = null, fieldKey = '';
+const TINT_STEPS = 240;
+
 function drawField(g, phase, t) {
-  if (mapReady) {
-    g.imageSmoothingEnabled = false;
-    g.drawImage(mapImg, 0, 0, VW, VH);
-  } else {
-    g.fillStyle = '#26401f'; g.fillRect(0, 0, VW, VH);
+  const key = cv.width + '|' + Math.round(phase * TINT_STEPS) + '|' + (mapReady ? 1 : 0);
+  if (key !== fieldKey) {
+    fieldKey = key;
+    if (!fieldCv) fieldCv = document.createElement('canvas');
+    if (fieldCv.width !== cv.width || fieldCv.height !== cv.height) {
+      fieldCv.width = cv.width; fieldCv.height = cv.height;
+    }
+    const fg = fieldCv.getContext('2d');
+    fg.setTransform(cv.width / VW, 0, 0, cv.height / VH, 0, 0);
+    fg.imageSmoothingEnabled = false;
+    if (mapReady) fg.drawImage(mapImg, 0, 0, VW, VH);
+    else { fg.fillStyle = '#26401f'; fg.fillRect(0, 0, VW, VH); }
+    fg.fillStyle = skyAt(Math.round(phase * TINT_STEPS) / TINT_STEPS).tint;
+    fg.fillRect(0, 0, VW, VH);
   }
-  const s = skyAt(phase);
-  g.fillStyle = s.tint;                  // wash the whole scene in the hour's light
-  g.fillRect(0, 0, VW, VH);
-  return s;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(fieldCv, 0, 0, VW, VH);     // buffer-sized source, so 1:1, no resample
+  return skyAt(phase);
 }
 
 function drawWard(g, r) {
@@ -2226,7 +2247,9 @@ function drawProj(g, p) {
 function render() {
   const g = ctx;
   let hoverLabel = null;
-  g.clearRect(0, 0, VW, VH);
+  // no clear: drawField lays down an opaque image over the whole surface, so
+  // clearing first is a second full-surface pass for nothing — which at a
+  // retina buffer is a real slice of the frame
   drawField(g, R.phase, R.elapsed);
 
   // ---- hover ghost / tile highlight
@@ -2466,8 +2489,7 @@ function menuRender(dt) {
   const g = ctx;
   menuT += dt;
   menuPhase = (menuPhase + dt / (DAY_LEN * 1.6)) % 1;
-  g.clearRect(0, 0, VW, VH);
-  drawField(g, menuPhase, menuT);
+  drawField(g, menuPhase, menuT);        // opaque and full-surface; no clear needed
 
   // the horde, walking in and stopping short of the hero
   if (idlers.length < 9 && Math.random() < .022) {
@@ -3049,13 +3071,48 @@ function renderUpgrades() {
    RESPONSIVE STAGE UNIT
    ══════════════════════════════════════════════════════════════════════ */
 const stage = document.getElementById('stage');
+
+/* The board is drawn in a fixed 1122x765 coordinate space, but that is a
+   coordinate space, not a resolution. Drawing into a 1122x765 buffer and
+   letting the browser stretch it to the screen means every display larger
+   than the art gets pixels the game never drew — sprites and HUD numbers go
+   soft while the DOM chrome around them stays sharp, which reads as the whole
+   thing dropping resolution.
+
+   So size the buffer to the display instead and scale the context, leaving
+   every coordinate in the code untouched. Pixel art also wants one art pixel
+   to cover a whole number of screen pixels, so prefer an integer scale and
+   trim the board to suit — but only while that costs under 15% of the width.
+   Past that, filling the space matters more than perfect pixel edges. The
+   Cap the surface at twice the art. The map is 1122px of real detail and every
+   sprite is stamped from a 16x18 grid, so past 2x there is nothing further to
+   resolve — only a bigger buffer to blit every frame, which on a 4K display
+   costs frames for no visible gain. */
+const MAX_SURFACE_W = VW * 2;
 function fit() {
   // derive the frame from the canvas so the two can never disagree — a
   // hard-coded 16/9 here silently squashed and clipped the painted map
   document.documentElement.style.setProperty('--ar', VW + ' / ' + VH);
   document.documentElement.style.setProperty('--arn', String(VW / VH));
-  const w = stage.getBoundingClientRect().width;
+
+  // measure uncapped, or the snap would feed on its own output and creep down
+  document.documentElement.style.setProperty('--cap', '100vw');
+  const avail = stage.getBoundingClientRect().width;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const dev = Math.min(avail * dpr, MAX_SURFACE_W);
+  let s = Math.floor(dev / VW), w = VW * s / dpr;
+  if (s < 1 || w < avail * .8) { s = dev / VW; w = avail; }
+
+  document.documentElement.style.setProperty('--cap', w + 'px');
   document.documentElement.style.setProperty('--u', (w / VW) + 'px');
+
+  const bw = Math.round(VW * s), bh = Math.round(VH * s);
+  if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+  // resizing resets context state, and setting the transform every call keeps
+  // the two in step whether or not the buffer actually changed
+  ctx.setTransform(bw / VW, 0, 0, bh / VH, 0, 0);
+  ctx.imageSmoothingEnabled = false;
 }
 addEventListener('resize', fit);
 fit();

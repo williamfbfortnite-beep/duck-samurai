@@ -332,6 +332,30 @@ draws the hitbox, not the grass band: what you see is what you click. Effects
 that describe the walkable strip — frost, splash outlines — still use the grass
 bands, because that is where things actually stand.
 
+**1122×765 is a coordinate space, not a resolution.** Every coordinate in the
+code is expressed in it, but the buffer the game actually draws into is sized to
+the display and the context scaled to match, so nothing in the game code had to
+change. Without that, a screen larger than the art gets pixels the game never
+drew — the board goes soft while the DOM chrome around it stays sharp, which is
+exactly what "it looks low resolution" describes.
+
+Pixel art also wants one art pixel to cover a *whole* number of screen pixels.
+At 1.18 the edges alternate one and two pixels wide and the art turns to mush,
+so the board is trimmed to a width where the ratio comes out whole — worth up to
+a fifth of the width, and past that filling the space wins instead. On a 1× panel
+that means the board sits at 1122px with 1:1 pixels; on a 2× panel it sits at the
+same size with a 2244×1530 buffer, so every art pixel is exactly four screen
+pixels. The surface is capped at twice the art, because the map holds 1122px of
+real detail and the sprites are stamped from 16×18 grids — beyond 2× there is
+nothing further to resolve, only a bigger buffer to blit sixty times a second.
+
+Paying for that resolution meant giving some back. The field is baked once per
+tint step rather than recomposited per frame — the day is 165 seconds long, so
+240 steps is a rebuild every 0.7s and no eye reads it as banding — and the
+`clearRect` that used to precede it is gone, since the field is opaque and
+covers the whole surface, making the clear a second full-surface pass for
+nothing. Together those hold 60fps on a 2× board through a typical wave.
+
 **One number caused three separate bug reports.** When the board was refitted to
 the map, `VW/VH` became 1122×765 but the `<canvas>` element kept its old 16:9
 attributes of 1152×648, and nothing enforced the pair. That single stale value
