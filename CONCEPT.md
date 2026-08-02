@@ -265,6 +265,15 @@ sprite. Every character animates on a **3-frame cycle** — stand, stride-out,
 stride-through — with a 1px body bob, and units *march onto their tile* when
 placed, so the walk cycle is used by both sides.
 
+**Every duck nods along to the soundtrack.** Sprites are drawn in two slices —
+head and neck as rows 0-8, body from row 7 so a nod never opens a gap at the
+throat — and the head is offset on a beat clock. The tempo was measured off the
+track itself (148.25 BPM, first beat at 0.03s) and the nod runs at half-time,
+which reads as a groove rather than a twitch. It is driven by the audio
+element's own playhead, so it stays in time however long the loop has been
+running, and falls back to the game clock when the music is off. The defenders
+nod on the beat; the dead nod half a beat late.
+
 **Objects** are a second, free-size layer over the same idea: each has its own
 grid and palette. Twenty of them cover the projectiles (shuriken, war fan, ice
 shard, arrow, bile), the Ki orb, the Ofuda ward, a 3-frame explosion, the three

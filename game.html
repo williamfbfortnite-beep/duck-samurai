@@ -990,11 +990,37 @@ function objThumb(name, el) {
   g.drawImage(c, 0, 0);
 }
 
+/* ── head bob ─────────────────────────────────────────────────────────
+   Every duck on the field nods along to the soundtrack. The tempo was
+   measured off the track itself (148.25 BPM, first beat at 0.03s) and the
+   nod runs at half-time, which reads as a groove rather than a twitch.
+   Driven by the audio element's own playhead so it stays in time however
+   long the loop has been running; falls back to the game clock when the
+   music is off, because the ducks should vibe regardless.            */
+const BGM_BPM = 148.25, BGM_OFF = 0.03;
+const NOD_PERIOD = 120 / BGM_BPM;                 // half-time, ~0.81s
+function beatClock() {
+  const el = MUSIC.el;
+  if (el && !el.paused && el.currentTime > 0) return el.currentTime;
+  return mode === 'menu' ? menuT : R.elapsed;
+}
+// 0..1 nod amount: quick drop on the beat, slow ease back up
+function nodAmt(shift) {
+  const t = beatClock() - BGM_OFF + (shift || 0);
+  let p = (t % NOD_PERIOD) / NOD_PERIOD;
+  if (p < 0) p += 1;
+  const e = p < .3 ? p / .3 : 1 - (p - .3) / .7;
+  return e * e * (3 - 2 * e);
+}
+const NOD_PX = 4.2;
+
 // walk cycle order gives a proper stride: out, through, out (other foot), through
 const CYCLE = [1, 0, 2, 0];
 const BOB = [-1, 0, -1, 0];
 
-function drawSprite(g, id, frame, x, y, scale, flip, mode) {
+const HEAD_ROWS = 9;      // rows 0-8: headroom, skull, bill, neck
+const BODY_FROM = 7;      // body slice starts 2 rows high, so a nod never gaps
+function drawSprite(g, id, frame, x, y, scale, flip, mode, nod) {
   const f = sprite(id)[frame];
   const img = mode === 'flash' ? f.flash : mode === 'ghost' ? f.ghost : f.img;
   const w = img.width * scale, h = img.height * scale;
@@ -1002,7 +1028,15 @@ function drawSprite(g, id, frame, x, y, scale, flip, mode) {
   g.translate(x, y);
   if (flip) g.scale(-1, 1);
   g.imageSmoothingEnabled = false;
-  g.drawImage(img, -w / 2, -h, w, h);
+  if (nod) {
+    const bf = BODY_FROM * PXS, hh = HEAD_ROWS * PXS;
+    g.drawImage(img, 0, bf, img.width, img.height - bf,
+      -w / 2, -h + bf * scale, w, (img.height - bf) * scale);
+    g.drawImage(img, 0, 0, img.width, hh,
+      -w / 2, -h + nod, w, hh * scale);
+  } else {
+    g.drawImage(img, -w / 2, -h, w, h);
+  }
   g.restore();
 }
 function thumb(id, el, scale) {
@@ -2225,7 +2259,8 @@ function render() {
       g.fillStyle = u.lvl === 3 ? 'rgba(240,201,135,.20)' : 'rgba(240,201,135,.10)';
       g.beginPath(); g.arc(x, u.y - 34, 34 + Math.sin(R.elapsed * 3) * 2, 0, 6.283); g.fill();
     }
-    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal');
+    const uNod = marching ? 0 : nodAmt(u.c * .012 + u.r * .006) * NOD_PX * (sc / SCL);
+    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uNod);
 
     // hp bar when hurt
     if (u.hp < u.maxHp - 1) {
@@ -2271,7 +2306,8 @@ function render() {
       g.fillStyle = 'rgba(143,232,247,.22)';
       g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
     }
-    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal');
+    const zNod = nodAmt(NOD_PERIOD * .5 + z.wob * .01) * NOD_PX * (z.scale / SCL);
+    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zNod);
     if (z.hp < z.maxHp - 1) {
       const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
       g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hx - 1, hy - 1, w + 2, 7);
@@ -2414,7 +2450,8 @@ function menuRender(dt) {
     const y = footY(z.lane);
     g.fillStyle = 'rgba(0,0,0,.3)';
     g.beginPath(); g.ellipse(z.x, y + 2, 26, 8, 0, 0, 6.283); g.fill();
-    drawSprite(g, z.skin, CYCLE[(z.anim | 0) % 4], z.x, y + BOB[(z.anim | 0) % 4], SCL, true, 'normal');
+    drawSprite(g, z.skin, CYCLE[(z.anim | 0) % 4], z.x, y + BOB[(z.anim | 0) % 4], SCL, true, 'normal',
+      nodAmt(NOD_PERIOD * .5 + z.lane * .02) * NOD_PX);
   }
 
   // the last retainer, breathing, facing them down
@@ -2423,7 +2460,8 @@ function menuRender(dt) {
   g.beginPath(); g.ellipse(hx2, hy + 2, 30, 9, 0, 0, 6.283); g.fill();
   g.fillStyle = `rgba(240,201,135,${.10 + Math.sin(menuT * 1.6) * .04})`;
   g.beginPath(); g.arc(hx2, hy - 40, 52, 0, 6.283); g.fill();
-  drawSprite(g, 'naginata', 0, hx2, hy + Math.sin(menuT * 1.9) * 1.8, SCL * 1.35, false, 'normal');
+  drawSprite(g, 'naginata', 0, hx2, hy + Math.sin(menuT * 1.9) * 1.8, SCL * 1.35, false, 'normal',
+    nodAmt(0) * NOD_PX * 1.35);
 
   // petals on the wind
   for (const p of petals) {
