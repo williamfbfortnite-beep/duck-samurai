@@ -313,9 +313,25 @@ seconds — the ground is cached once, the sky is redrawn each frame from an
 interpolated palette, the sun and moon ride the same arc half a cycle apart, stars
 fade in, and the whole field is washed in the light of whatever hour it is.
 
-**The lanes are tiled**, not flat: two seamless 16×16 pixel tiles — flooded paddy
-and turned earth — alternate row to row, offset per lane so no seam lines up, with
-raised ridges between them.
+**The battlefield is painted, not generated.** A hand-drawn 1122×765 pixel map
+(`assets/map.png`) is the ground now, drawn 1:1 with no resampling — the canvas
+was resized to the art rather than the art squeezed into the canvas — and the
+day/night cycle tints it rather than rebuilding it. The procedural tile field it
+replaced is gone.
+
+Because the map is drawn at a slight angle, its lanes are not uniform: they run
+65px at the top and 113px at the bottom. The bands were measured out of the
+pixels and live in a hand-written `LANES` table instead of a computed grid.
+
+Those bands describe where the **grass** is, which is not the same as where you
+can **click**. The kerbs between them are drawn stone, and treating them as
+non-lane left about 15% of the board as dead space — a click there resolved to
+no lane at all, which reads as the hover landing on the wrong row. `LANE_EDGE`
+cuts the hit boundaries midway between neighbouring bands, so the field is
+covered edge to edge and every pointer position belongs to exactly one lane. The
+hover highlight draws the hitbox, not the grass band: what you see is what you
+click. Effects that describe the walkable strip — frost, splash outlines — still
+use the grass bands, because that is where things actually stand.
 
 ## 9. Audio
 
