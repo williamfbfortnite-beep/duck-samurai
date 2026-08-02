@@ -149,6 +149,11 @@
   .crate .cname { font-size: calc(var(--u) * 18); font-weight: 800; letter-spacing: .1em; }
   .crate .cdesc { font-size: calc(var(--u) * 12); opacity: .65; margin: calc(var(--u) * 5) 0; line-height: 1.5; }
   .crate .cprice { font-size: calc(var(--u) * 18); color: var(--gold); font-weight: 800; }
+  .crate .cimg { width: calc(var(--u) * 74); height: calc(var(--u) * 65); image-rendering: pixelated; }
+  .card .shovelIcon {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: calc(var(--u) * 40); height: calc(var(--u) * 40); image-rendering: pixelated;
+  }
   .crate.ash  { border-color: #7d6a55; } .crate.ash .cname  { color: #cbb79b; }
   .crate.iron { border-color: #7f93a8; } .crate.iron .cname { color: #bcd2e6; }
   .crate.gold { border-color: #d4a94e; } .crate.gold .cname { color: #ffd98a; }
@@ -158,7 +163,7 @@
     position: relative; background: linear-gradient(#241a35, #140d20);
     border: calc(var(--u) * 2) solid #4a3a5e; border-radius: calc(var(--u) * 8);
     padding: calc(var(--u) * 7); display: flex; gap: calc(var(--u) * 7); align-items: center;
-    cursor: pointer; transition: border-color .12s, filter .12s;
+    cursor: pointer; transition: border-color .12s, filter .12s; overflow: hidden;
   }
   .ucard:hover { filter: brightness(1.2); }
   .ucard.locked { filter: grayscale(1) brightness(.4); cursor: not-allowed; }
@@ -395,6 +400,252 @@ const SKINS = {
   ronin:    { c: { w: '#6f8a52', W: '#54683c', y: '#8a9550', Y: '#68723c', e: '#ff3c3c', i: '#ffb0a0', 2: '#3f4d2c', 3: '#c0483a', 4: '#3a2a44' }, p: ['helm', 'polearm', 'tatters'] },
   oni:      { c: { w: '#b8705c', W: '#8f513f', y: '#e8c25a', Y: '#b8912f', e: '#ffe14a', i: '#fff8c0', 2: '#5c2f22', 6: '#efe3c8' }, p: ['horns', 'reach', 'tatters'] }
 };
+
+/* ── object sprites ────────────────────────────────────────────────────
+   Everything that isn't a character: projectiles, pickups, effects, props,
+   UI icons. Arbitrary grid sizes, each with its own palette. `ref` reuses
+   another object's rows with a different palette.                        */
+const OBJ = {
+  orb: { p: { k: '#173b52', h: '#eafcff', o: '#9be8ff', O: '#3f9fc8' }, r: [
+    '...kkkk...',
+    '..khhoOk..',
+    '.khhoooOk.',
+    'khhoooooOk',
+    'khooooooOk',
+    'khooooooOk',
+    'kOoooooOOk',
+    '.kOooooOk.',
+    '..kOOOOk..',
+    '...kkkk...'] },
+
+  shuriken: { p: { k: '#20182c', o: '#d3dbe4', H: '#3b3550' }, r: [
+    '....kkk....',
+    '...koook...',
+    '...koook...',
+    '.kkkoookkk.',
+    'koooooooook',
+    'kooooHooook',
+    'koooooooook',
+    '.kkkoookkk.',
+    '...koook...',
+    '...koook...',
+    '....kkk....'] },
+
+  fanblade: { p: { k: '#20182c', f: '#f6f0e0', F: '#c94a3a' }, r: [
+    '..kkkkk..',
+    '.kfFfFfk.',
+    'kfFfFfFfk',
+    'kfFfFfFfk',
+    '.kfFfFfk.',
+    '..kfFfk..',
+    '...kfk...',
+    '...kkk...',
+    '....k....'] },
+
+  iceshard: { p: { k: '#1e4a5e', c: '#8fe8f7', C: '#4fb6d8', i: '#ffffff' }, r: [
+    '....k....',
+    '...kck...',
+    '..kcCck..',
+    '.kcCCCck.',
+    'kcCCiCCck',
+    '.kcCCCck.',
+    '..kcCck..',
+    '...kck...',
+    '....k....'] },
+
+  arrow: { p: { k: '#20182c', f: '#c94a3a', s: '#8a5a3b', H: '#d3dbe4' }, r: [
+    '.ff..........k..',
+    '.ff.........kHk.',
+    'ffssssssssHHHHHk',
+    '.ff.........kHk.',
+    '.ff..........k..'] },
+
+  bileglob: { p: { k: '#2c3d16', b: '#a8e04a', B: '#d7f77e' }, r: [
+    '..kkk..',
+    '.kbbbk.',
+    'kbBBBbk',
+    'kbBBBbk',
+    'kbBBBbk',
+    '.kbbbk.',
+    '..kkk..'] },
+
+  ofuda: { p: { k: '#3a2a1e', r: '#c0392b', p: '#f2e7cf', m: '#2b2118' }, r: [
+    '.kkkkkkkkkk.',
+    '.krrrrrrrrk.',
+    '.krrrrrrrrk.',
+    '.kppppppppk.',
+    '.kpppmmpppk.',
+    '.kppmmmmppk.',
+    '.kpppmmpppk.',
+    '.kppppppppk.',
+    '.kpmmmmmmpk.',
+    '.kppppppppk.',
+    '.kpppmmpppk.',
+    '.kpppmmpppk.',
+    '.kppmmmmppk.',
+    '.kppppppppk.',
+    '.kpmmmmmmpk.',
+    '.kppppppppk.',
+    '.kpppmmpppk.',
+    '.kppppppppk.',
+    '.kkkkkkkkkk.'] },
+
+  crate: { p: { k: '#2b1c12', w: '#8a5a3b', W: '#5f3a24', M: '#6d6152' }, r: [
+    'kkkkkkkkkkkkkkkk',
+    'kMMwwwwwwwwwwMMk',
+    'kMMwwwwwwwwwwMMk',
+    'kwwwwwwwwwwwwwwk',
+    'kwwWwwwwwwwwWwwk',
+    'kwwwWwwwwwwWwwwk',
+    'kwwwwWwwwwWwwwwk',
+    'kwwwwwWwwWwwwwwk',
+    'kwwwwwwWWwwwwwwk',
+    'kwwwwwWwwWwwwwwk',
+    'kwwwwWwwwwWwwwwk',
+    'kwwwWwwwwwwWwwwk',
+    'kMMwwwwwwwwwwMMk',
+    'kkkkkkkkkkkkkkkk'] },
+  crateIron: { ref: 'crate', p: { k: '#1a2330', w: '#8996a6', W: '#5d6a7a', M: '#c3d2e2' } },
+  crateGold: { ref: 'crate', p: { k: '#3a2708', w: '#e0b45c', W: '#a87f2c', M: '#fff0c0' } },
+
+  shovel: { p: { k: '#20182c', d: '#8a5a3b', S: '#b9c4d0' }, r: [
+    '........kk..',
+    '.......kddk.',
+    '......kddk..',
+    '.....kddk...',
+    '....kddk....',
+    '...kddk.....',
+    '..kddk......',
+    '.kSSSk......',
+    'kSSSSSk.....',
+    'kSSSSSk.....',
+    '.kSSSk......',
+    '..kkk.......'] },
+
+  boom0: { p: { o: '#ff9a3c', O: '#e0561e', W: '#ffe9a8' }, r: [
+    '.............',
+    '.............',
+    '.............',
+    '.....ooo.....',
+    '....oOOOo....',
+    '...oOWWWOo...',
+    '...oOWWWOo...',
+    '...oOWWWOo...',
+    '....oOOOo....',
+    '.....ooo.....',
+    '.............',
+    '.............',
+    '.............'] },
+  boom1: { p: { o: '#ff9a3c', O: '#e0561e', W: '#ffd06a', Y: '#fffbe0' }, r: [
+    '.....ooo.....',
+    '...ooOOOoo...',
+    '..oOOOOOOOo..',
+    '.oOOWWWWWOOo.',
+    'oOOWWWWWWWOOo',
+    'oOWWWWWWWWWOo',
+    'oOWWWWYWWWWOo',
+    'oOWWWWWWWWWOo',
+    'oOOWWWWWWWOOo',
+    '.oOOWWWWWOOo.',
+    '..oOOOOOOOo..',
+    '...ooOOOoo...',
+    '.....ooo.....'] },
+  boom2: { p: { o: '#e0561e', s: '#6b5a52' }, r: [
+    '...s.....s...',
+    '.s..ooooo..s.',
+    '...oo...oo...',
+    '..o.......o..',
+    '.o.........o.',
+    's...........s',
+    'o...........o',
+    's...........s',
+    '.o.........o.',
+    '..o.......o..',
+    '...oo...oo...',
+    '.s..ooooo..s.',
+    '...s.....s...'] },
+
+  rock: { p: { k: '#1a1d16', g: '#5d6657', G: '#3f4739' }, r: [
+    '...kkkk...',
+    '..kggggk..',
+    '.kgggGGgk.',
+    'kggggGGGgk',
+    'kgggGGGGGk',
+    'kGGGGGGGGk',
+    'kkkkkkkkkk'] },
+
+  lilypad: { p: { k: '#1c2a16', g: '#4f7a3a', G: '#385a28' }, r: [
+    '..kkkkkkk...',
+    '.kgggggggk..',
+    'kggggkgggggk',
+    'kgGGGkGGGGGk',
+    '.kGGGGGGGGk.',
+    '..kkkkkkkk..'] },
+
+  skull: { p: { k: '#2a2a22', b: '#ded4bc', e: '#26221c', y: '#b8a274' }, r: [
+    '..kkkkk....',
+    '.kbbbbbk...',
+    'kbbbbbbbk..',
+    'kbeebeebbyk',
+    'kbbbbbbbyyk',
+    '.kbbbbbbk..',
+    '..kbbbk....',
+    '...kkk.....'] },
+
+  lantern: { p: { k: '#1c1a24', s: '#6e6a72', S: '#4a4750', l: '#ffd98a' }, r: [
+    '....kkkk....',
+    '...kssssk...',
+    '..kssssssk..',
+    '.kssssssssk.',
+    '.kSSSSSSSSk.',
+    '..kssssssk..',
+    '..ksllllsk..',
+    '..ksllllsk..',
+    '..ksllllsk..',
+    '..kssssssk..',
+    '.kssssssssk.',
+    '...kssssk...',
+    '....kssk....',
+    '....kssk....',
+    '....kssk....',
+    '...kssssk...',
+    '..kssssssk..',
+    '..kkkkkkkk..'] },
+
+  reeds: { p: { G: '#5f8a3e', g: '#3f5f2a' }, r: [
+    '...G..G',
+    '..G..G.',
+    '..G.G..',
+    'G.G.G..',
+    'G.G.G..',
+    '.GG.G..',
+    '.GGgG..',
+    '..GgG..',
+    '..GgG..',
+    '..GgG..',
+    '..ggg..',
+    '..ggg..'] },
+
+  torii: { p: { r: '#7a2436', R: '#511726' }, r: [
+    '.rrrrrrrrrrrrrrrrrrrrrr.',
+    'rrrrrrrrrrrrrrrrrrrrrrrr',
+    '..RRRRRRRRRRRRRRRRRRRR..',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '...rrrrrrrrrrrrrrrrrr...',
+    '...RRRRRRRRRRRRRRRRRR...',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '.....rr..........rr.....',
+    '....RRRR........RRRR....',
+    '....RRRR........RRRR....',
+    '........................'] }
+};
 /* SPRITE-DATA-END */
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -445,6 +696,48 @@ function sprite(id) {
   });
   return (SPRITES[id] = frames);
 }
+/* object sprites: arbitrary size, own palette, cached as canvases */
+const OBJC = {};
+function objc(name) {
+  if (OBJC[name]) return OBJC[name];
+  const def = OBJ[name];
+  const rows = def.ref ? OBJ[def.ref].r : def.r;
+  const w = rows[0].length, h = rows.length;
+  const c = document.createElement('canvas');
+  c.width = w * PXS; c.height = h * PXS;
+  const g = c.getContext('2d');
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = rows[y][x];
+    if (ch === '.') continue;
+    const col = def.p[ch];
+    if (!col) continue;
+    g.fillStyle = col;
+    g.fillRect(x * PXS, y * PXS, PXS, PXS);
+  }
+  return (OBJC[name] = c);
+}
+// NOTE: object canvases are already rendered at PXS (4px per sprite pixel), so
+// `scale` multiplies that — scale 1 means one sprite pixel = 4 screen pixels.
+// anchor: 'c' centre (default), 'b' bottom-centre
+function drawObj(g, name, x, y, scale, rot, alpha, anchor) {
+  const c = objc(name);
+  const w = c.width * scale, h = c.height * scale;
+  g.save();
+  g.translate(x, y);
+  if (rot) g.rotate(rot);
+  if (alpha != null) g.globalAlpha = alpha;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(c, -w / 2, anchor === 'b' ? -h : -h / 2, w, h);
+  g.restore();
+}
+function objThumb(name, el) {
+  const c = objc(name);
+  el.width = c.width; el.height = c.height;
+  const g = el.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.drawImage(c, 0, 0);
+}
+
 // walk cycle order gives a proper stride: out, through, out (other foot), through
 const CYCLE = [1, 0, 2, 0];
 const BOB = [-1, 0, -1, 0];
@@ -512,9 +805,9 @@ const LVL = [{ m: 1, r: 1 }, { m: 1.85, r: 1.12 }, { m: 3.3, r: 1.28 }];
 const MAXLVL = 3;
 
 const CRATES = [
-  { id: 'ash', cls: 'ash', name: 'ASH CRATE', cost: 400, pulls: 1, odds: [70, 23, 6, 1] },
-  { id: 'iron', cls: 'iron', name: 'IRON CRATE', cost: 1100, pulls: 3, odds: [45, 35, 16, 4] },
-  { id: 'gold', cls: 'gold', name: 'GOLD CRATE', cost: 3000, pulls: 5, odds: [15, 35, 35, 15], floor: 2 }
+  { id: 'ash', cls: 'ash', spr: 'crate', name: 'ASH CRATE', cost: 400, pulls: 1, odds: [70, 23, 6, 1] },
+  { id: 'iron', cls: 'iron', spr: 'crateIron', name: 'IRON CRATE', cost: 1100, pulls: 3, odds: [45, 35, 16, 4] },
+  { id: 'gold', cls: 'gold', spr: 'crateGold', name: 'GOLD CRATE', cost: 3000, pulls: 5, odds: [15, 35, 35, 15], floor: 2 }
 ];
 
 const TRACKS = [
@@ -570,12 +863,24 @@ const ctx = cv.getContext('2d');
 /* ══════════════════════════════════════════════════════════════════════
    AUDIO — synthesized, no files (same trick as the title page)
    ══════════════════════════════════════════════════════════════════════ */
-let actx = null, muted = false;
+let actx = null, muted = false, noAudio = false;
+// Audio is strictly optional. Locked-down iframes, permissions policies and some
+// mobile webviews make AudioContext throw or vanish — if that takes down the
+// click handler that calls it, the game never starts. Never let that happen.
 function ac() {
-  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
-  if (actx.state === 'suspended') actx.resume();
-  return actx;
+  if (noAudio) return null;
+  try {
+    if (!actx) {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) { noAudio = true; return null; }
+      actx = new Ctor();
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  } catch (e) { noAudio = true; actx = null; return null; }
 }
+// any handler that touches a subsystem which can fail on an exotic host
+const safe = fn => (...a) => { try { return fn(...a); } catch (e) { console.error(e); } };
 function noise(c, s) {
   const b = c.createBuffer(1, Math.max(1, Math.floor(c.sampleRate * s)), c.sampleRate);
   const d = b.getChannelData(0);
@@ -585,7 +890,8 @@ function noise(c, s) {
 function blip(freq, dur, type, vol, slide) {
   if (muted) return;
   try {
-    const c = ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    const c = ac(); if (!c) return;
+    const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
     o.type = type || 'square';
     o.frequency.setValueAtTime(freq, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + dur);
@@ -597,7 +903,8 @@ function blip(freq, dur, type, vol, slide) {
 function hiss(dur, f0, f1, vol) {
   if (muted) return;
   try {
-    const c = ac(), t = c.currentTime, s = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+    const c = ac(); if (!c) return;
+    const t = c.currentTime, s = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
     s.buffer = noise(c, dur); bp.type = 'bandpass'; bp.Q.value = 1.4;
     bp.frequency.setValueAtTime(f0, t);
     bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
@@ -1020,16 +1327,10 @@ function buildBg() {
   g.lineTo(VW, GY + 20); g.closePath(); g.fill();
 
   // distant shrine gates on the horizon (kept clear of the HUD pills and the moon)
-  const torii = (x, y, s, col) => {
-    g.fillStyle = col;
-    g.fillRect(x - 34 * s, y - 60 * s, 68 * s, 7 * s);
-    g.fillRect(x - 29 * s, y - 48 * s, 58 * s, 5 * s);
-    g.fillRect(x - 22 * s, y - 60 * s, 7 * s, 60 * s);
-    g.fillRect(x + 15 * s, y - 60 * s, 7 * s, 60 * s);
-  };
-  torii(452, GY + 6, .82, '#3a1c2e');
-  torii(596, GY + 8, .58, '#2e1626');
-  torii(700, GY + 9, .42, '#271324');
+  g.globalAlpha = .85; drawObj(g, 'torii', 452, GY + 8, .55, 0, null, 'b');
+  g.globalAlpha = .6;  drawObj(g, 'torii', 598, GY + 9, .38, 0, null, 'b');
+  g.globalAlpha = .42; drawObj(g, 'torii', 702, GY + 10, .28, 0, null, 'b');
+  g.globalAlpha = 1;
 
   // ground
   const gr = g.createLinearGradient(0, GY, 0, VH);
@@ -1061,12 +1362,34 @@ function buildBg() {
   g.strokeStyle = 'rgba(240,201,135,.28)'; g.lineWidth = 3;
   g.beginPath(); g.moveTo(GX - 1, GY); g.lineTo(GX - 1, GY + ROWS * RH); g.stroke();
 
-  // reeds along the bottom + right fog
-  for (let i = 0; i < 120; i++) {
-    const x = Math.random() * VW, y = GY + ROWS * RH + Math.random() * (VH - GY - ROWS * RH);
-    g.strokeStyle = `rgba(90,120,60,${.3 + Math.random() * .5})`; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(x, y + 22); g.quadraticCurveTo(x + 5, y + 6, x + 12, y - 12); g.stroke();
+  // stone lanterns flanking the shrine path, behind the wards
+  drawObj(g, 'lantern', 22, GY + 88, .72, 0, .5, 'b');
+  drawObj(g, 'lantern', 22, GY + ROWS * RH - 8, .72, 0, .5, 'b');
+
+  // scattered props — deterministic placement so the board never reshuffles
+  let seed = 1337;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let r = 0; r < ROWS; r++) {
+    for (let i = 0; i < 3; i++) {
+      const x = GX + 30 + rnd() * (COLS * CW - 60);
+      const y = GY + r * RH + 18 + rnd() * (RH - 30);
+      const pick = rnd();
+      g.globalAlpha = .55 + rnd() * .3;
+      if (pick < .42) drawObj(g, 'lilypad', x, y, .45 + rnd() * .35, 0, null, 'b');
+      else if (pick < .72) drawObj(g, 'rock', x, y, .35 + rnd() * .25, 0, null, 'b');
+      else if (pick < .88) drawObj(g, 'reeds', x, y, .5 + rnd() * .35, 0, null, 'b');
+      else drawObj(g, 'skull', x, y, .34 + rnd() * .18, 0, null, 'b');
+    }
   }
+  g.globalAlpha = 1;
+
+  // reed bank along the bottom + right fog
+  for (let i = 0; i < 34; i++) {
+    const x = rnd() * VW, y = GY + ROWS * RH + 10 + rnd() * (VH - GY - ROWS * RH - 10);
+    g.globalAlpha = .45 + rnd() * .45;
+    drawObj(g, 'reeds', x, y, .6 + rnd() * .6, 0, null, 'b');
+  }
+  g.globalAlpha = 1;
   const fog = g.createLinearGradient(VW - 190, 0, VW, 0);
   fog.addColorStop(0, 'rgba(20,10,26,0)'); fog.addColorStop(1, 'rgba(20,10,26,.72)');
   g.fillStyle = fog; g.fillRect(VW - 190, GY - 40, 190, VH - GY + 40);
@@ -1089,45 +1412,19 @@ function drawWard(g, r) {
   g.fillStyle = 'rgba(240,201,135,.15)';
   g.beginPath(); g.arc(0, 0, 26, 0, 6.283); g.fill();
   for (let i = 0; i < n; i++) {
-    g.save();
-    g.translate(i * 7 - (n - 1) * 3.5, i * -3);
-    g.fillStyle = '#f2e7cf'; g.fillRect(-12, -22, 24, 44);
-    g.fillStyle = '#c0392b'; g.fillRect(-12, -22, 24, 5);
-    g.strokeStyle = '#8a2a1e'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(0, -14); g.lineTo(0, 14);
-    g.moveTo(-6, -6); g.lineTo(6, -6); g.moveTo(-6, 4); g.lineTo(6, 4); g.stroke();
-    g.restore();
+    drawObj(g, 'ofuda', i * 6 - (n - 1) * 3, i * -3, .52);
   }
   g.restore();
 }
 
 function drawProj(g, p) {
-  g.save(); g.translate(p.x, p.y);
-  if (p.type === 'kunai') {
-    g.rotate(p.rot);
-    g.fillStyle = '#d3dbe4';
-    g.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const a = i * Math.PI / 4, rr = i % 2 ? 4 : 11;
-      g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr);
-    }
-    g.closePath(); g.fill();
-    g.fillStyle = '#3b3550'; g.beginPath(); g.arc(0, 0, 2.4, 0, 6.283); g.fill();
-  } else if (p.type === 'fan') {
-    g.rotate(p.rot * 1.5);
-    g.fillStyle = '#f6f0e0'; g.fillRect(-10, -3, 20, 6); g.fillRect(-3, -10, 6, 20);
-    g.fillStyle = '#c94a3a'; g.fillRect(-3, -3, 6, 6);
-  } else if (p.type === 'ice') {
-    g.rotate(p.rot * .6);
-    g.fillStyle = 'rgba(143,232,247,.35)'; g.beginPath(); g.arc(0, 0, 13, 0, 6.283); g.fill();
-    g.fillStyle = '#bff2fb'; g.beginPath();
-    g.moveTo(0, -10); g.lineTo(7, 0); g.lineTo(0, 10); g.lineTo(-7, 0); g.closePath(); g.fill();
-  } else {
-    g.fillStyle = '#efe6d0'; g.fillRect(-16, -2, 32, 4);
-    g.fillStyle = '#d3dbe4'; g.beginPath();
-    g.moveTo(22, 0); g.lineTo(12, -6); g.lineTo(12, 6); g.closePath(); g.fill();
-  }
-  g.restore();
+  if (p.type === 'kunai') drawObj(g, 'shuriken', p.x, p.y, .6, p.rot);
+  else if (p.type === 'fan') drawObj(g, 'fanblade', p.x, p.y, .64, p.rot * 1.5);
+  else if (p.type === 'ice') {
+    g.fillStyle = 'rgba(143,232,247,.28)';
+    g.beginPath(); g.arc(p.x, p.y, 13, 0, 6.283); g.fill();
+    drawObj(g, 'iceshard', p.x, p.y, .64, p.rot * .6);
+  } else drawObj(g, 'arrow', p.x, p.y, .58, 0);
 }
 
 function render() {
@@ -1211,13 +1508,10 @@ function render() {
     const pulse = 1 + Math.sin(R.elapsed * 5 + o.x) * .08;
     const fade = o.life < 2 ? .4 + Math.abs(Math.sin(R.elapsed * 9)) * .6 : 1;
     g.globalAlpha = fade;
-    g.fillStyle = 'rgba(120,220,255,.22)';
+    g.fillStyle = 'rgba(120,220,255,.20)';
     g.beginPath(); g.arc(o.x, o.y, 24 * pulse, 0, 6.283); g.fill();
-    g.fillStyle = '#9be8ff';
-    g.beginPath(); g.arc(o.x, o.y, 13 * pulse, 0, 6.283); g.fill();
-    g.fillStyle = '#e8fbff';
-    g.beginPath(); g.arc(o.x - 3, o.y - 4, 4.5, 0, 6.283); g.fill();
     g.globalAlpha = 1;
+    drawObj(g, 'orb', o.x, o.y, .74 * pulse, 0, fade);
   }
 
   // ---- zombies
@@ -1247,10 +1541,11 @@ function render() {
   for (const f of R.fx) {
     const k = f.life / f.max;
     if (f.t === 'boom') {
-      g.strokeStyle = `rgba(255,190,90,${k})`; g.lineWidth = 8 * k + 2;
-      g.beginPath(); g.arc(f.x, f.y, f.r * (1 - k) + 10, 0, 6.283); g.stroke();
-      g.fillStyle = `rgba(255,140,60,${k * .35})`;
-      g.beginPath(); g.arc(f.x, f.y, f.r * (1 - k * .8), 0, 6.283); g.fill();
+      const stage = k > .66 ? 'boom0' : k > .33 ? 'boom1' : 'boom2';
+      const grow = (2 * f.r * (1 - k * .25)) / (13 * PXS);
+      drawObj(g, stage, f.x, f.y, grow, 0, Math.min(1, k * 2.2));
+      g.fillStyle = `rgba(255,150,60,${k * .22})`;
+      g.beginPath(); g.arc(f.x, f.y, f.r * (1 - k * .7), 0, 6.283); g.fill();
     } else if (f.t === 'bolt') {
       g.strokeStyle = `rgba(190,235,255,${k})`; g.lineWidth = 3;
       g.beginPath(); g.moveTo(f.x1, f.y1);
@@ -1273,10 +1568,9 @@ function render() {
     } else if (f.t === 'bile') {
       const t = 1 - k;
       const x = f.x + (f.tx - f.x) * t, y = f.y + (f.ty - f.y) * t - Math.sin(t * 3.14) * 40;
-      g.fillStyle = '#a8e04a';
-      g.beginPath(); g.arc(x, y, 7, 0, 6.283); g.fill();
-      g.fillStyle = 'rgba(168,224,74,.3)';
+      g.fillStyle = 'rgba(168,224,74,.26)';
       g.beginPath(); g.arc(x, y, 12, 0, 6.283); g.fill();
+      drawObj(g, 'bileglob', x, y, .62, t * 9);
     }
   }
 
@@ -1400,7 +1694,8 @@ function buildTray() {
   const sh = document.createElement('div');
   sh.className = 'card';
   sh.style.width = 'calc(var(--u) * 66)';
-  sh.innerHTML = `<div style="position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--u)*30)">⛏</div>`;
+  sh.innerHTML = `<canvas class="shovelIcon"></canvas>`;
+  objThumb('shovel', sh.querySelector('canvas'));
   sh.title = 'Shovel — remove a unit, refund half';
   sh.onclick = () => { R.shovel = !R.shovel; if (R.shovel) R.sel = null; };
   trayEl.appendChild(sh);
@@ -1514,22 +1809,30 @@ function toMenu() {
 }
 function toggleSpeed() { speed = speed === 1 ? 2 : 1; document.getElementById('spdBtn').textContent = speed + '×'; }
 
-document.getElementById('btnPlay').onclick = () => { ac(); startRun(); };
-document.getElementById('btnBarracks').onclick = () => { ac(); openBarracks(); };
-document.getElementById('btnUpgrades').onclick = () => { ac(); openUpgrades(); };
-document.getElementById('bBack').onclick = toMenu;
-document.getElementById('uBack').onclick = toMenu;
-document.getElementById('pResume').onclick = resume;
-document.getElementById('pQuit').onclick = () => { gameOver(); };
-document.getElementById('oAgain').onclick = startRun;
-document.getElementById('oShop').onclick = openBarracks;
-document.getElementById('oMenu').onclick = toMenu;
-document.getElementById('pauseBtn').onclick = pause;
-document.getElementById('spdBtn').onclick = toggleSpeed;
-document.getElementById('muteBtn').onclick = ev => {
+document.getElementById('btnPlay').onclick = safe(() => { ac(); startRun(); });
+document.getElementById('btnBarracks').onclick = safe(() => { ac(); openBarracks(); });
+document.getElementById('btnUpgrades').onclick = safe(() => { ac(); openUpgrades(); });
+document.getElementById('bBack').onclick = safe(toMenu);
+document.getElementById('uBack').onclick = safe(toMenu);
+document.getElementById('pResume').onclick = safe(resume);
+document.getElementById('pQuit').onclick = safe(() => { gameOver(); });
+document.getElementById('oAgain').onclick = safe(startRun);
+document.getElementById('oShop').onclick = safe(openBarracks);
+document.getElementById('oMenu').onclick = safe(toMenu);
+document.getElementById('pauseBtn').onclick = safe(pause);
+document.getElementById('spdBtn').onclick = safe(toggleSpeed);
+document.getElementById('muteBtn').onclick = safe(ev => {
   muted = !muted;
   ev.currentTarget.textContent = muted ? '🔇' : '🔊';
-};
+});
+// a second way in, in case a host ever eats the button
+addEventListener('keydown', safe(ev => {
+  if (mode !== 'menu') return;
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  if (!document.getElementById('scMenu').classList.contains('on')) return;
+  ev.preventDefault();
+  ac(); startRun();
+}));
 
 /* ---------- barracks ---------- */
 function openBarracks() {
@@ -1552,10 +1855,11 @@ function renderBarracks() {
     const o = luckOdds(c.odds).map(v => Math.round(v));
     const el = document.createElement('div');
     el.className = 'crate ' + c.cls + (S.sp < c.cost ? ' poor' : '');
-    el.innerHTML = `<div class="cname">${c.name}</div>` +
+    el.innerHTML = `<canvas class="cimg"></canvas><div class="cname">${c.name}</div>` +
       `<div class="cdesc">${c.pulls} card${c.pulls > 1 ? 's' : ''}<br>${o[0]}/${o[1]}/${o[2]}/${o[3]}` +
       (c.floor ? '<br>1 Rare+ guaranteed' : '') + `</div>` +
       `<div class="cprice">${c.cost.toLocaleString()} 点</div>`;
+    objThumb(c.spr, el.querySelector('canvas'));
     el.onclick = () => openCrate(c);
     cr.appendChild(el);
   }
@@ -1569,8 +1873,8 @@ function renderBarracks() {
     el.className = 'ucard r' + d.rar + (have ? '' : ' locked') + (picked ? ' picked' : '');
     el.innerHTML = `<canvas></canvas><div>` +
       `<div class="un">${have ? d.name : '???'}</div>` +
-      `<div class="uk">${have ? d.kanji + ' · ' + RARITY[d.rar] + ' · ' + d.cost + ' 氣' : 'Locked — find it in a crate'}</div>` +
-      `<div class="ust">${have ? (stars(d.id) ? '★'.repeat(stars(d.id)) + ` +${stars(d.id) * 6}%` : '') : ''}</div>` +
+      `<div class="uk">${have ? d.kanji + ' · ' + RARITY[d.rar] : 'Locked — find it in a crate'}</div>` +
+      `<div class="ust">${have ? d.cost + ' 氣' + (stars(d.id) ? '  ' + '★'.repeat(stars(d.id)) + ` +${stars(d.id) * 6}%` : '') : ''}</div>` +
       `</div><div class="pick">✓</div>`;
     thumb(d.id, el.querySelector('canvas'));
     if (have) {

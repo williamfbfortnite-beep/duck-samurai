@@ -170,11 +170,23 @@ the roster still pays into the upgrade tracks.
 
 ## 8. Art direction
 
-Hand-authored 16×18 pixel sprites, nearest-neighbour upscaled ×4, built from one
-shared duck silhouette plus stamped accessory layers (helmets, masks, weapons,
-lanterns). Every character animates on a **3-frame cycle** — stand, stride-out,
+Hand-authored pixel art, nearest-neighbour upscaled ×4. Nothing on screen is a
+canvas primitive.
+
+**Characters** are 16×18 grids built from one shared duck silhouette plus stamped
+accessory layers (helmets, masks, weapons, lanterns, rags) and per-skin palette
+swaps — so a new unit costs a colour table and two small overlays, not a new
+sprite. Every character animates on a **3-frame cycle** — stand, stride-out,
 stride-through — with a 1px body bob, and units *march onto their tile* when
 placed, so the walk cycle is used by both sides.
+
+**Objects** are a second, free-size layer over the same idea: each has its own
+grid and palette. Twenty of them cover the projectiles (shuriken, war fan, ice
+shard, arrow, bile), the Ki orb, the Ofuda ward, a 3-frame explosion, the three
+supply crates, the shovel icon, and the props that dress the board — lily pads,
+rocks, duck skulls, reed clumps, stone lanterns, and the shrine gates on the
+horizon. Props are placed from a fixed seed so the field never reshuffles between
+runs.
 
 Palette inherits the existing Duck Samurai page: `#0d0716` night, `#f0c987` gold,
 rot-green `#8fae6a` for the tide. Same dusk, later in the evening, much worse.
