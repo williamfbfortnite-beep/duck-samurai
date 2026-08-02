@@ -22,8 +22,12 @@
   body { display: grid; place-items: center; }
 
   #stage {
-    position: relative; width: 100%; aspect-ratio: 16 / 9;
-    max-width: 100vw; max-height: 100vh;
+    position: relative;
+    /* bound by BOTH axes: capping height alone let a short, wide window
+       stretch the board off-ratio */
+    width: min(100%, calc(100vh * var(--arn, 1.778)));
+    aspect-ratio: var(--ar, 16 / 9);
+    max-width: 100vw;
     box-shadow: 0 0 calc(var(--u) * 60) rgba(0,0,0,.9);
     overflow: hidden;
   }
@@ -396,8 +400,9 @@
           <button class="btn" id="btnSound">音 &nbsp;SOUND CHECK</button>
         </div>
         <div class="hint">
-          Drop a unit on its twin to <b>MERGE</b> it — Lv1 → Lv2 → Lv3.<br>
-          Drop a <i>different</i> unit on it to <b>FUSE</b> them into something new.
+          The rotting flock is marching west on the <b>nests</b> — five clutches of
+          eggs at the far end of the garden, one behind each lane.<br>
+          Drop a unit on its twin to <b>MERGE</b> it; drop a <i>different</i> one to <b>FUSE</b>.
         </div>
       </div>
     </div>
@@ -865,6 +870,16 @@ const OBJ = {
     'bbbaaabbbaaabcba',
     'bbbacabbbaaabbba',
     'dddddddddddddddd'] },
+
+  nest: { p: { k: '#3a2a18', s: '#b8924a', S: '#8a6a2e', e: '#fff4e0', E: '#e6d6b4' }, r: [
+    '....kkkkkk....',
+    '..kksSSSSskk..',
+    '.ksseeEEeessk.',
+    'ksSeeeEEeeeSsk',
+    'ksSSeeeeeeSSsk',
+    '.kssSSSSSSssk.',
+    '..kkssssssskk.',
+    '....kkkkkk....'] },
 
   torii: { p: { r: '#7a2436', R: '#511726' }, r: [
     '.rrrrrrrrrrrrrrrrrrrrrr.',
@@ -2021,7 +2036,7 @@ function gameOver() {
   persist();
   document.getElementById('oTitle').textContent = '崩御';
   document.getElementById('oTitle').style.color = '#ff8a7a';
-  document.getElementById('oSub').textContent = 'The line has broken — level ' + R.level + ' failed';
+  document.getElementById('oSub').textContent = 'They reached the nests — level ' + R.level + ' failed';
   document.getElementById('oWave').textContent = R.wave + ' / ' + R.target;
   document.getElementById('oKills').textContent = R.kills;
   document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
@@ -2156,7 +2171,7 @@ function drawField(g, phase, t) {
 }
 
 function drawWard(g, r) {
-  const x = 64, y = rowY(r);
+  const x = 82, y = rowY(r);
   const n = R.wards[r];
   if (n <= 0) {
     g.globalAlpha = .25;
@@ -2227,6 +2242,15 @@ function render() {
       t: dupe ? U[fuse.out].kanji + ' ALREADY FIELDED' : 'FUSE → ' + U[fuse.out].kanji + ' ' + U[fuse.out].name,
       x: colX(c), y: laneTop(r) + 20, col: dupe ? '#ff9a8a' : ok ? '#8fe8f7' : '#7fa8b8' };
     if (sealed) hoverLabel = { t: 'SEALED — LEVEL ' + sealed.unlock, x: colX(c), y: laneTop(r) + 20, col: '#9a86b8' };
+  }
+
+  // ---- what the tide is actually marching on: the flock's nests, one per
+  // lane, sitting behind the wards at the western end
+  for (let r = 0; r < ROWS; r++) {
+    const y = footY(r);
+    g.fillStyle = 'rgba(0,0,0,.28)';
+    g.beginPath(); g.ellipse(34, y + 1, 22, 6, 0, 0, 6.283); g.fill();
+    drawObj(g, 'nest', 34, y + 3, 1.1, 0, null, 'b');
   }
 
   // ---- wards
@@ -3003,6 +3027,10 @@ function renderUpgrades() {
    ══════════════════════════════════════════════════════════════════════ */
 const stage = document.getElementById('stage');
 function fit() {
+  // derive the frame from the canvas so the two can never disagree — a
+  // hard-coded 16/9 here silently squashed and clipped the painted map
+  document.documentElement.style.setProperty('--ar', VW + ' / ' + VH);
+  document.documentElement.style.setProperty('--arn', String(VW / VH));
   const w = stage.getBoundingClientRect().width;
   document.documentElement.style.setProperty('--u', (w / VW) + 'px');
 }
