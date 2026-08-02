@@ -265,14 +265,23 @@ sprite. Every character animates on a **3-frame cycle** — stand, stride-out,
 stride-through — with a 1px body bob, and units *march onto their tile* when
 placed, so the walk cycle is used by both sides.
 
-**Every duck nods along to the soundtrack.** Sprites are drawn in two slices —
-head and neck as rows 0-8, body from row 7 so a nod never opens a gap at the
-throat — and the head is offset on a beat clock. The tempo was measured off the
-track itself (148.25 BPM, first beat at 0.03s) and the nod runs at half-time,
-which reads as a groove rather than a twitch. It is driven by the audio
-element's own playhead, so it stays in time however long the loop has been
-running, and falls back to the game clock when the music is off. The defenders
-nod on the beat; the dead nod half a beat late.
+**Every duck bobs along to the soundtrack** — head thrust *forward* on the beat
+and drawn back after, the way a chicken walks, not a vertical nod. Sprites draw
+in two slices, head and neck as rows 0-8 and body from row 9; the cut can be
+clean because a horizontal thrust needs no overlap to hide a seam, the neck
+simply riding over the wider body top.
+
+The offset is applied *inside* the mirrored transform, so one positive number
+means "toward the bill" for everyone: defenders facing right thrust right,
+zombies facing left thrust left. Verified in isolation on a blank canvas — a
+thrust of 10 moves the defender's head exactly +10px and the zombie's exactly
+-10px.
+
+The tempo was measured off the track itself (148.25 BPM, first beat at 0.03s)
+and it runs at half-time, which reads as a groove rather than a twitch. It is
+driven by the audio element's own playhead, so it stays in time however long the
+loop has been running, and falls back to the game clock when the music is off.
+The defenders bob on the beat; the dead bob half a beat late.
 
 **Objects** are a second, free-size layer over the same idea: each has its own
 grid and palette. Twenty of them cover the projectiles (shuriken, war fan, ice

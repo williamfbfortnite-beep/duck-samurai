@@ -991,12 +991,14 @@ function objThumb(name, el) {
 }
 
 /* ── head bob ─────────────────────────────────────────────────────────
-   Every duck on the field nods along to the soundtrack. The tempo was
-   measured off the track itself (148.25 BPM, first beat at 0.03s) and the
-   nod runs at half-time, which reads as a groove rather than a twitch.
-   Driven by the audio element's own playhead so it stays in time however
-   long the loop has been running; falls back to the game clock when the
-   music is off, because the ducks should vibe regardless.            */
+   Every duck on the field bobs along to the soundtrack — head thrust
+   forward on the beat and drawn back after, the way a chicken walks,
+   rather than a vertical nod. The tempo was measured off the track itself
+   (148.25 BPM, first beat at 0.03s) and it runs at half-time, which reads
+   as a groove rather than a twitch. Driven by the audio element's own
+   playhead so it stays in time however long the loop has been running;
+   falls back to the game clock when the music is off, because the ducks
+   should vibe regardless.                                            */
 const BGM_BPM = 148.25, BGM_OFF = 0.03;
 const NOD_PERIOD = 120 / BGM_BPM;                 // half-time, ~0.81s
 function beatClock() {
@@ -1012,15 +1014,20 @@ function nodAmt(shift) {
   const e = p < .3 ? p / .3 : 1 - (p - .3) / .7;
   return e * e * (3 - 2 * e);
 }
-const NOD_PX = 4.2;
+const NOD_PX = 5.0;      // horizontal travel reads smaller than vertical
 
 // walk cycle order gives a proper stride: out, through, out (other foot), through
 const CYCLE = [1, 0, 2, 0];
 const BOB = [-1, 0, -1, 0];
 
-const HEAD_ROWS = 9;      // rows 0-8: headroom, skull, bill, neck
-const BODY_FROM = 7;      // body slice starts 2 rows high, so a nod never gaps
-function drawSprite(g, id, frame, x, y, scale, flip, mode, nod) {
+/* Head and neck are rows 0-8, body is rows 9 down. The cut is clean because
+   the thrust is horizontal — the neck rides over the wider body top, so no
+   vertical overlap is needed to hide a seam. The offset is applied inside
+   the flipped transform, so +thrust is always toward the bill: forward for
+   defenders facing right and for zombies facing left alike. */
+const HEAD_ROWS = 9;
+const BODY_FROM = 9;
+function drawSprite(g, id, frame, x, y, scale, flip, mode, thrust) {
   const f = sprite(id)[frame];
   const img = mode === 'flash' ? f.flash : mode === 'ghost' ? f.ghost : f.img;
   const w = img.width * scale, h = img.height * scale;
@@ -1028,12 +1035,12 @@ function drawSprite(g, id, frame, x, y, scale, flip, mode, nod) {
   g.translate(x, y);
   if (flip) g.scale(-1, 1);
   g.imageSmoothingEnabled = false;
-  if (nod) {
+  if (thrust) {
     const bf = BODY_FROM * PXS, hh = HEAD_ROWS * PXS;
     g.drawImage(img, 0, bf, img.width, img.height - bf,
       -w / 2, -h + bf * scale, w, (img.height - bf) * scale);
     g.drawImage(img, 0, 0, img.width, hh,
-      -w / 2, -h + nod, w, hh * scale);
+      -w / 2 + thrust, -h, w, hh * scale);
   } else {
     g.drawImage(img, -w / 2, -h, w, h);
   }
@@ -2259,8 +2266,8 @@ function render() {
       g.fillStyle = u.lvl === 3 ? 'rgba(240,201,135,.20)' : 'rgba(240,201,135,.10)';
       g.beginPath(); g.arc(x, u.y - 34, 34 + Math.sin(R.elapsed * 3) * 2, 0, 6.283); g.fill();
     }
-    const uNod = marching ? 0 : nodAmt(u.c * .012 + u.r * .006) * NOD_PX * (sc / SCL);
-    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uNod);
+    const uThrust = marching ? 0 : nodAmt(u.c * .012 + u.r * .006) * NOD_PX * (sc / SCL);
+    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uThrust);
 
     // hp bar when hurt
     if (u.hp < u.maxHp - 1) {
@@ -2306,8 +2313,8 @@ function render() {
       g.fillStyle = 'rgba(143,232,247,.22)';
       g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
     }
-    const zNod = nodAmt(NOD_PERIOD * .5 + z.wob * .01) * NOD_PX * (z.scale / SCL);
-    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zNod);
+    const zThrust = nodAmt(NOD_PERIOD * .5 + z.wob * .01) * NOD_PX * (z.scale / SCL);
+    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zThrust);
     if (z.hp < z.maxHp - 1) {
       const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
       g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hx - 1, hy - 1, w + 2, 7);
