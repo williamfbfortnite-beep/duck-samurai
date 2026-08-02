@@ -11,7 +11,7 @@
     --plum: #1b1226;
     --rot: #8fae6a;
     --blood: #c0392b;
-    --u: 1px; /* stage unit, set by JS: stageWidth / 1152 */
+    --u: 1px; /* stage unit, set by JS: stageWidth / VW */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
@@ -341,7 +341,8 @@
 </head>
 <body>
 <div id="stage">
-  <canvas id="cv" width="1152" height="648"></canvas>
+  <!-- size is authoritative in script (cv.width = VW), these are the pre-boot values -->
+  <canvas id="cv" width="1122" height="765"></canvas>
   <!-- BGM-SRC: the artifact build replaces this src with an inlined data URI -->
   <audio id="bgm" src="assets/music.mp3" loop preload="auto" playsinline></audio>
 
@@ -1356,6 +1357,16 @@ const rowOf = y => {
 };
 
 const cv = document.getElementById('cv');
+/* Drive the drawing surface from VW/VH rather than trusting the markup. When
+   the board was refitted to the painted map the attributes were left at the
+   old 16:9 1152x648, and every symptom of that was blamed on something else:
+   the map lost its bottom 117px and showed 30px of bare canvas on the right
+   where the tide walks in, sprites in the last lane were sliced off at the
+   knees, and — because the surface was stretched to a 1122x765 frame —
+   pointer maths divided by a height 18% larger than the one being drawn to,
+   so the cursor picked the lane below the one under it. One number, three
+   bugs. Setting it here means the two can never disagree again. */
+cv.width = VW; cv.height = VH;
 const ctx = cv.getContext('2d');
 
 /* ══════════════════════════════════════════════════════════════════════

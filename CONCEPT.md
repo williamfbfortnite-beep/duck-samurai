@@ -325,13 +325,33 @@ pixels and live in a hand-written `LANES` table instead of a computed grid.
 
 Those bands describe where the **grass** is, which is not the same as where you
 can **click**. The kerbs between them are drawn stone, and treating them as
-non-lane left about 15% of the board as dead space — a click there resolved to
-no lane at all, which reads as the hover landing on the wrong row. `LANE_EDGE`
-cuts the hit boundaries midway between neighbouring bands, so the field is
-covered edge to edge and every pointer position belongs to exactly one lane. The
-hover highlight draws the hitbox, not the grass band: what you see is what you
-click. Effects that describe the walkable strip — frost, splash outlines — still
-use the grass bands, because that is where things actually stand.
+non-lane left about 15% of the board as dead space. `LANE_EDGE` cuts the hit
+boundaries midway between neighbouring bands, so the field is covered edge to
+edge and every pointer position belongs to exactly one lane. The hover highlight
+draws the hitbox, not the grass band: what you see is what you click. Effects
+that describe the walkable strip — frost, splash outlines — still use the grass
+bands, because that is where things actually stand.
+
+**One number caused three separate bug reports.** When the board was refitted to
+the map, `VW/VH` became 1122×765 but the `<canvas>` element kept its old 16:9
+attributes of 1152×648, and nothing enforced the pair. That single stale value
+produced:
+
+- the map losing its bottom 117px, and showing 30px of bare canvas down the
+  right-hand edge — precisely the strip the tide walks in through;
+- sprites in the last lane sliced off at the knees, because their feet sat at
+  y 674 on a surface that stopped at 648;
+- and the cursor selecting the lane *below* the one under it, because the
+  surface was being stretched to fill a 1122×765 frame while `toBoard` divided
+  by 765 — an 18% mismatch, which is almost exactly one lane at the centre of
+  the board.
+
+The lesson is in the third one. A hover test that converts canvas coordinates to
+screen coordinates *using the same maths the game uses*, and then checks the game
+agrees, will pass no matter how wrong that maths is — it validates a function
+against its own inverse. The test that caught this reads the rendered pixels: it
+finds where something actually got drawn and puts the cursor there. The canvas
+size is now set in script from `VW`/`VH`, so the two cannot drift again.
 
 ## 9. Audio
 
