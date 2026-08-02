@@ -105,10 +105,27 @@ onto a Lv3 hands you a Lv3.
 | 弓 Yumi Sniper | + | 爆 Powder Keg | → | **爆矢 Bombardier** — piercing arrows that detonate |
 | 稲 Rice Paddy | + | 狐 Fox Shrine | → | **豊穣 Harvest Spirit** — Ki income *and* an aura |
 | 氷 Frost Lantern | + | 爆 Powder Keg | → | **氷爆 Frost Mine** — a wide bloom of ice |
+| 苦無 Kunai Duck | + | 稲 Rice Paddy | → | **暁 Dawn Herald** — a shooter that pays its own way |
+| 竹 Bamboo Wall | + | 爆 Powder Keg | → | **茨 Thorn Wall** — hurts whatever chews on it |
+| 扇 Twin Fan | + | 弓 Yumi Sniper | → | **疾風 Wind Herald** — three piercing blades, fastest on the board |
+| 雷 Thunder Drum | + | 狐 Fox Shrine | → | **鎮魂 Grave Bell** — chains, and refunds Ki as it kills |
+| 苦無 Kunai Duck | + | 長刀 Naginata Ronin | → | **炎僧 Ember Monk** — a burning sweep that keeps burning |
+| **鉄壁 Iron Bulwark** | + | 氷 Frost Lantern | → | **潮守 Tide Warden** — *tier 2*: 1200 HP and an aura of mud |
+
+Eleven recipes take two buildable units. The twelfth is **tier 2**: its left-hand
+ingredient is itself a fusion, so you build a Bulwark on the board first and then
+drop a Frost Lantern card onto *that*. Same interaction, one layer deeper.
 
 The **Fusion Codex** on the menu lists every recipe. Ingredients are always readable
 so you can plan a loadout around one; the result stays a silhouette until you have
-actually made it, and then shows how many times you have.
+actually made it, and then shows its stats and how many times you have made it.
+
+### Every unit says what it does
+
+Role, description and stat chips are generated from the same fields the simulation
+reads — damage, rate, HP, reach, slow, burn, thorns, blast radius — so a card can
+never advertise behaviour a unit does not have. They appear on the barracks cards,
+in the codex for discovered fusions, and on a hover panel over the in-run tray.
 
 ---
 
@@ -228,8 +245,13 @@ scheduled ahead of the WebAudio clock. It drops an octave and slows at night,
 and the taiko doubles up as the waves get heavy. Sound effects cover throwing,
 impacts, biting, deaths, the ward, crates, the boss walking on, and fusion.
 
-Audio never blocks play: if a host refuses to give the page an AudioContext, the
-game notices once and runs silently.
+Everything mixes through one master bus, which is also how the output gets
+verified: an analyser taps the bus and measures true peak and RMS, so "is this
+audible" is a number rather than an opinion. Target is a peak around 0.5.
+
+Audio never blocks play. If a host refuses an AudioContext the game notices once
+and runs silently, and the speaker icon tells the truth — 🔊 playing, 🔈 blocked
+until you click, 🚫 refused outright — instead of always claiming sound is on.
 
 ---
 

@@ -87,6 +87,19 @@
   .card .cdmask { position: absolute; inset: 0; background: rgba(8,4,16,.78); transform-origin: 50% 0%; pointer-events: none; }
   .card .key { position: absolute; top: calc(var(--u)*3); right: calc(var(--u)*5); font-size: calc(var(--u)*11); opacity: .45; font-weight: 700; }
 
+  #tip {
+    position: absolute; left: 50%; bottom: calc(var(--u) * 106); transform: translateX(-50%);
+    width: calc(var(--u) * 340); pointer-events: none; opacity: 0; transition: opacity .14s;
+    background: linear-gradient(rgba(40,30,58,.97), rgba(18,11,30,.97));
+    border: calc(var(--u) * 2) solid #6b527f; border-radius: calc(var(--u) * 8);
+    padding: calc(var(--u) * 9) calc(var(--u) * 12);
+    box-shadow: 0 calc(var(--u)*6) calc(var(--u)*20) rgba(0,0,0,.7);
+  }
+  #tip.show { opacity: 1; }
+  #tip .tn { font-size: calc(var(--u) * 15); font-weight: 800; color: var(--gold); }
+  #tip .tr { font-size: calc(var(--u) * 10); letter-spacing: .18em; text-transform: uppercase; opacity: .6; margin-top: calc(var(--u)*1); }
+  #tip .td { font-size: calc(var(--u) * 11.5); opacity: .85; line-height: 1.45; margin-top: calc(var(--u) * 5); }
+
   #toast {
     position: absolute; left: 50%; top: calc(var(--u) * 92); transform: translateX(-50%);
     font-size: calc(var(--u) * 26); font-weight: 800; letter-spacing: .22em; color: var(--gold);
@@ -190,7 +203,17 @@
   .crate.iron { border-color: #7f93a8; } .crate.iron .cname { color: #bcd2e6; }
   .crate.gold { border-color: #d4a94e; } .crate.gold .cname { color: #ffd98a; }
 
-  .grid { display: grid; grid-template-columns: repeat(5, calc(var(--u) * 182)); gap: calc(var(--u) * 9); }
+  .grid { display: grid; grid-template-columns: repeat(3, calc(var(--u) * 320)); gap: calc(var(--u) * 9); }
+  .ucard .ubody { min-width: 0; flex: 1; }
+  .ucard .udesc { font-size: calc(var(--u) * 11); opacity: .78; line-height: 1.4; margin-top: calc(var(--u) * 3); }
+  .uchips { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 3); margin-top: calc(var(--u) * 5); }
+  .chip {
+    font-size: calc(var(--u) * 9.5); padding: calc(var(--u) * 2) calc(var(--u) * 5);
+    border-radius: calc(var(--u) * 3); background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.10); white-space: nowrap; letter-spacing: .02em;
+  }
+  .chip.cost { color: #9be8ff; border-color: rgba(155,232,255,.35); }
+  .chip.star { color: var(--gold); border-color: rgba(240,201,135,.4); }
   .ucard {
     position: relative; background: linear-gradient(#241a35, #140d20);
     border: calc(var(--u) * 2) solid #4a3a5e; border-radius: calc(var(--u) * 8);
@@ -295,6 +318,7 @@
       <button class="btn" id="pauseBtn">❚❚</button>
     </div>
     <div id="tray"></div>
+    <div id="tip"></div>
     <div id="toast"></div>
   </div>
 
@@ -488,6 +512,12 @@ const SKINS = {
   bombardier: { c: { 1: '#8a5a3b', 5: '#e0873b', 6: '#57301c', 2: '#f0c987' }, p: ['band', 'keg', 'bow'] },
   harvest:    { c: { w: '#fbf3d8', W: '#ded0a4', 1: '#f0c987', 2: '#c9a24a', 5: '#ffe9a8' }, p: ['rice', 'hat', 'foxmask'] },
   frostmine:  { c: { w: '#dcf0fa', W: '#a9d0e6', y: '#8fb6c9', Y: '#6b90a5', 2: '#8fe8f7', 5: '#4d7288', 6: '#2f4f6e' }, p: ['keg', 'lantern'] },
+  sunwake:    { c: { w: '#fff4d0', W: '#e8cf90', y: '#ffb43c', Y: '#c9821c', 1: '#ffd96a', 3: '#fff8e0', 4: '#c9932c' }, p: ['band', 'kunai', 'hat'] },
+  thornwall:  { c: { w: '#7aa84e', W: '#557a34', y: '#c2b45e', Y: '#8f8340', 1: '#a8d47a', 2: '#3f5f24', 5: '#8a5a3b', 6: '#4e3122' }, p: ['bamboo', 'keg'] },
+  windherald: { c: { w: '#eaf3fb', W: '#bcd0e2', 1: '#5b8fd6', 5: '#f6f0e0', 6: '#5b8fd6' }, p: ['band', 'fan', 'bow'] },
+  gravebell:  { c: { w: '#cfc6e0', W: '#a196bc', y: '#b8a8d0', Y: '#8a7ba8', e: '#c86aff', 1: '#6b4a9f', 5: '#d7c8f0', 6: '#4a3070' }, p: ['foxmask', 'drum'] },
+  embermonk:  { c: { w: '#ffd8b0', W: '#d8a476', y: '#ff8a3c', Y: '#c25a18', 1: '#e0561e', 3: '#ffe9a8', 4: '#8a3a12' }, p: ['mask', 'polearm'] },
+  tidewarden: { c: { w: '#bfe6f2', W: '#8ab8cc', y: '#6fa8bc', Y: '#4a7d90', 1: '#2f6f8e', 3: '#d3f0fb', 4: '#2a5468', 5: '#9be8ff', 6: '#3a6f88' }, p: ['helm', 'lantern', 'polearm'] },
 
   shambler: { c: { w: '#8fae6a', W: '#6a8a4a', y: '#9aa85e', Y: '#77864a', e: '#ff5a3c', i: '#ffd08a', 2: '#4a5c33' }, p: ['reach', 'tatters'] },
   runner:   { c: { w: '#a8c67c', W: '#7ea154', y: '#c2b45e', Y: '#95893f', e: '#ff8a3c', i: '#fff0a0', 2: '#5a6b3a' }, p: ['reach', 'tatters'] },
@@ -940,19 +970,81 @@ const UNITS = [
     blurb: 'Grows Ki faster than a paddy and hurries the eight tiles around it.' },
   { id: 'frostmine', name: 'Frost Mine', kanji: '氷爆', cost: 0, cd: 0, rar: 4, fused: true,
     kind: 'mine', hp: 240, dmg: 220, radius: 210, freeze: 4,
-    blurb: 'Detonates into a wide bloom of ice. Survivors crawl out of it.' }
+    blurb: 'Detonates into a wide bloom of ice. Survivors crawl out of it.' },
+  { id: 'sunwake', name: 'Dawn Herald', kanji: '暁', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'shot', hp: 280, dmg: 34, rate: .8, proj: 'kunai', count: 2,
+    blurb: 'Throws at dawn speed and pays its own way — a Ki orb every 14s on top.' },
+  { id: 'thornwall', name: 'Thorn Wall', kanji: '茨', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'wall', hp: 820, thorns: 26,
+    blurb: 'A wall that bites back — anything chewing on it takes damage every swing.' },
+  { id: 'windherald', name: 'Wind Herald', kanji: '疾風', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'shot', hp: 250, dmg: 26, rate: .55, proj: 'fan', count: 3, pierce: true,
+    blurb: 'Three piercing blades a volley, faster than anything else on the board.' },
+  { id: 'gravebell', name: 'Grave Bell', kanji: '鎮魂', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'chain', hp: 300, dmg: 40, rate: 1.7, chains: 3, drain: .35,
+    blurb: 'Chains a mourning note through the horde and refunds Ki for every kill.' },
+  { id: 'embermonk', name: 'Ember Monk', kanji: '炎僧', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'melee', hp: 420, dmg: 70, rate: .85, range: 168, burn: 30,
+    blurb: 'Sweeps a burning staff — everything it touches keeps burning afterwards.' },
+  { id: 'tidewarden', name: 'Tide Warden', kanji: '潮守', cost: 0, cd: 0, rar: 4, fused: true,
+    kind: 'melee', hp: 1200, dmg: 62, rate: 1.0, range: 150, slowAura: .35,
+    blurb: 'The last line. Enormous, hits hard, and everything near it wades as if through mud.' }
 ];
 const U = {}; UNITS.forEach(u => U[u.id] = u);
 const CRATE_POOL = UNITS.filter(u => !u.fused);
 
+/* One-word role plus the numbers that actually matter, derived from the same
+   fields the simulation reads — so a card can never describe a unit it isn't. */
+const ROLE = {
+  ki: 'Economy', wall: 'Wall', shot: 'Shooter', melee: 'Melee',
+  mine: 'Mine', chain: 'Chain', aura: 'Support'
+};
+function unitRole(d) {
+  if (d.kind === 'ki' && d.aura) return 'Economy · Support';
+  if (d.kind === 'shot' && d.slow) return 'Shooter · Control';
+  if (d.kind === 'wall' && d.thorns) return 'Wall · Reflect';
+  if (d.kind === 'melee' && d.slowAura) return 'Melee · Control';
+  return ROLE[d.kind] || 'Unit';
+}
+// short, factual stat chips
+function unitStats(d) {
+  const out = [];
+  if (d.kind === 'ki') out.push(`${KI_LVL[0].amount} 氣 / ${KI_LVL[0].period}s`);
+  if (d.dmg) out.push(`${d.dmg} dmg` + (d.count > 1 ? ` ×${d.count}` : ''));
+  if (d.rate) out.push(`every ${d.rate}s`);
+  if (d.hp) out.push(`${d.hp} hp`);
+  if (d.pierce) out.push('pierces');
+  if (d.splash) out.push('splash');
+  if (d.slow) out.push(`${Math.round(d.slow * 100)}% slow`);
+  if (d.freeze) out.push(`freezes ${d.freeze}s`);
+  if (d.burn) out.push(`burns ${d.burn}/s`);
+  if (d.thorns) out.push(`${d.thorns} thorns`);
+  if (d.slowAura) out.push(`${Math.round(d.slowAura * 100)}% aura slow`);
+  if (d.chains) out.push(`${d.chains} chains`);
+  if (d.drain) out.push('refunds 氣');
+  if (d.radius) out.push(`${Math.round(d.radius / CW * 10) / 10} tile blast`);
+  if (d.range) out.push(`${Math.round(d.range / CW * 10) / 10} tile reach`);
+  if (d.buff) out.push(`+${Math.round(d.buff * 100)}% nearby rate`);
+  return out;
+}
+
 /* ── fusion recipes ── order-independent: A + B and B + A both work ── */
 const FUSIONS = [
+  // tier 1 — two buildable units
   { a: 'kunai', b: 'frost', out: 'frostblade' },
   { a: 'fan', b: 'drum', out: 'stormfan' },
   { a: 'bamboo', b: 'naginata', out: 'bulwark' },
   { a: 'yumi', b: 'bomb', out: 'bombardier' },
   { a: 'paddy', b: 'shrine', out: 'harvest' },
-  { a: 'frost', b: 'bomb', out: 'frostmine' }
+  { a: 'frost', b: 'bomb', out: 'frostmine' },
+  { a: 'kunai', b: 'paddy', out: 'sunwake' },
+  { a: 'bamboo', b: 'bomb', out: 'thornwall' },
+  { a: 'fan', b: 'yumi', out: 'windherald' },
+  { a: 'drum', b: 'shrine', out: 'gravebell' },
+  { a: 'kunai', b: 'naginata', out: 'embermonk' },
+  // tier 2 — a fusion result is itself an ingredient. The board unit is the
+  // fused one; the card you drop on it is an ordinary buildable unit.
+  { a: 'bulwark', b: 'frost', out: 'tidewarden', t2: true }
 ];
 function fusionOf(x, y) {
   return FUSIONS.find(f => (f.a === x && f.b === y) || (f.a === y && f.b === x)) || null;
@@ -1042,6 +1134,7 @@ let actx = null, muted = false, noAudio = false;
 // Audio is strictly optional. Locked-down iframes, permissions policies and some
 // mobile webviews make AudioContext throw or vanish — if that takes down the
 // click handler that calls it, the game never starts. Never let that happen.
+let master = null;
 function ac() {
   if (noAudio) return null;
   try {
@@ -1050,10 +1143,19 @@ function ac() {
       if (!Ctor) { noAudio = true; return null; }
       actx = new Ctor();
     }
+    if (!master) {
+      // one master bus: everything is mixed through here, so levels are
+      // consistent and the output can actually be measured
+      master = actx.createGain();
+      master.gain.value = 0.9;
+      master.connect(actx.destination);
+    }
     if (actx.state === 'suspended') actx.resume();
     return actx;
   } catch (e) { noAudio = true; actx = null; return null; }
 }
+// true only when sound can really come out right now
+function audioLive() { return !!(actx && master && actx.state === 'running' && !noAudio); }
 // any handler that touches a subsystem which can fail on an exotic host
 const safe = fn => (...a) => { try { return fn(...a); } catch (e) { console.error(e); } };
 function noise(c, s) {
@@ -1070,9 +1172,9 @@ function blip(freq, dur, type, vol, slide) {
     o.type = type || 'square';
     o.frequency.setValueAtTime(freq, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + dur);
-    g.gain.setValueAtTime(vol || .06, t);
+    g.gain.setValueAtTime(vol || .2, t);
     g.gain.exponentialRampToValueAtTime(.0008, t + dur);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + .02);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + .02);
   } catch (e) {}
 }
 function hiss(dur, f0, f1, vol) {
@@ -1083,33 +1185,33 @@ function hiss(dur, f0, f1, vol) {
     s.buffer = noise(c, dur); bp.type = 'bandpass'; bp.Q.value = 1.4;
     bp.frequency.setValueAtTime(f0, t);
     bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
-    g.gain.setValueAtTime(vol || .12, t);
+    g.gain.setValueAtTime(vol || .3, t);
     g.gain.exponentialRampToValueAtTime(.0008, t + dur);
-    s.connect(bp).connect(g).connect(c.destination); s.start(t); s.stop(t + dur);
+    s.connect(bp).connect(g).connect(master); s.start(t); s.stop(t + dur);
   } catch (e) {}
 }
 const SFX = {
-  shoot: () => blip(760, .05, 'square', .028, 420),
-  hit: () => blip(180, .05, 'square', .03, 90),
-  place: () => { blip(300, .07, 'triangle', .07, 220); hiss(.06, 1800, 500, .05); },
-  merge: () => { blip(520, .1, 'triangle', .08); setTimeout(() => blip(780, .14, 'triangle', .08), 70); setTimeout(() => blip(1040, .2, 'triangle', .07), 150); },
-  die: () => { blip(160, .12, 'sawtooth', .045, 60); hiss(.14, 900, 200, .06); },
-  boom: () => { hiss(.4, 700, 60, .22); blip(90, .35, 'sawtooth', .1, 40); },
-  ki: () => blip(880, .09, 'sine', .06, 1320),
-  ward: () => { hiss(.6, 2600, 300, .18); blip(200, .5, 'sawtooth', .09, 60); },
-  bad: () => blip(140, .18, 'square', .06, 70),
-  wave: () => { blip(300, .3, 'sawtooth', .05); setTimeout(() => blip(226, .5, 'sawtooth', .05), 180); },
-  crate: () => [0, 90, 180, 300].forEach((d, i) => setTimeout(() => blip(440 * Math.pow(1.26, i), .18, 'triangle', .07), d)),
-  zap: () => { blip(1400, .09, 'sawtooth', .05, 300); hiss(.1, 4000, 900, .06); },
+  shoot: () => blip(760, .07, 'square', .10, 420),
+  hit: () => blip(180, .07, 'square', .11, 90),
+  place: () => { blip(300, .10, 'triangle', .24, 220); hiss(.08, 1800, 500, .18); },
+  merge: () => { blip(520, .14, 'triangle', .26); setTimeout(() => blip(780, .18, 'triangle', .26), 70); setTimeout(() => blip(1040, .26, 'triangle', .24), 150); },
+  die: () => { blip(160, .14, 'sawtooth', .15, 60); hiss(.16, 900, 200, .20); },
+  boom: () => { hiss(.45, 700, 60, .55); blip(90, .40, 'sawtooth', .34, 40); },
+  ki: () => blip(880, .12, 'sine', .22, 1320),
+  ward: () => { hiss(.65, 2600, 300, .5); blip(200, .55, 'sawtooth', .30, 60); },
+  bad: () => blip(140, .2, 'square', .20, 70),
+  wave: () => { blip(300, .35, 'sawtooth', .20); setTimeout(() => blip(226, .55, 'sawtooth', .20), 180); },
+  crate: () => [0, 90, 180, 300].forEach((d, i) => setTimeout(() => blip(440 * Math.pow(1.26, i), .22, 'triangle', .24), d)),
+  zap: () => { blip(1400, .11, 'sawtooth', .18, 300); hiss(.12, 4000, 900, .20); },
   fuse: () => {
-    [0, 70, 140, 210, 300].forEach((d, i) => setTimeout(() => blip(392 * Math.pow(1.3, i), .22, 'triangle', .075), d));
-    setTimeout(() => hiss(.5, 5200, 700, .12), 260);
-    setTimeout(() => blip(120, .5, 'sine', .09, 60), 300);
+    [0, 70, 140, 210, 300].forEach((d, i) => setTimeout(() => blip(392 * Math.pow(1.3, i), .26, 'triangle', .26), d));
+    setTimeout(() => hiss(.55, 5200, 700, .34), 260);
+    setTimeout(() => blip(120, .55, 'sine', .30, 60), 300);
   },
-  bite: () => { blip(110, .07, 'square', .035, 60); hiss(.06, 700, 260, .045); },
-  unitDie: () => { hiss(.22, 1400, 260, .08); blip(220, .18, 'triangle', .05, 90); },
-  roar: () => { blip(70, .8, 'sawtooth', .13, 44); hiss(.7, 480, 90, .13); },
-  click: () => blip(660, .04, 'triangle', .035)
+  bite: () => { blip(110, .09, 'square', .13, 60); hiss(.07, 700, 260, .16); },
+  unitDie: () => { hiss(.25, 1400, 260, .28); blip(220, .2, 'triangle', .17, 90); },
+  roar: () => { blip(70, .85, 'sawtooth', .42, 44); hiss(.75, 480, 90, .40); },
+  click: () => blip(660, .05, 'triangle', .13)
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1142,7 +1244,7 @@ function voice(c, t, hz, dur, type, vol, pan) {
     const p = c.createStereoPanner(); p.pan.value = pan;
     g.connect(p); node = p;
   }
-  o.connect(g); node.connect(c.destination);
+  o.connect(g); node.connect(master);
   o.start(t); o.stop(t + dur + .05);
 }
 function taiko(c, t, vol) {
@@ -1152,11 +1254,11 @@ function taiko(c, t, vol) {
   o.frequency.exponentialRampToValueAtTime(48, t + .16);
   g.gain.setValueAtTime(vol, t);
   g.gain.exponentialRampToValueAtTime(.0008, t + .3);
-  o.connect(g).connect(c.destination); o.start(t); o.stop(t + .32);
+  o.connect(g).connect(master); o.start(t); o.stop(t + .32);
   const s = c.createBufferSource(), bg = c.createGain(), bp = c.createBiquadFilter();
   s.buffer = noise(c, .06); bp.type = 'lowpass'; bp.frequency.value = 1800;
   bg.gain.setValueAtTime(vol * .5, t); bg.gain.exponentialRampToValueAtTime(.0008, t + .06);
-  s.connect(bp).connect(bg).connect(c.destination); s.start(t); s.stop(t + .07);
+  s.connect(bp).connect(bg).connect(master); s.start(t); s.stop(t + .07);
 }
 
 function musicTick() {
@@ -1176,17 +1278,17 @@ function musicTick() {
 
     if (deg >= 0) {
       const hz = noteHz(deg) * (night > .55 ? .5 : 1);   // drop an octave at night
-      voice(c, t, hz, dur * 1.5, 'triangle', .050 - night * .012, -.25);
-      voice(c, t + .014, hz * 2.005, dur * .7, 'sine', .016, .3);   // koto shimmer
+      voice(c, t, hz, dur * 1.5, 'triangle', .155 - night * .030, -.25);
+      voice(c, t + .014, hz * 2.005, dur * .7, 'sine', .055, .3);   // koto shimmer
     }
     // bass drone on the bar
     if (MUSIC.step % 6 === 0) {
-      voice(c, t, noteHz(0) / 2, beat * 5, 'sine', .055, 0);
+      voice(c, t, noteHz(0) / 2, beat * 5, 'sine', .17, 0);
       MUSIC.bar++;
     }
     // taiko: heartbeat, doubling up once the waves get heavy
-    taiko(c, t, .085 + wave * .05);
-    if (wave > .35 && MUSIC.step % 2 === 1) taiko(c, t + dur * .5, .05);
+    taiko(c, t, .26 + wave * .12);
+    if (wave > .35 && MUSIC.step % 2 === 1) taiko(c, t + dur * .5, .15);
 
     MUSIC.next += dur;
     MUSIC.step++;
@@ -1428,6 +1530,14 @@ function update(dt) {
         u.pop = .6;
       }
     } else if (def.kind === 'shot') {
+      if (def.id === 'sunwake') {                      // Dawn Herald pays its own way
+        u.kt = (u.kt || 0) + dt;
+        if (u.kt >= 14) {
+          u.kt = 0;
+          R.orbs.push({ x: u.x + (Math.random() - .5) * 26, y: u.y - 44, ty: u.y - 6, amount: Math.round(25 * starMul(def.id)), life: 9, vy: -90 });
+          u.pop = .6;
+        }
+      }
       if (ahead.length && u.t >= unitRate(u)) {
         u.t = 0; u.pop = .45;
         const n = def.count || 1;
@@ -1443,10 +1553,18 @@ function update(dt) {
       }
     } else if (def.kind === 'melee') {
       const rng = def.range;
+      if (def.slowAura) {                              // Tide Warden's drag
+        for (const z of lane) {
+          if (Math.abs(z.x - u.x) < rng * 1.5) { z.slow = Math.max(z.slow, def.slowAura); z.slowT = Math.max(z.slowT, .3); }
+        }
+      }
       const targets = lane.filter(z => z.x > u.x - 40 && z.x < u.x + rng);
       if (targets.length && u.t >= unitRate(u)) {
         u.t = 0; u.pop = .5;
-        for (const z of targets) damageZombie(z, unitStat(u, 'dmg'));
+        for (const z of targets) {
+          damageZombie(z, unitStat(u, 'dmg'));
+          if (def.burn && !z.dead) { z.burnDps = def.burn * LVL[u.lvl - 1].m; z.burnT = 3.5; }
+        }
         R.fx.push({ t: 'slash', x: u.x + rng * .5, y: u.y - 42, r: rng * .55, life: .18, max: .18 });
         hiss(.12, 5200, 1400, .05);
       }
@@ -1460,6 +1578,7 @@ function update(dt) {
           const zy = footY(z.lane) - 38;
           R.fx.push({ t: 'bolt', x1: px, y1: py, x2: z.x, y2: zy, life: .16, max: .16 });
           damageZombie(z, unitStat(u, 'dmg'), 'quiet');
+          if (def.drain) R.ki += def.drain * 10 * LVL[u.lvl - 1].m;
           px = z.x; py = zy;
         }
         SFX.zap();
@@ -1516,6 +1635,12 @@ function update(dt) {
     if (z.dead) { R.zombs.splice(i, 1); continue; }
     if (z.flash > 0) z.flash -= dt;
     if (z.slowT > 0) { z.slowT -= dt; if (z.slowT <= 0) z.slow = 0; }
+    if (z.burnT > 0) {
+      z.burnT -= dt;
+      z.hp -= z.burnDps * dt;
+      if (Math.random() < dt * 9) puff(z.x + (Math.random() - .5) * 14, footY(z.lane) - 40, Math.random() < .5 ? '#ff8a3c' : '#ffd06a', 60);
+      if (z.hp <= 0) { killZombie(z); R.zombs.splice(i, 1); continue; }
+    }
 
     const laneUnits = R.units.filter(u => u.r === z.lane && u.hp > 0 && u.march >= 1);
     const biting = laneUnits.find(u => u.x > z.x - 52 && u.x < z.x + 10);
@@ -1528,6 +1653,10 @@ function update(dt) {
         z.atk = 0;
         biting.hp -= z.dmg; biting.flash = .12;
         for (let k = 0; k < 4; k++) puff(biting.x + 14, biting.y - 34, '#cdc2ae');
+        if (biting.def.thorns) {                       // Thorn Wall bites back
+          damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m, 'quiet');
+          for (let k = 0; k < 3; k++) puff(z.x - 10, footY(z.lane) - 34, '#a8d47a');
+        }
         SFX.bite();
       }
     } else if (rangedTarget) {
@@ -2099,8 +2228,10 @@ function frame(now) {
   } else {
     menuRender(dt);
   }
+  if ((badgeTick++ & 31) === 0) syncAudioBadge();
   requestAnimationFrame(frame);
 }
+let badgeTick = 0;
 requestAnimationFrame(frame);
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -2124,8 +2255,9 @@ function buildTray() {
       (stars(id) ? `<div class="stars">${'★'.repeat(stars(id))}</div>` : '') +
       `<div class="cdmask" style="transform:scaleY(0)"></div>`;
     thumb(id, el.querySelector('canvas'));
-    el.title = d.name + ' — ' + d.blurb;
     el.onclick = () => { R.shovel = false; R.sel = R.sel === id ? null : id; };
+    el.onmouseenter = () => showTip(d);
+    el.onmouseleave = hideTip;
     trayEl.appendChild(el);
     cardEls.push({ el, id, mask: el.querySelector('.cdmask') });
   });
@@ -2153,6 +2285,21 @@ function syncHud() {
     c.mask.style.transform = `scaleY(${Math.max(0, Math.min(1, k))})`;
   }
 }
+
+/* hovering a tray card explains the unit without leaving the run */
+const tipEl = document.getElementById('tip');
+function showTip(d) {
+  tipEl.innerHTML =
+    `<div class="tn">${d.kanji} ${d.name}</div>` +
+    `<div class="tr">${unitRole(d)}</div>` +
+    `<div class="td">${d.blurb}</div>` +
+    `<div class="uchips">` +
+      `<span class="chip cost">${d.cost} 氣</span>` +
+      unitStats(d).map(t => `<span class="chip">${t}</span>`).join('') +
+    `</div>`;
+  tipEl.classList.add('show');
+}
+function hideTip() { tipEl.classList.remove('show'); }
 
 let toastT = 0;
 const toastEl = document.getElementById('toast');
@@ -2263,11 +2410,27 @@ document.getElementById('oShop').onclick = safe(openBarracks);
 document.getElementById('oMenu').onclick = safe(toMenu);
 document.getElementById('pauseBtn').onclick = safe(pause);
 document.getElementById('spdBtn').onclick = safe(toggleSpeed);
-document.getElementById('muteBtn').onclick = safe(ev => {
+document.getElementById('muteBtn').onclick = safe(() => {
   muted = !muted;
-  ev.currentTarget.textContent = muted ? '🔇' : '🔊';
   if (muted) musicStop(); else { ac(); musicStart(); }
+  syncAudioBadge();
 });
+// Browsers only let audio start from a real gesture, and some hosts refuse the
+// first attempt. Retry on every click until the context is actually running.
+addEventListener('pointerdown', () => {
+  if (muted || noAudio) return;
+  if (!audioLive()) { ac(); musicStart(); }
+}, true);
+
+// tell the truth about the speaker icon instead of always showing 🔊
+const muteBtn = document.getElementById('muteBtn');
+function syncAudioBadge() {
+  if (muted) { muteBtn.textContent = '🔇'; muteBtn.title = 'Sound off — click to enable'; return; }
+  if (noAudio) { muteBtn.textContent = '🚫'; muteBtn.title = 'This browser will not give the page audio'; return; }
+  if (!audioLive()) { muteBtn.textContent = '🔈'; muteBtn.title = 'Sound is blocked until you click the page'; return; }
+  muteBtn.textContent = '🔊'; muteBtn.title = 'Sound on';
+}
+
 // a second way in, in case a host ever eats the button
 addEventListener('keydown', safe(ev => {
   if (mode !== 'menu') return;
@@ -2314,14 +2477,18 @@ function renderBarracks() {
     const picked = S.loadout.indexOf(d.id) >= 0;
     const el = document.createElement('div');
     el.className = 'ucard r' + d.rar + (have ? '' : ' locked') + (picked ? ' picked' : '');
-    el.innerHTML = `<canvas></canvas><div>` +
+    el.innerHTML = `<canvas></canvas><div class="ubody">` +
       `<div class="un">${have ? d.name : '???'}</div>` +
-      `<div class="uk">${have ? d.kanji + ' · ' + RARITY[d.rar] : 'Locked — find it in a crate'}</div>` +
-      `<div class="ust">${have ? d.cost + ' 氣' + (stars(d.id) ? '  ' + '★'.repeat(stars(d.id)) + ` +${stars(d.id) * 6}%` : '') : ''}</div>` +
+      `<div class="uk">${have ? d.kanji + ' · ' + RARITY[d.rar] + ' · ' + unitRole(d) : 'Locked — find it in a crate'}</div>` +
+      (have ? `<div class="udesc">${d.blurb}</div>` +
+              `<div class="uchips">` +
+                `<span class="chip cost">${d.cost} 氣</span>` +
+                unitStats(d).map(t => `<span class="chip">${t}</span>`).join('') +
+                (stars(d.id) ? `<span class="chip star">${'★'.repeat(stars(d.id))} +${stars(d.id) * 6}%</span>` : '') +
+              `</div>` : '') +
       `</div><div class="pick">✓</div>`;
     thumb(d.id, el.querySelector('canvas'));
     if (have) {
-      el.title = d.blurb;
       el.onclick = () => {
         const i = S.loadout.indexOf(d.id);
         if (i >= 0) S.loadout.splice(i, 1);
@@ -2412,7 +2579,8 @@ function renderCodex() {
       `<div class="res">` +
         `<div class="rn">${got ? out.kanji + ' ' + out.name : '???'}</div>` +
         `<div class="rb">${got ? out.blurb : 'Fuse them on the board to reveal this.'}</div>` +
-        `<div class="tag">${got ? 'DISCOVERED ×' + found[f.out] : 'UNDISCOVERED'}</div>` +
+        (got ? `<div class="uchips">${unitStats(out).slice(0, 4).map(t => `<span class="chip">${t}</span>`).join('')}</div>` : '') +
+        `<div class="tag">${got ? 'DISCOVERED ×' + found[f.out] : (f.t2 ? 'TIER 2 — needs a fused unit' : 'UNDISCOVERED')}</div>` +
       `</div>`;
     const cvs = el.querySelectorAll('canvas');
     thumb(f.a, cvs[0]); thumb(f.b, cvs[1]); thumb(f.out, cvs[2]);
