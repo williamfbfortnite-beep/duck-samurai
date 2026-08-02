@@ -90,13 +90,33 @@ at once. Spread wide and survive chip damage, or stack tall and pray.
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
 **★ star** to that unit (+6% damage and HP each, max 5), so crates never dead-end.
 
+### Fusion — the other half of the mechanic
+
+Dropping a **different** unit onto one already on the board fuses them, if the pair
+has a recipe. The result is a unit that exists nowhere else — not in crates, not in
+the tray — and it **inherits the level of the unit already on the tile**, so fusing
+onto a Lv3 hands you a Lv3.
+
+| | + | | → | Fusion |
+| --- | --- | --- | --- | --- |
+| 苦無 Kunai Duck | + | 氷 Frost Lantern | → | **氷刃 Frostblade Duck** — twin frozen blades, 50% slow |
+| 扇 Twin Fan | + | 雷 Thunder Drum | → | **雷扇 Storm Fan** — chains 4 targets across three lanes |
+| 竹 Bamboo Wall | + | 長刀 Naginata Ronin | → | **鉄壁 Iron Bulwark** — 900 HP that swings back |
+| 弓 Yumi Sniper | + | 爆 Powder Keg | → | **爆矢 Bombardier** — piercing arrows that detonate |
+| 稲 Rice Paddy | + | 狐 Fox Shrine | → | **豊穣 Harvest Spirit** — Ki income *and* an aura |
+| 氷 Frost Lantern | + | 爆 Powder Keg | → | **氷爆 Frost Mine** — a wide bloom of ice |
+
+The **Fusion Codex** on the menu lists every recipe. Ingredients are always readable
+so you can plan a loadout around one; the result stays a silhouette until you have
+actually made it, and then shows how many times you have.
+
 ---
 
 ## 5. Roster — the flock
 
 | Unit | 漢字 | Ki | Rarity | Role |
 | --- | --- | --- | --- | --- |
-| Rice Paddy | 稲 | 50 | Common | Economy — grows a Ki orb every ~6.5s |
+| Rice Paddy | 稲 | 50 | Common | Economy — a Ki orb every 8s; merging is sub-linear on purpose |
 | Kunai Duck | 苦無 | 100 | Common | Baseline lane shooter |
 | Bamboo Wall | 竹 | 50 | Common | 400 HP of nothing-personal |
 | Twin Fan | 扇 | 175 | Uncommon | Two blades a volley, fast |
@@ -191,14 +211,35 @@ runs.
 Palette inherits the existing Duck Samurai page: `#0d0716` night, `#f0c987` gold,
 rot-green `#8fae6a` for the tide. Same dusk, later in the evening, much worse.
 
+**The sky moves.** A run opens at sunset and runs a full day/night cycle every 165
+seconds — the ground is cached once, the sky is redrawn each frame from an
+interpolated palette, the sun and moon ride the same arc half a cycle apart, stars
+fade in, and the whole field is washed in the light of whatever hour it is.
+
+**The lanes are tiled**, not flat: two seamless 16×16 pixel tiles — flooded paddy
+and turned earth — alternate row to row, offset per lane so no seam lines up, with
+raised ridges between them.
+
+## 9. Audio
+
+Everything is synthesized at runtime; there are no audio files. The score is a
+koto-ish loop on the **hirajoshi** scale with a bass drone and a taiko pulse,
+scheduled ahead of the WebAudio clock. It drops an octave and slows at night,
+and the taiko doubles up as the waves get heavy. Sound effects cover throwing,
+impacts, biting, deaths, the ward, crates, the boss walking on, and fusion.
+
+Audio never blocks play: if a host refuses to give the page an AudioContext, the
+game notices once and runs silently.
+
 ---
 
-## 9. Build status
+## 10. Build status
 
 **Shipped in `game.html`** (single file, no dependencies, opens from disk):
-board, merging, all 10 units, all 6 enemies, endless waves, wards, Ki economy,
-score → points, crates with reveal animation, all four upgrade tracks, loadout
-picker, localStorage save, synthesized audio, pause and 2× speed.
+board, merging, fusion + codex, 10 buildable units and 6 fusion results, all 6
+enemies, endless waves, wards, Ki economy, score → points, crates with reveal
+animation, all four upgrade tracks, loadout picker, day/night cycle, tiled lanes,
+music and SFX, localStorage save, pause and 2× speed.
 
 **Next, in rough priority order:** a "sell for 50%" shovel refund curve that scales
 with level; lane hazards (mud that slows your own melee, a bridge column that can
