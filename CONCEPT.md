@@ -277,6 +277,19 @@ zombies facing left thrust left. Verified in isolation on a blank canvas — a
 thrust of 10 moves the defender's head exactly +10px and the zombie's exactly
 -10px.
 
+**The thrust is quantised, never interpolated.** Pixel art that slides by
+fractions of a pixel reads as a blurry modern sprite, so the head snaps between
+whole *sprite* pixels — 0 → 1 → 2 → 1 → 0 across the beat, three discrete states
+rather than a glide.
+
+Making that true meant fixing the base scale. `SCL` was 1.12, which put one
+sprite pixel at 4.48 screen pixels, so nothing in the game ever landed on a
+clean grid and the head stepped unevenly — 4px, then 5px. It is now **1.25**, an
+exact 5 screen pixels per sprite pixel, and every scale a caller passes is
+snapped to quarter steps so pops, bosses and elites stay integral too. The body
+bobs were sliding by single *device* pixels — a fifth of a sprite pixel, far too
+small to read — and are now whole sprite pixels as well.
+
 The tempo was measured off the track itself (148.25 BPM, first beat at 0.03s)
 and it runs at half-time, which reads as a groove rather than a twitch. It is
 driven by the audio element's own playhead, so it stays in time however long the

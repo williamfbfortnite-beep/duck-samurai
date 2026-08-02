@@ -1014,7 +1014,16 @@ function nodAmt(shift) {
   const e = p < .3 ? p / .3 : 1 - (p - .3) / .7;
   return e * e * (3 - 2 * e);
 }
-const NOD_PX = 5.0;      // horizontal travel reads smaller than vertical
+/* Pixel art must never slide by fractions of a pixel — a smoothly
+   interpolated head reads as a blurry modern sprite and breaks the whole
+   look. The thrust is therefore quantised to whole SPRITE pixels (each one
+   PXS screen pixels before scaling), so the head snaps 0 → 1 → 2 → 1 → 0
+   across the beat instead of gliding. */
+const NOD_STEPS = 2;                       // whole sprite pixels of travel
+function thrustPx(shift, scale) {
+  const steps = Math.round(nodAmt(shift) * NOD_STEPS);
+  return steps * PXS * scale;              // always an exact sprite-pixel multiple
+}
 
 // walk cycle order gives a proper stride: out, through, out (other foot), through
 const CYCLE = [1, 0, 2, 0];
@@ -1028,6 +1037,9 @@ const BOB = [-1, 0, -1, 0];
 const HEAD_ROWS = 9;
 const BODY_FROM = 9;
 function drawSprite(g, id, frame, x, y, scale, flip, mode, thrust) {
+  // quarter steps keep PXS x scale integral for every caller — pop effects,
+  // bosses and elites included
+  scale = Math.max(.25, Math.round(scale * 4) / 4);
   const f = sprite(id)[frame];
   const img = mode === 'flash' ? f.flash : mode === 'ghost' ? f.ghost : f.img;
   const w = img.width * scale, h = img.height * scale;
@@ -1035,14 +1047,15 @@ function drawSprite(g, id, frame, x, y, scale, flip, mode, thrust) {
   g.translate(x, y);
   if (flip) g.scale(-1, 1);
   g.imageSmoothingEnabled = false;
+  const bx = Math.round(-w / 2), by = Math.round(-h);
   if (thrust) {
     const bf = BODY_FROM * PXS, hh = HEAD_ROWS * PXS;
     g.drawImage(img, 0, bf, img.width, img.height - bf,
-      -w / 2, -h + bf * scale, w, (img.height - bf) * scale);
+      bx, by + Math.round(bf * scale), w, (img.height - bf) * scale);
     g.drawImage(img, 0, 0, img.width, hh,
-      -w / 2 + thrust, -h, w, hh * scale);
+      bx + Math.round(thrust), by, w, hh * scale);
   } else {
-    g.drawImage(img, -w / 2, -h, w, h);
+    g.drawImage(img, bx, by, w, h);
   }
   g.restore();
 }
@@ -1283,7 +1296,12 @@ const starMul = id => 1 + stars(id) * 0.06;
    ══════════════════════════════════════════════════════════════════════ */
 const VW = 1152, VH = 648;
 const COLS = 9, ROWS = 5, CW = 112, RH = 92, GX = 112, GY = 78;
-const SCL = 1.12;   // base sprite scale — keeps a 16×18 sprite inside one row
+/* Base sprite scale. This MUST leave PXS x scale a whole number, or one
+   sprite pixel covers a fractional count of screen pixels and nothing lands
+   on a clean grid — the old 1.12 made a sprite pixel 4.48px wide, so motion
+   stepped unevenly (4px, then 5px) and the pixel look fell apart. At 1.25 a
+   sprite pixel is exactly 5 screen pixels. */
+const SCL = 1.25;
 const colX = c => GX + c * CW + CW / 2;
 const rowY = r => GY + r * RH + RH / 2;
 const footY = r => GY + r * RH + RH - 16;
@@ -1576,7 +1594,7 @@ function spawnZombie(id, lane, waveN, elite) {
     dmg: d.dmg * (1 + 0.035 * (waveN - 1)) * (elite ? 1.8 : 1), atk: Math.random() * d.rate,
     elite: !!elite, pts: Math.round(d.pts * (elite ? 6 : 1)),
     slow: 0, slowT: 0, flash: 0, anim: Math.random() * 4, skin: id, helm: !!d.armor,
-    scale: (d.scale || 1) * SCL * (elite ? 1.35 : 1), wob: Math.random() * 6.283
+    scale: (d.scale || 1) * SCL * (elite ? 1.2 : 1), wob: Math.random() * 6.283
   });
   if (d.boss || elite) SFX.roar();
 }
@@ -2255,8 +2273,10 @@ function render() {
     const marching = u.march < 1;
     const x = u.x - (1 - u.march) * 74;
     const frame = marching ? CYCLE[(u.anim | 0) % 4] : 0;
-    const bob = marching ? BOB[(u.anim | 0) % 4] : Math.sin(R.elapsed * 2.4 + u.c) * 1.6;
+    // whole sprite pixels only, or the body slides sub-pixel against the head
     const sc = SCL + u.pop * .13;
+    const bob = (marching ? BOB[(u.anim | 0) % 4]
+      : (Math.sin(R.elapsed * 2.4 + u.c) > .55 ? -1 : 0)) * PXS * sc;
 
     // shadow
     g.fillStyle = 'rgba(0,0,0,.32)';
@@ -2266,7 +2286,7 @@ function render() {
       g.fillStyle = u.lvl === 3 ? 'rgba(240,201,135,.20)' : 'rgba(240,201,135,.10)';
       g.beginPath(); g.arc(x, u.y - 34, 34 + Math.sin(R.elapsed * 3) * 2, 0, 6.283); g.fill();
     }
-    const uThrust = marching ? 0 : nodAmt(u.c * .012 + u.r * .006) * NOD_PX * (sc / SCL);
+    const uThrust = marching ? 0 : thrustPx(u.c * .012 + u.r * .006, sc);
     drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uThrust);
 
     // hp bar when hurt
@@ -2306,14 +2326,14 @@ function render() {
   for (const z of zl) {
     const y = footY(z.lane);
     const frame = CYCLE[(z.anim | 0) % 4];
-    const bob = BOB[(z.anim | 0) % 4];
+    const bob = BOB[(z.anim | 0) % 4] * PXS * z.scale;
     g.fillStyle = 'rgba(0,0,0,.32)';
     g.beginPath(); g.ellipse(z.x, y + 2, 26 * z.scale / SCL, 8 * z.scale / SCL, 0, 0, 6.283); g.fill();
     if (z.slow > 0) {
       g.fillStyle = 'rgba(143,232,247,.22)';
       g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
     }
-    const zThrust = nodAmt(NOD_PERIOD * .5 + z.wob * .01) * NOD_PX * (z.scale / SCL);
+    const zThrust = thrustPx(NOD_PERIOD * .5 + z.wob * .01, z.scale);
     drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zThrust);
     if (z.hp < z.maxHp - 1) {
       const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
@@ -2457,8 +2477,8 @@ function menuRender(dt) {
     const y = footY(z.lane);
     g.fillStyle = 'rgba(0,0,0,.3)';
     g.beginPath(); g.ellipse(z.x, y + 2, 26, 8, 0, 0, 6.283); g.fill();
-    drawSprite(g, z.skin, CYCLE[(z.anim | 0) % 4], z.x, y + BOB[(z.anim | 0) % 4], SCL, true, 'normal',
-      nodAmt(NOD_PERIOD * .5 + z.lane * .02) * NOD_PX);
+    drawSprite(g, z.skin, CYCLE[(z.anim | 0) % 4], z.x, y + BOB[(z.anim | 0) % 4] * PXS * SCL, SCL, true, 'normal',
+      thrustPx(NOD_PERIOD * .5 + z.lane * .02, SCL));
   }
 
   // the last retainer, breathing, facing them down
@@ -2467,8 +2487,8 @@ function menuRender(dt) {
   g.beginPath(); g.ellipse(hx2, hy + 2, 30, 9, 0, 0, 6.283); g.fill();
   g.fillStyle = `rgba(240,201,135,${.10 + Math.sin(menuT * 1.6) * .04})`;
   g.beginPath(); g.arc(hx2, hy - 40, 52, 0, 6.283); g.fill();
-  drawSprite(g, 'naginata', 0, hx2, hy + Math.sin(menuT * 1.9) * 1.8, SCL * 1.35, false, 'normal',
-    nodAmt(0) * NOD_PX * 1.35);
+  drawSprite(g, 'naginata', 0, hx2, hy + (Math.sin(menuT * 1.9) > .55 ? -1 : 0) * PXS * SCL, SCL * 1.35, false, 'normal',
+    thrustPx(0, SCL * 1.35));
 
   // petals on the wind
   for (const p of petals) {
