@@ -271,6 +271,35 @@
   .pull.n3 { border-color: #d78fff; box-shadow: 0 0 calc(var(--u)*30) rgba(180,111,214,.6); }
   .pull .new { color: var(--gold); font-size: calc(var(--u)*13); font-weight: 800; letter-spacing: .2em; }
 
+  /* sound check */
+  #soundBox {
+    width: calc(var(--u) * 460); margin-top: calc(var(--u) * 14);
+    background: linear-gradient(#241a35, #140d20); border: calc(var(--u) * 2) solid #4a3a5e;
+    border-radius: calc(var(--u) * 10); padding: calc(var(--u) * 16) calc(var(--u) * 20);
+  }
+  .srow {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: calc(var(--u) * 13); padding: calc(var(--u) * 4) 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .srow span { opacity: .6; letter-spacing: .1em; text-transform: uppercase; font-size: calc(var(--u) * 11); }
+  .srow b { color: var(--gold); font-size: calc(var(--u) * 14); }
+  .srow b.bad { color: #ff8a7a; }
+  .srow b.good { color: #7fe0a0; }
+  .meterWrap { margin-top: calc(var(--u) * 14); }
+  .mlabel { font-size: calc(var(--u) * 10); letter-spacing: .22em; opacity: .55; }
+  .meter {
+    height: calc(var(--u) * 20); margin-top: calc(var(--u) * 5);
+    background: #150e21; border: calc(var(--u) * 2) solid #4a3a5e; border-radius: calc(var(--u) * 4);
+    overflow: hidden;
+  }
+  .meter i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, #4fb37a, #f0c987 65%, #ff8a5a);
+    transition: width .05s linear;
+  }
+  .mhint { font-size: calc(var(--u) * 11); opacity: .6; margin-top: calc(var(--u) * 5); }
+
   /* fusion codex */
   #codexList { display: grid; grid-template-columns: repeat(2, calc(var(--u) * 430)); gap: calc(var(--u) * 10); margin-top: calc(var(--u) * 10); }
   .recipe {
@@ -355,6 +384,9 @@
           <button class="btn" id="btnCodex">巻物 &nbsp;FUSION CODEX</button>
           <button class="btn" id="btnUpgrades">強化 &nbsp;UPGRADES</button>
         </div>
+        <div class="row" style="margin-top:calc(var(--u)*8)">
+          <button class="btn" id="btnSound">音 &nbsp;SOUND CHECK</button>
+        </div>
         <div class="hint">
           Drop a unit on its twin to <b>MERGE</b> it — Lv1 → Lv2 → Lv3.<br>
           Drop a <i>different</i> unit on it to <b>FUSE</b> them into something new.
@@ -371,6 +403,36 @@
       <h2 class="sect">The Flock — pick up to 6 for your loadout</h2>
       <div class="grid" id="unitGrid"></div>
       <div class="row" style="margin-top:calc(var(--u)*16)"><button class="btn big" id="bBack">◀ BACK</button></div>
+    </div>
+
+    <!-- SOUND CHECK -->
+    <div class="screen" id="scSound">
+      <h1 class="title" style="font-size:calc(var(--u)*38)">音 SOUND CHECK</h1>
+      <div class="sub">If the bar moves and you still hear nothing, it is not the game</div>
+
+      <div id="soundBox">
+        <div class="srow"><span>Audio engine</span><b id="sndState">—</b></div>
+        <div class="srow"><span>Sample rate</span><b id="sndRate">—</b></div>
+        <div class="srow"><span>Sound</span><b id="sndMuted">—</b></div>
+        <div class="meterWrap">
+          <div class="mlabel">OUTPUT LEVEL</div>
+          <div class="meter"><i id="meterBar"></i></div>
+          <div class="mhint" id="meterHint">Press TEST TONE — the bar should jump</div>
+        </div>
+        <div class="row" style="margin-top:calc(var(--u)*12)">
+          <button class="btn big on" id="sndTest">▶ TEST TONE</button>
+          <button class="btn" id="sndMute">MUTE</button>
+        </div>
+      </div>
+
+      <div class="hint" style="max-width:44em">
+        <b>Bar moves, no sound?</b> Check the tab isn't muted (right-click the tab),
+        your system output device, and — on iPhone — the <b>silent/ringer switch</b>,
+        which mutes web audio.<br>
+        <b>Bar stays flat?</b> This browser is refusing the page audio; opening
+        <b>game.html</b> in its own tab usually fixes it.
+      </div>
+      <div class="row" style="margin-top:calc(var(--u)*12)"><button class="btn big" id="sndBack">◀ BACK</button></div>
     </div>
 
     <!-- FUSION CODEX -->
@@ -1134,7 +1196,38 @@ let actx = null, muted = false, noAudio = false;
 // Audio is strictly optional. Locked-down iframes, permissions policies and some
 // mobile webviews make AudioContext throw or vanish — if that takes down the
 // click handler that calls it, the game never starts. Never let that happen.
-let master = null;
+let master = null, meter = null, meterBuf = null;
+
+/* iOS silences WebAudio when the ringer switch is off, but not <audio>
+   playback. Nudging the audio session with a silent clip on the first
+   gesture is the standard way to get sound back on a muted iPhone. */
+let unlocked = false;
+function unlockIOS() {
+  if (unlocked) return;
+  unlocked = true;
+  try {
+    const a = new Audio('data:audio/wav;base64,UklGRgQWAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YeAVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==');
+    a.loop = true; a.volume = 0.001;
+    a.setAttribute('playsinline', '');
+    const p = a.play();
+    if (p && p.catch) p.catch(() => {});
+    silentEl = a;
+  } catch (e) {}
+}
+let silentEl = null;
+
+// live output level, 0..1 — lets a player see whether the page is making
+// any sound at all, which is the one thing a screenshot can't show
+function audioPeak() {
+  if (!meter) return 0;
+  try {
+    meter.getFloatTimeDomainData(meterBuf);
+    let p = 0;
+    for (let i = 0; i < meterBuf.length; i++) { const v = Math.abs(meterBuf[i]); if (v > p) p = v; }
+    return p;
+  } catch (e) { return 0; }
+}
+
 function ac() {
   if (noAudio) return null;
   try {
@@ -1148,6 +1241,10 @@ function ac() {
       // consistent and the output can actually be measured
       master = actx.createGain();
       master.gain.value = 0.9;
+      meter = actx.createAnalyser();
+      meter.fftSize = 1024;
+      meterBuf = new Float32Array(meter.fftSize);
+      master.connect(meter);
       master.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume();
@@ -2229,9 +2326,24 @@ function frame(now) {
     menuRender(dt);
   }
   if ((badgeTick++ & 31) === 0) syncAudioBadge();
+  if (soundOpen) {
+    const p = audioPeak();
+    meterPeak = Math.max(p, meterPeak * .90);
+    document.getElementById('meterBar').style.width = Math.min(100, meterPeak * 140) + '%';
+    if (meterHold > 0) {
+      meterHold -= dt;
+      if (meterHold <= 0) {
+        document.getElementById('meterHint').textContent = meterSeen > .02
+          ? 'Signal confirmed — the page produced ' + Math.round(meterSeen * 100) + '% output.'
+          : 'No signal reached the output. This browser is blocking page audio.';
+      }
+      meterSeen = Math.max(meterSeen, p);
+    }
+    if ((badgeTick & 15) === 0) refreshSound();
+  }
   requestAnimationFrame(frame);
 }
-let badgeTick = 0;
+let badgeTick = 0, meterPeak = 0, meterSeen = 0;
 requestAnimationFrame(frame);
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -2381,7 +2493,7 @@ addEventListener('keydown', ev => {
 /* ══════════════════════════════════════════════════════════════════════
    SCREENS
    ══════════════════════════════════════════════════════════════════════ */
-const SCREENS = ['scBoot', 'scMenu', 'scBarracks', 'scCodex', 'scUpgrades', 'scPause', 'scOver'];
+const SCREENS = ['scBoot', 'scMenu', 'scBarracks', 'scCodex', 'scSound', 'scUpgrades', 'scPause', 'scOver'];
 function show(id) {
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('on', s === id));
 }
@@ -2395,12 +2507,20 @@ function toMenu() {
 }
 function toggleSpeed() { speed = speed === 1 ? 2 : 1; document.getElementById('spdBtn').textContent = speed + '×'; }
 
-const boot = () => { ac(); musicStart(); };
+const boot = () => { unlockIOS(); ac(); musicStart(); };
 document.getElementById('btnPlay').onclick = safe(() => { boot(); startRun(); });
 document.getElementById('btnBarracks').onclick = safe(() => { boot(); openBarracks(); });
 document.getElementById('btnUpgrades').onclick = safe(() => { boot(); openUpgrades(); });
 document.getElementById('btnCodex').onclick = safe(() => { boot(); openCodex(); });
 document.getElementById('cBack').onclick = safe(toMenu);
+document.getElementById('btnSound').onclick = safe(openSound);
+document.getElementById('sndBack').onclick = safe(() => { soundOpen = false; toMenu(); });
+document.getElementById('sndTest').onclick = safe(testTone);
+document.getElementById('sndMute').onclick = safe(() => {
+  muted = !muted;
+  if (muted) musicStop(); else { ac(); musicStart(); }
+  syncAudioBadge(); refreshSound();
+});
 document.getElementById('bBack').onclick = safe(toMenu);
 document.getElementById('uBack').onclick = safe(toMenu);
 document.getElementById('pResume').onclick = safe(resume);
@@ -2419,6 +2539,7 @@ document.getElementById('muteBtn').onclick = safe(() => {
 // first attempt. Retry on every click until the context is actually running.
 addEventListener('pointerdown', () => {
   if (muted || noAudio) return;
+  unlockIOS();
   if (!audioLive()) { ac(); musicStart(); }
 }, true);
 
@@ -2551,6 +2672,47 @@ function openCrate(c) {
 }
 revealEl.onclick = () => revealEl.classList.remove('on');
 function toastNo() { blip(140, .18, 'square', .06, 70); }
+
+/* ---------- sound check ---------- */
+let soundOpen = false, meterHold = 0;
+function openSound() {
+  mode = 'menu'; show('scSound');
+  document.getElementById('ui').classList.add('hidden');
+  unlockIOS(); ac(); if (!muted) musicStart();
+  soundOpen = true;
+  refreshSound();
+}
+function refreshSound() {
+  const st = document.getElementById('sndState');
+  const live = audioLive();
+  st.textContent = noAudio ? 'refused by this browser'
+    : !actx ? 'not started'
+      : actx.state === 'running' ? 'running' : actx.state;
+  st.className = live ? 'good' : 'bad';
+  document.getElementById('sndRate').textContent = actx ? Math.round(actx.sampleRate) + ' Hz' : '—';
+  const m = document.getElementById('sndMuted');
+  m.textContent = muted ? 'muted' : 'on';
+  m.className = muted ? 'bad' : 'good';
+  document.getElementById('sndMute').textContent = muted ? 'UNMUTE' : 'MUTE';
+}
+// a tone loud and long enough that there is no ambiguity about hearing it
+function testTone() {
+  unlockIOS();
+  const c = ac();
+  if (!c) { document.getElementById('meterHint').textContent = 'This browser will not give the page audio at all.'; return; }
+  const t = c.currentTime;
+  [523.25, 659.25, 783.99].forEach((hz, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(hz, t + i * .18);
+    g.gain.setValueAtTime(0, t + i * .18);
+    g.gain.linearRampToValueAtTime(.5, t + i * .18 + .02);
+    g.gain.exponentialRampToValueAtTime(.0008, t + i * .18 + .7);
+    o.connect(g).connect(master);
+    o.start(t + i * .18); o.stop(t + i * .18 + .75);
+  });
+  meterHold = 1.6;
+  document.getElementById('meterHint').textContent = 'Playing a three-note chime…';
+}
 
 /* ---------- fusion codex ---------- */
 function openCodex() {

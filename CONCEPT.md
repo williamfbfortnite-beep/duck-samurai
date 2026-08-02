@@ -253,6 +253,14 @@ Audio never blocks play. If a host refuses an AudioContext the game notices once
 and runs silently, and the speaker icon tells the truth — 🔊 playing, 🔈 blocked
 until you click, 🚫 refused outright — instead of always claiming sound is on.
 
+**Sound Check** (on the menu) exists because no automated test can confirm a
+speaker actually made noise. It shows the engine state, the sample rate, a live
+output meter tapped off the master bus, and a loud test chime. A moving bar with
+no sound means the problem is downstream — tab muted, wrong output device, or an
+iPhone ringer switch, which silences web audio. A flat bar means the page itself
+is being denied audio. The first gesture also plays a silent clip to nudge iOS
+out of that ringer-switch audio session.
+
 ---
 
 ## 10. Build status
