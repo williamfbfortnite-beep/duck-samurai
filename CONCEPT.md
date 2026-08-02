@@ -279,8 +279,9 @@ thrust of 10 moves the defender's head exactly +10px and the zombie's exactly
 
 **The thrust is quantised, never interpolated.** Pixel art that slides by
 fractions of a pixel reads as a blurry modern sprite, so the head snaps between
-whole *sprite* pixels — 0 → 1 → 2 → 1 → 0 across the beat, three discrete states
-rather than a glide.
+whole *sprite* pixels — 0 → 1 → 0 across the beat, two discrete states rather
+than a glide. One pixel of travel is deliberate: two reads as a duck
+headbanging rather than a duck keeping time.
 
 Making that true meant fixing the base scale. `SCL` was 1.12, which put one
 sprite pixel at 4.48 screen pixels, so nothing in the game ever landed on a

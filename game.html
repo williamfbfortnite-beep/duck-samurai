@@ -1019,7 +1019,7 @@ function nodAmt(shift) {
    look. The thrust is therefore quantised to whole SPRITE pixels (each one
    PXS screen pixels before scaling), so the head snaps 0 → 1 → 2 → 1 → 0
    across the beat instead of gliding. */
-const NOD_STEPS = 2;                       // whole sprite pixels of travel
+const NOD_STEPS = 1;                       // whole sprite pixels of travel — one is plenty
 function thrustPx(shift, scale) {
   const steps = Math.round(nodAmt(shift) * NOD_STEPS);
   return steps * PXS * scale;              // always an exact sprite-pixel multiple
