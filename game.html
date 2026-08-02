@@ -419,18 +419,24 @@
           <div class="meter"><i id="meterBar"></i></div>
           <div class="mhint" id="meterHint">Press TEST TONE — the bar should jump</div>
         </div>
+        <div class="srow" style="margin-top:calc(var(--u)*8);border:0">
+          <span>iPhone audio route</span><b id="sndRoute">—</b>
+        </div>
         <div class="row" style="margin-top:calc(var(--u)*12)">
           <button class="btn big on" id="sndTest">▶ TEST TONE</button>
           <button class="btn" id="sndMute">MUTE</button>
+          <button class="btn" id="sndRouteBtn">SWITCH ROUTE</button>
         </div>
       </div>
 
       <div class="hint" style="max-width:44em">
-        <b>Bar moves, no sound?</b> Check the tab isn't muted (right-click the tab),
-        your system output device, and — on iPhone — the <b>silent/ringer switch</b>,
-        which mutes web audio.<br>
-        <b>Bar stays flat?</b> This browser is refusing the page audio; opening
-        <b>game.html</b> in its own tab usually fixes it.
+        <b>On iPhone</b> the silent/ringer switch mutes web audio outright. This page
+        routes sound through a media element to get around that — if you still hear
+        nothing, flip the ringer switch on, turn the volume up with the game open,
+        then hit <b>SWITCH ROUTE</b> and test again.<br>
+        <b>Bar moves, no sound?</b> The signal is real, so check the tab isn't muted,
+        the output device, and the ringer switch.<br>
+        <b>Bar stays flat?</b> The browser is refusing the page audio entirely.
       </div>
       <div class="row" style="margin-top:calc(var(--u)*12)"><button class="btn big" id="sndBack">◀ BACK</button></div>
     </div>
@@ -1157,6 +1163,7 @@ const fresh = () => ({
   sp: 0, bestWave: 0, runs: 0,
   owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> stars
   found: {},                                     // fusion id -> times discovered
+  mediaRoute: null,                              // null = use the platform default
   loadout: ['paddy', 'kunai', 'bamboo'],
   up: { coin: 0, ki: 0, ward: 0, luck: 0 }
 });
@@ -1197,6 +1204,46 @@ let actx = null, muted = false, noAudio = false;
 // mobile webviews make AudioContext throw or vanish — if that takes down the
 // click handler that calls it, the game never starts. Never let that happen.
 let master = null, meter = null, meterBuf = null;
+
+/* iOS puts a bare AudioContext in the "ambient" audio session, which the
+   ringer/silent switch mutes — so an iPhone with the switch flipped plays a
+   game in complete silence with no error and a perfectly healthy audio graph.
+   Piping the master bus through a MediaStream into an <audio> element moves
+   output into the "playback" session instead, which ignores that switch.
+   Default on for iOS, and toggleable in Sound Check in case a device
+   dislikes the routing. */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let mediaRoute = IS_IOS, mediaEl = null, mediaDest = null;
+if (S.mediaRoute === true || S.mediaRoute === false) mediaRoute = S.mediaRoute;
+
+function setMediaRoute(on) {
+  mediaRoute = on;
+  if (!actx || !master) return;
+  try { master.disconnect(); } catch (e) {}
+  if (meter) master.connect(meter);          // meter taps the bus either way
+  try {
+    if (on) {
+      if (!mediaDest) {
+        mediaDest = actx.createMediaStreamDestination();
+        mediaEl = document.createElement('audio');
+        mediaEl.setAttribute('playsinline', '');
+        mediaEl.autoplay = true;
+        mediaEl.srcObject = mediaDest.stream;
+        mediaEl.style.display = 'none';
+        document.body.appendChild(mediaEl);
+      }
+      master.connect(mediaDest);
+      const p = mediaEl.play();
+      if (p && p.catch) p.catch(() => {});
+    } else {
+      master.connect(actx.destination);
+    }
+  } catch (e) {                               // routing unsupported — fall back
+    mediaRoute = false;
+    try { master.connect(actx.destination); } catch (e2) {}
+  }
+}
 
 /* iOS silences WebAudio when the ringer switch is off, but not <audio>
    playback. Nudging the audio session with a silent clip on the first
@@ -1244,8 +1291,7 @@ function ac() {
       meter = actx.createAnalyser();
       meter.fftSize = 1024;
       meterBuf = new Float32Array(meter.fftSize);
-      master.connect(meter);
-      master.connect(actx.destination);
+      setMediaRoute(mediaRoute);
     }
     if (actx.state === 'suspended') actx.resume();
     return actx;
@@ -2516,6 +2562,15 @@ document.getElementById('cBack').onclick = safe(toMenu);
 document.getElementById('btnSound').onclick = safe(openSound);
 document.getElementById('sndBack').onclick = safe(() => { soundOpen = false; toMenu(); });
 document.getElementById('sndTest').onclick = safe(testTone);
+document.getElementById('sndRouteBtn').onclick = safe(() => {
+  unlockIOS(); ac();
+  setMediaRoute(!mediaRoute);
+  S.mediaRoute = mediaRoute; persist();
+  document.getElementById('meterHint').textContent =
+    'Route switched to ' + (mediaRoute ? 'media element' : 'direct') + ' — press TEST TONE.';
+  meterSeen = 0;
+  refreshSound();
+});
 document.getElementById('sndMute').onclick = safe(() => {
   muted = !muted;
   if (muted) musicStop(); else { ac(); musicStart(); }
@@ -2694,6 +2749,10 @@ function refreshSound() {
   m.textContent = muted ? 'muted' : 'on';
   m.className = muted ? 'bad' : 'good';
   document.getElementById('sndMute').textContent = muted ? 'UNMUTE' : 'MUTE';
+  const rt = document.getElementById('sndRoute');
+  rt.textContent = mediaRoute ? 'media element (ignores ringer switch)' : 'direct';
+  rt.className = '';
+  rt.style.fontSize = 'calc(var(--u) * 12)';
 }
 // a tone loud and long enough that there is no ambiguity about hearing it
 function testTone() {

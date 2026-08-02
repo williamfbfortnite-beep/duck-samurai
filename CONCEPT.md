@@ -253,6 +253,13 @@ Audio never blocks play. If a host refuses an AudioContext the game notices once
 and runs silently, and the speaker icon tells the truth — 🔊 playing, 🔈 blocked
 until you click, 🚫 refused outright — instead of always claiming sound is on.
 
+**iOS needs its own output path.** A bare AudioContext on iPhone runs in the
+*ambient* audio session, which the ringer/silent switch mutes — so the game plays
+in total silence with a perfectly healthy audio graph and no error anywhere. The
+master bus is therefore piped through a MediaStream into an `<audio>` element on
+iOS, which moves output into the *playback* session and ignores that switch. It
+can be toggled in Sound Check if a device dislikes the routing.
+
 **Sound Check** (on the menu) exists because no automated test can confirm a
 speaker actually made noise. It shows the engine state, the sample rate, a live
 output meter tapped off the master bus, and a loud test chime. A moving bar with
