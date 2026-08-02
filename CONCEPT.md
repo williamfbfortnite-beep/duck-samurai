@@ -287,11 +287,17 @@ raised ridges between them.
 
 ## 9. Audio
 
-Everything is synthesized at runtime; there are no audio files. The score is a
-koto-ish loop on the **hirajoshi** scale with a bass drone and a taiko pulse,
-scheduled ahead of the WebAudio clock. It drops an octave and slows at night,
-and the taiko doubles up as the waves get heavy. Sound effects cover throwing,
-impacts, biting, deaths, the ward, crates, the boss walking on, and fusion.
+The soundtrack is **an original recording by the player** — a 2:38 track,
+looped, replacing the synthesized score that used to sit here. It plays through
+a plain `<audio>` element rather than the WebAudio graph on purpose: media
+playback is the one path iOS keeps in the "playback" audio session, so the music
+survives the ringer switch even where a bare AudioContext would not.
+
+Sound effects are still synthesized at runtime — throwing, impacts, biting,
+deaths, the ward, crates, the boss walking on, and fusion — so the only asset in
+the project is the music itself. It lives at `assets/music.mp3` and is referenced
+relatively; the artifact build inlines it as a data URI, since a published page
+is a single self-contained file whose CSP blocks every external host.
 
 Everything mixes through one master bus, which is also how the output gets
 verified: an analyser taps the bus and measures true peak and RMS, so "is this

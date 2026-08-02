@@ -338,6 +338,8 @@
 <body>
 <div id="stage">
   <canvas id="cv" width="1152" height="648"></canvas>
+  <!-- BGM-SRC: the artifact build replaces this src with an inlined data URI -->
+  <audio id="bgm" src="assets/music.mp3" loop preload="auto" playsinline></audio>
 
   <div id="ui" class="hidden">
     <div id="top">
@@ -425,6 +427,7 @@
           <div class="meter"><i id="meterBar"></i></div>
           <div class="mhint" id="meterHint">Press TEST TONE — the bar should jump</div>
         </div>
+        <div class="srow"><span>Soundtrack</span><b id="sndMusic">—</b></div>
         <div class="srow" style="margin-top:calc(var(--u)*8);border:0">
           <span>iPhone audio route</span><b id="sndRoute">—</b>
         </div>
@@ -1411,96 +1414,46 @@ const SFX = {
 };
 
 /* ══════════════════════════════════════════════════════════════════════
-   MUSIC — a koto-ish loop on the hirajoshi scale, scheduled ahead of the
-   audio clock. Bright and open by day, low and sparse at night; the taiko
-   pulse tightens as the waves get worse. All synthesized, nothing loaded.
+   MUSIC — the player's own recording, looped.
+
+   Played through a plain <audio> element rather than the WebAudio graph on
+   purpose: media playback is the one path iOS keeps in the "playback" audio
+   session, so the soundtrack survives the ringer switch even where a bare
+   AudioContext would not. The artifact build swaps the src for a data URI
+   so the published page stays self-contained.
    ══════════════════════════════════════════════════════════════════════ */
-const HIRAJOSHI = [0, 2, 3, 7, 8];            // the scale that makes it read as Japanese
-const ROOT = 220;                              // A3
-const noteHz = deg => {
-  const oct = Math.floor(deg / 5), step = HIRAJOSHI[((deg % 5) + 5) % 5];
-  return ROOT * Math.pow(2, oct + step / 12);
-};
-const MELODY = [                                // degree, beats  (-1 = rest)
-  [7, 1], [9, 1], [11, 2], [9, 1], [7, 1], [6, 2],
-  [7, 1], [11, 1], [12, 2], [11, 1], [9, 1], [7, 2],
-  [-1, 1], [6, 1], [7, 2], [9, 1], [7, 1], [4, 2],
-  [7, 1], [9, 1], [11, 1], [12, 1], [11, 2], [-1, 2]
-];
-const MUSIC = { on: false, step: 0, next: 0, bar: 0, timer: null };
+const MUSIC_VOL = 0.55;
+const MUSIC = { on: false, el: null, failed: false };
 
-function voice(c, t, hz, dur, type, vol, pan) {
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = type; o.frequency.setValueAtTime(hz, t);
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(vol, t + .012);          // plucked attack
-  g.gain.exponentialRampToValueAtTime(.0006, t + dur);
-  let node = g;
-  if (pan !== undefined && c.createStereoPanner) {
-    const p = c.createStereoPanner(); p.pan.value = pan;
-    g.connect(p); node = p;
-  }
-  o.connect(g); node.connect(master);
-  o.start(t); o.stop(t + dur + .05);
-}
-function taiko(c, t, vol) {
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(160, t);
-  o.frequency.exponentialRampToValueAtTime(48, t + .16);
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(.0008, t + .3);
-  o.connect(g).connect(master); o.start(t); o.stop(t + .32);
-  const s = c.createBufferSource(), bg = c.createGain(), bp = c.createBiquadFilter();
-  s.buffer = noise(c, .06); bp.type = 'lowpass'; bp.frequency.value = 1800;
-  bg.gain.setValueAtTime(vol * .5, t); bg.gain.exponentialRampToValueAtTime(.0008, t + .06);
-  s.connect(bp).connect(bg).connect(master); s.start(t); s.stop(t + .07);
-}
-
-function musicTick() {
-  if (!MUSIC.on || muted) return;
-  const c = ac();
-  if (!c) return;
-  // night is slower and darker; deep waves push the tempo up
-  const night = mode === 'play' ? (1 - Math.sin(R.phase * 6.283 - 1.57) * .5 - .5) : .7;
-  const wave = mode === 'play' ? Math.min(1, R.wave / 22) : 0;
-  const beat = (0.50 - wave * 0.11) * (1 + night * .10);
-  if (MUSIC.next < c.currentTime) MUSIC.next = c.currentTime + .06;
-
-  while (MUSIC.next < c.currentTime + 1.2) {          // schedule ~1.2s ahead
-    const t = MUSIC.next;
-    const [deg, len] = MELODY[MUSIC.step % MELODY.length];
-    const dur = len * beat;
-
-    if (deg >= 0) {
-      const hz = noteHz(deg) * (night > .55 ? .5 : 1);   // drop an octave at night
-      voice(c, t, hz, dur * 1.5, 'triangle', .155 - night * .030, -.25);
-      voice(c, t + .014, hz * 2.005, dur * .7, 'sine', .055, .3);   // koto shimmer
-    }
-    // bass drone on the bar
-    if (MUSIC.step % 6 === 0) {
-      voice(c, t, noteHz(0) / 2, beat * 5, 'sine', .17, 0);
-      MUSIC.bar++;
-    }
-    // taiko: heartbeat, doubling up once the waves get heavy
-    taiko(c, t, .26 + wave * .12);
-    if (wave > .35 && MUSIC.step % 2 === 1) taiko(c, t + dur * .5, .15);
-
-    MUSIC.next += dur;
-    MUSIC.step++;
-  }
+function musicEl() {
+  if (MUSIC.el || MUSIC.failed) return MUSIC.el;
+  const el = document.getElementById('bgm');
+  if (!el) { MUSIC.failed = true; return null; }
+  el.loop = true;
+  el.volume = MUSIC_VOL;
+  el.addEventListener('error', () => { MUSIC.failed = true; MUSIC.on = false; });
+  MUSIC.el = el;
+  return el;
 }
 function musicStart() {
-  if (MUSIC.on) return;
-  if (!ac()) return;
-  MUSIC.on = true; MUSIC.next = 0;
-  MUSIC.timer = setInterval(safeTick, 260);
+  if (muted) return;
+  const el = musicEl();
+  if (!el) return;
+  el.volume = MUSIC_VOL;
+  const p = el.play();
+  if (p && p.then) p.then(() => { MUSIC.on = true; }).catch(() => { MUSIC.on = false; });
+  else MUSIC.on = true;
 }
 function musicStop() {
   MUSIC.on = false;
-  if (MUSIC.timer) { clearInterval(MUSIC.timer); MUSIC.timer = null; }
+  const el = musicEl();
+  if (el) { try { el.pause(); } catch (e) {} }
 }
-function safeTick() { try { musicTick(); } catch (e) { musicStop(); } }
+// true when the soundtrack is genuinely rolling
+function musicLive() {
+  const el = MUSIC.el;
+  return !!(el && !el.paused && !el.ended && el.currentTime > 0);
+}
 
 /* ══════════════════════════════════════════════════════════════════════
    RUN STATE
@@ -2902,6 +2855,11 @@ function refreshSound() {
   m.textContent = muted ? 'muted' : 'on';
   m.className = muted ? 'bad' : 'good';
   document.getElementById('sndMute').textContent = muted ? 'UNMUTE' : 'MUTE';
+  const mu = document.getElementById('sndMusic');
+  if (mu) {
+    mu.textContent = MUSIC.failed ? 'track failed to load' : musicLive() ? 'playing' : muted ? 'muted' : 'stopped';
+    mu.className = musicLive() ? 'good' : MUSIC.failed ? 'bad' : '';
+  }
   const rt = document.getElementById('sndRoute');
   rt.textContent = mediaRoute ? 'media element (ignores ringer switch)' : 'direct';
   rt.className = '';
