@@ -51,6 +51,8 @@
   .pill.ki   { color: #9be8ff; border-color: #2f5f7a; }
   .pill.wave { color: var(--gold); }
   .pill.score{ color: #e8b8ff; border-color: #5a3a6e; }
+  .pill.lvl  { color: #9bf0c0; border-color: #2f6b4e; }
+  .pill.valor{ color: #ffb36a; border-color: #7a4f2a; }
   .spacer { flex: 1; }
 
   .btn {
@@ -308,6 +310,7 @@
     border-left: calc(var(--u) * 5) solid #4a3a5e;
     border-radius: calc(var(--u) * 8); padding: calc(var(--u) * 8) calc(var(--u) * 10);
   }
+  .recipe.sealed { border-color: #6f5f95; border-left-color: #b46fd6; }
   .recipe.found { border-color: #8fe8f7; border-left-color: #8fe8f7; box-shadow: inset 0 0 calc(var(--u)*24) rgba(143,232,247,.10); }
   .recipe canvas { width: calc(var(--u) * 38); height: calc(var(--u) * 43); image-rendering: pixelated; flex: none; }
   .recipe .op { font-size: calc(var(--u) * 20); color: #6f5f85; font-weight: 800; flex: none; }
@@ -340,6 +343,8 @@
     <div id="top">
       <div class="pill ki"><span class="lbl">氣</span><span id="kiVal">0</span></div>
       <div class="pill wave"><span class="lbl">WAVE</span><span id="waveVal">1</span></div>
+      <div class="pill lvl"><span class="lbl">LV</span><span id="lvlVal">1</span></div>
+      <div class="pill valor"><span class="lbl">武功</span><span id="valorVal">+0%</span></div>
       <div class="pill score"><span class="lbl">点</span><span id="scoreVal">0</span></div>
       <div class="spacer"></div>
       <button class="btn" id="spdBtn">1×</button>
@@ -375,7 +380,8 @@
         <h1 class="title bigTitle">鴨<span>侍</span></h1>
         <div class="rule"><i></i><span>無 限 の 夜</span><i></i></div>
         <div class="sub">Siege of the Rotting Reeds</div>
-        <div class="bank"><span>点 <b id="mSp">0</b></span><span style="opacity:.6">BEST WAVE <b id="mBest">—</b></span></div>
+        <div class="bank"><span>点 <b id="mSp">0</b></span><span style="opacity:.75">LEVEL <b id="mLevel">1</b> <span style="opacity:.6;font-size:calc(var(--u)*13)">of 100</span></span></div>
+        <div class="sub" id="mGoal" style="margin-top:calc(var(--u)*6);letter-spacing:.2em"></div>
         <div class="row" style="margin-top:calc(var(--u)*14)">
           <button class="btn big on" id="btnPlay">出陣 &nbsp;DEPLOY</button>
         </div>
@@ -474,10 +480,10 @@
 
     <!-- GAME OVER -->
     <div class="screen" id="scOver">
-      <h1 class="title" style="font-size:calc(var(--u)*46);color:#ff8a7a">崩御</h1>
-      <div class="sub">The line has broken</div>
+      <h1 class="title" id="oTitle" style="font-size:calc(var(--u)*46);color:#ff8a7a">崩御</h1>
+      <div class="sub" id="oSub">The line has broken</div>
       <div class="stat">
-        <div><span class="v" id="oWave">0</span><span class="k">Waves held</span></div>
+        <div><span class="v" id="oWave">0</span><span class="k">Wave reached</span></div>
         <div><span class="v" id="oKills">0</span><span class="k">Slain</span></div>
         <div><span class="v" id="oScore">0</span><span class="k">Score</span></div>
       </div>
@@ -961,6 +967,18 @@ function drawObj(g, name, x, y, scale, rot, alpha, anchor) {
   g.drawImage(c, -w / 2, anchor === 'b' ? -h : -h / 2, w, h);
   g.restore();
 }
+// blank slot for a recipe the player hasn't found yet
+function mysteryThumb(el) {
+  el.width = SW * PXS; el.height = SH * PXS;
+  const g = el.getContext('2d');
+  g.fillStyle = 'rgba(120,100,160,.12)';
+  g.fillRect(0, 0, el.width, el.height);
+  g.fillStyle = 'rgba(200,180,240,.45)';
+  g.font = '700 ' + (el.height * .5) + 'px system-ui';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('?', el.width / 2, el.height / 2);
+}
+
 function objThumb(name, el) {
   const c = objc(name);
   el.width = c.width; el.height = c.height;
@@ -1098,25 +1116,35 @@ function unitStats(d) {
 
 /* ── fusion recipes ── order-independent: A + B and B + A both work ── */
 const FUSIONS = [
-  // tier 1 — two buildable units
-  { a: 'kunai', b: 'frost', out: 'frostblade' },
-  { a: 'fan', b: 'drum', out: 'stormfan' },
-  { a: 'bamboo', b: 'naginata', out: 'bulwark' },
-  { a: 'yumi', b: 'bomb', out: 'bombardier' },
-  { a: 'paddy', b: 'shrine', out: 'harvest' },
-  { a: 'frost', b: 'bomb', out: 'frostmine' },
-  { a: 'kunai', b: 'paddy', out: 'sunwake' },
-  { a: 'bamboo', b: 'bomb', out: 'thornwall' },
-  { a: 'fan', b: 'yumi', out: 'windherald' },
-  { a: 'drum', b: 'shrine', out: 'gravebell' },
-  { a: 'kunai', b: 'naginata', out: 'embermonk' },
+  // tier 1 — two buildable units. `unlock` is the campaign level that makes
+  // the recipe work at all; until then the pair simply refuses to fuse.
+  { a: 'kunai', b: 'paddy', out: 'sunwake', unlock: 3 },
+  { a: 'kunai', b: 'frost', out: 'frostblade', unlock: 6 },
+  { a: 'bamboo', b: 'bomb', out: 'thornwall', unlock: 9 },
+  { a: 'bamboo', b: 'naginata', out: 'bulwark', unlock: 13 },
+  { a: 'frost', b: 'bomb', out: 'frostmine', unlock: 18 },
+  { a: 'kunai', b: 'naginata', out: 'embermonk', unlock: 24 },
+  { a: 'fan', b: 'yumi', out: 'windherald', unlock: 31 },
+  { a: 'yumi', b: 'bomb', out: 'bombardier', unlock: 39 },
+  { a: 'paddy', b: 'shrine', out: 'harvest', unlock: 48 },
+  { a: 'fan', b: 'drum', out: 'stormfan', unlock: 58 },
+  { a: 'drum', b: 'shrine', out: 'gravebell', unlock: 69 },
   // tier 2 — a fusion result is itself an ingredient. The board unit is the
   // fused one; the card you drop on it is an ordinary buildable unit.
-  { a: 'bulwark', b: 'frost', out: 'tidewarden', t2: true }
+  { a: 'bulwark', b: 'frost', out: 'tidewarden', unlock: 80, t2: true }
 ];
+const recipeUnlocked = f => (S.level || 1) >= f.unlock;
+const recipeFound = f => !!(S.found && S.found[f.out]);
 function fusionOf(x, y) {
-  return FUSIONS.find(f => (f.a === x && f.b === y) || (f.a === y && f.b === x)) || null;
+  const f = FUSIONS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x));
+  return f && recipeUnlocked(f) ? f : null;
 }
+// a recipe that exists but is still gated, so the game can say so
+function fusionLocked(x, y) {
+  const f = FUSIONS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x));
+  return f && !recipeUnlocked(f) ? f : null;
+}
+const fusionOnBoard = id => R.units.some(u => u.id === id && u.hp > 0);
 
 const ZOMBIES = [
   { id: 'shambler', name: 'Rot Duckling', hp: 110, spd: 15, dmg: 22, rate: 1.0, pts: 8, min: 1, w: 10, cst: 1 },
@@ -1131,6 +1159,31 @@ const Z = {}; ZOMBIES.forEach(z => Z[z.id] = z);
 
 const LVL = [{ m: 1, r: 1 }, { m: 1.85, r: 1.12 }, { m: 3.3, r: 1.28 }];
 const MAXLVL = 3;
+
+/* ── campaign ─────────────────────────────────────────────────────────
+   100 levels in blocks of ten. Every level in a block shares a wave
+   target — levels 1-10 all ask for wave 10, 11-20 for wave 20, and so on
+   to 91-100 asking for wave 100 — while difficulty climbs step by step
+   inside the block. Every fifth level fields an elite.               */
+const MAX_LEVEL = 100;
+const targetWave = L => Math.ceil(L / 10) * 10;
+const blockStep = L => (L - 1) % 10;                 // 0..9 within the block
+const isEliteLevel = L => L % 5 === 0;
+
+// Enemy HP over a run. The old curve was 1.115^(w-1): about 55,000x by
+// wave 100, which no amount of towers could ever meet. Linear-plus-gentle-
+// quadratic reaches ~25x instead, which a scaled-up board can actually fight.
+const waveMul = w => 1 + 0.08 * (w - 1) + 0.0016 * (w - 1) * (w - 1);
+const levelMul = L => 1 + blockStep(L) * 0.06;
+
+/* ── Valor (武功) ──────────────────────────────────────────────────────
+   Towers cap out at Lv3 x 5 stars, so without this the player's ceiling is
+   fixed while the tide keeps climbing — wave 100 would be arithmetically
+   impossible. Every wave you clear permanently strengthens the whole line
+   for the rest of the run, so surviving is itself the scaling mechanic. */
+const VALOR_DMG = 0.05, VALOR_HP = 0.04;
+const valorDmg = () => 1 + (R.wave > 0 ? R.wave - 1 : 0) * VALOR_DMG;
+const valorHp = () => 1 + (R.wave > 0 ? R.wave - 1 : 0) * VALOR_HP;
 
 // Economy units scale sub-linearly on merge, on purpose. Three separate Lv1
 // paddies out-produce one Lv3 (3.0x vs 2.1x) — merging buys you board space,
@@ -1160,7 +1213,7 @@ const TRACKS = [
    ══════════════════════════════════════════════════════════════════════ */
 const KEY = 'duckSamuraiTD_v1';
 const fresh = () => ({
-  sp: 0, bestWave: 0, runs: 0,
+  sp: 0, bestWave: 0, runs: 0, level: 1, cleared: 0,
   owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> stars
   found: {},                                     // fusion id -> times discovered
   mediaRoute: null,                              // null = use the platform default
@@ -1458,13 +1511,16 @@ const R = {
   wave: 0, waveT: 0, waveDur: 0, queue: [], ki: 0, score: 0, kills: 0,
   units: [], zombs: [], shots: [], orbs: [], parts: [], texts: [], fx: [],
   wards: [], cds: {}, sel: null, shovel: false, hover: null, skyT: 0, elapsed: 0,
-  banner: 0, flash: 0, phase: .78
+  banner: 0, flash: 0, phase: .78, level: 1, target: 10, won: false
 };
 let loadout = [];
 
 function startRun() {
   loadout = S.loadout.filter(owns).slice(0, 6);
   if (!loadout.length) loadout = ['paddy', 'kunai', 'bamboo'].filter(owns);
+  R.level = Math.min(MAX_LEVEL, S.level || 1);
+  R.target = targetWave(R.level);
+  R.won = false;
   R.wave = 0; R.waveT = 999; R.waveDur = 0; R.queue = [];
   R.ki = startKi(); R.score = 0; R.kills = 0; R.elapsed = 0;
   R.units = []; R.zombs = []; R.shots = []; R.orbs = []; R.parts = []; R.texts = []; R.fx = [];
@@ -1472,7 +1528,7 @@ function startRun() {
   R.cds = {}; loadout.forEach(id => R.cds[id] = 0);
   // nothing pre-selected: a card click is a toggle, so pre-selecting makes the
   // player's first click deselect and feel broken
-  R.sel = null; R.shovel = false; R.skyT = 6; R.banner = 0; R.flash = 0;
+  R.sel = null; R.shovel = false; R.skyT = 6; R.banner = 0; R.flash = 0; R.eliteBanner = false;
   R.phase = .74;                 // every siege opens at sunset
   buildTray();
   mode = 'play';
@@ -1486,7 +1542,10 @@ function nextWave() {
   const n = R.wave;
   const list = [];
   if (n % 10 === 0) for (let i = 0; i < Math.floor(n / 10); i++) list.push('oni');
-  let budget = 4 + n * 3.2;
+  // every fifth level closes with an elite: one hugely inflated Oni per
+  // block of ten levels reached, on the final wave
+  const elites = (isEliteLevel(R.level) && n === R.target) ? 1 + Math.floor(R.level / 25) : 0;
+  let budget = Math.min(110, 4 + n * 2.2);
   const pool = ZOMBIES.filter(z => !z.boss && n >= z.min);
   const total = pool.reduce((s, z) => s + z.w, 0);
   let guard = 400;
@@ -1502,7 +1561,11 @@ function nextWave() {
     id,
     t: lead + Math.random() * R.waveDur,
     lane: (Math.random() * ROWS) | 0
-  })).sort((a, b) => a.t - b.t);
+  }));
+  for (let i = 0; i < elites; i++) {
+    R.queue.push({ id: 'oni', t: lead + 2 + i * 4, lane: (Math.random() * ROWS) | 0, elite: true });
+  }
+  R.queue.sort((a, b) => a.t - b.t);
   R.waveDur += lead + 3;
   R.waveT = 0;
   R.banner = 2.6;
@@ -1510,27 +1573,28 @@ function nextWave() {
 }
 
 /* ---------- entities ---------- */
-function spawnZombie(id, lane, waveN) {
+function spawnZombie(id, lane, waveN, elite) {
   const d = Z[id];
-  const mul = Math.pow(1.115, waveN - 1);
+  const mul = waveMul(waveN) * levelMul(R.level) * (elite ? 4.2 : 1);
   const hp = d.hp * mul;
   R.zombs.push({
     d, lane, x: VW + 40 + Math.random() * 140, hp, maxHp: hp,
-    dmg: d.dmg * (1 + 0.05 * (waveN - 1)), atk: Math.random() * d.rate,
+    dmg: d.dmg * (1 + 0.035 * (waveN - 1)) * (elite ? 1.8 : 1), atk: Math.random() * d.rate,
+    elite: !!elite, pts: Math.round(d.pts * (elite ? 6 : 1)),
     slow: 0, slowT: 0, flash: 0, anim: Math.random() * 4, skin: id, helm: !!d.armor,
-    scale: (d.scale || 1) * SCL, wob: Math.random() * 6.283
+    scale: (d.scale || 1) * SCL * (elite ? 1.35 : 1), wob: Math.random() * 6.283
   });
-  if (d.boss) SFX.roar();
+  if (d.boss || elite) SFX.roar();
 }
 function unitStat(u, key) {
-  return (u.def[key] || 0) * LVL[u.lvl - 1].m * starMul(u.def.id);
+  return (u.def[key] || 0) * LVL[u.lvl - 1].m * starMul(u.def.id) * valorDmg();
 }
 function unitRate(u) {
   return u.def.rate / (LVL[u.lvl - 1].r * (1 + u.buff));
 }
 function spawnUnit(id, r, c, lvl) {
   const def = U[id];
-  const hp = def.hp * LVL[lvl - 1].m * starMul(id);
+  const hp = def.hp * LVL[lvl - 1].m * starMul(id) * valorHp();
   const u = {
     def, id, lvl, r, c, x: colX(c), y: footY(r), hp, maxHp: hp,
     t: Math.random() * 0.4, march: 1, anim: 0, buff: 0, flash: 0, pop: 1
@@ -1545,6 +1609,9 @@ function placeUnit(id, r, c) {
 
   if (ex && ex.id !== id) {                       // fusion: two different units
     const rec = fusionOf(ex.id, id);
+    // the rules live here, not only in the click handler, so no caller can
+    // sneak past a sealed recipe or field a second of the same fusion
+    if (!rec || fusionOnBoard(rec.out)) return false;
     const out = U[rec.out];
     const lvl = ex.lvl;
     R.units.splice(R.units.indexOf(ex), 1);
@@ -1560,20 +1627,21 @@ function placeUnit(id, r, c) {
     text(colX(c), rowY(r) - 34, out.kanji + ' ' + out.name.toUpperCase(), '#bff2fb', 2);
     if (first) text(colX(c), rowY(r) - 62, 'NEW FUSION!', '#f0c987', 2.4);
     SFX.fuse();
-    return;
+    return true;
   }
 
   if (ex) { // merge
     ex.lvl++;
-    ex.hp = ex.maxHp = def.hp * LVL[ex.lvl - 1].m * starMul(id);
+    ex.hp = ex.maxHp = def.hp * LVL[ex.lvl - 1].m * starMul(id) * valorHp();
     ex.pop = 1;
     for (let i = 0; i < 22; i++) puff(colX(c), rowY(r), '#f0c987');
     text(colX(c), rowY(r) - 30, 'Lv' + ex.lvl + ' MERGE', '#f0c987', 1.4);
     SFX.merge();
-    return;
+    return true;
   }
   spawnUnit(id, r, c, 1);
   SFX.place();
+  return true;
 }
 function unitAt(r, c) { return R.units.find(u => u.r === r && u.c === c && u.hp > 0); }
 
@@ -1599,8 +1667,8 @@ function damageZombie(z, dmg, src) {
 function killZombie(z) {
   z.dead = true;
   R.kills++;
-  R.score += z.d.pts;
-  text(z.x, footY(z.lane) - 76, '+' + z.d.pts, '#e8b8ff', .8);
+  R.score += z.pts || z.d.pts;
+  text(z.x, footY(z.lane) - 76, '+' + (z.pts || z.d.pts), '#e8b8ff', .8);
   for (let i = 0; i < (z.d.boss ? 30 : 12); i++) puff(z.x + (Math.random() - .5) * 18, footY(z.lane) - 30, Math.random() < .5 ? '#7fa04c' : '#4a5c33', z.d.boss ? 220 : 150);
   SFX.die();
 }
@@ -1612,16 +1680,22 @@ function update(dt) {
   R.elapsed += dt;
   R.phase = (R.phase + dt / DAY_LEN) % 1;
   R.score += dt * (1.5 + R.wave * 0.75);   // per-second rate itself scales, so depth beats farming
-  if (R.banner > 0) R.banner -= dt;
+  if (R.banner > 0) { R.banner -= dt; if (R.banner <= 0) R.eliteBanner = false; }
   if (R.flash > 0) R.flash -= dt;
 
   // ---- waves
   R.waveT += dt;
   while (R.queue.length && R.queue[0].t <= R.waveT) {
     const s = R.queue.shift();
-    spawnZombie(s.id, s.lane, R.wave);
+    spawnZombie(s.id, s.lane, R.wave, s.elite);
+    if (s.elite) { R.banner = 3; R.eliteBanner = true; R.flash = .25; }
   }
-  if (!R.queue.length && R.waveT >= R.waveDur) nextWave();
+  // the level is won once the target wave is fully cleared off the board
+  if (!R.queue.length && R.waveT >= R.waveDur) {
+    if (R.wave >= R.target && !R.zombs.length) { levelComplete(); return; }
+    if (R.wave < R.target) nextWave();
+    else R.waveT = R.waveDur - 2;         // hold at the target until it's clear
+  }
 
   // ---- sky ki
   R.skyT -= dt;
@@ -1866,24 +1940,74 @@ function collectOrb(i) {
   SFX.ki();
 }
 
-function gameOver() {
+/* Payout is per level cleared, not per second survived. The old formula paid
+   by score, so a deep run handed over 30-40k — most of the campaign's whole
+   economy in one sitting. A finished level now pays 40 + 10×level; a failed
+   one pays a fraction of that, scaled by how far you got. */
+const levelReward = L => 40 + L * 10;
+
+function payout(won) {
+  const base = levelReward(R.level);
+  const progress = Math.min(1, R.wave / R.target);
+  const raw = won ? base : Math.floor(base * 0.3 * progress);
+  return { base, progress, earned: Math.max(won ? 1 : 0, Math.floor(raw * coinMul())) };
+}
+
+function levelComplete() {
   mode = 'over';
+  R.won = true;
   S.runs++;
   if (R.wave > S.bestWave) S.bestWave = R.wave;
-  const base = Math.floor(R.score);
-  const earned = Math.floor(base * coinMul());
-  S.sp += earned;
+  const p = payout(true);
+  S.sp += p.earned;
+  if (R.level >= (S.level || 1) && S.level < MAX_LEVEL) S.level = R.level + 1;
+  S.cleared = Math.max(S.cleared || 0, R.level);
   persist();
+  document.getElementById('oTitle').textContent = '突破';
+  document.getElementById('oTitle').style.color = 'var(--gold)';
+  document.getElementById('oSub').textContent = 'Level ' + R.level + ' cleared';
   document.getElementById('oWave').textContent = R.wave;
   document.getElementById('oKills').textContent = R.kills;
-  document.getElementById('oScore').textContent = base.toLocaleString();
+  document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
   document.getElementById('oPayout').innerHTML =
-    `<span style="opacity:.65">${base.toLocaleString()} score × ${coinMul().toFixed(2)} multiplier</span><br>` +
-    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${earned.toLocaleString()} 点</b>` +
+    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 点</b><br>` +
+    `<span style="opacity:.65">level reward ${p.base} × ${coinMul().toFixed(2)} multiplier</span>` +
+    (S.level > R.level ? `<br><span style="color:#8fe8f7">LEVEL ${S.level} UNLOCKED — target wave ${targetWave(S.level)}</span>` : '') +
+    unlockedAtLine(R.level);
+  document.getElementById('ui').classList.add('hidden');
+  show('scOver');
+  SFX.merge();
+}
+
+function gameOver() {
+  mode = 'over';
+  R.won = false;
+  S.runs++;
+  if (R.wave > S.bestWave) S.bestWave = R.wave;
+  const p = payout(false);
+  S.sp += p.earned;
+  persist();
+  document.getElementById('oTitle').textContent = '崩御';
+  document.getElementById('oTitle').style.color = '#ff8a7a';
+  document.getElementById('oSub').textContent = 'The line has broken — level ' + R.level + ' failed';
+  document.getElementById('oWave').textContent = R.wave + ' / ' + R.target;
+  document.getElementById('oKills').textContent = R.kills;
+  document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
+  document.getElementById('oPayout').innerHTML =
+    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 点</b><br>` +
+    `<span style="opacity:.65">reached wave ${R.wave} of ${R.target} — partial reward</span>` +
     (S.up.coin < 8 ? `<br><span style="opacity:.5;font-size:calc(var(--u)*13)">Coin Multiplier tier ${S.up.coin}/8 — upgrade it to keep more of what you earn</span>` : '');
   document.getElementById('ui').classList.add('hidden');
   show('scOver');
   SFX.bad();
+}
+
+// name any fusion recipes this level just made available
+function unlockedAtLine(L) {
+  const now = FUSIONS.filter(f => f.unlock === L + 1);
+  if (!now.length) return '';
+  return `<br><span style="color:#8fe8f7;font-size:calc(var(--u)*13)">` +
+    `${now.length} new fusion recipe${now.length > 1 ? 's' : ''} unlocked — experiment on the board</span>`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -2094,14 +2218,19 @@ function render() {
   if (mode === 'play' && R.hover) {
     const { r, c } = R.hover;
     const ex = unitAt(r, c);
-    let ok = false, merge = false, fuse = null;
+    let ok = false, merge = false, fuse = null, dupe = false, sealed = null;
     if (R.shovel) ok = !!ex;
     else if (R.sel) {
       const def = U[R.sel];
       const afford = R.ki >= def.cost && R.cds[R.sel] <= 0;
       if (ex) {
         if (ex.id === R.sel) { merge = ex.lvl < MAXLVL; ok = merge && afford; }
-        else { fuse = fusionOf(ex.id, R.sel); ok = !!fuse && afford; }
+        else {
+          fuse = fusionOf(ex.id, R.sel);
+          dupe = !!(fuse && fusionOnBoard(fuse.out));
+          sealed = fusionLocked(ex.id, R.sel);
+          ok = !!fuse && afford && !dupe;
+        }
       } else ok = afford;
     }
     g.fillStyle = R.shovel ? (ok ? 'rgba(255,120,90,.22)' : 'rgba(120,120,120,.12)')
@@ -2117,7 +2246,10 @@ function render() {
     }
     // labels draw after the sprites, otherwise the unit covers them
     if (merge) hoverLabel = { t: 'MERGE → Lv' + (ex.lvl + 1), x: colX(c), y: GY + r * RH + 22, col: ok ? '#f0c987' : '#c8a97a' };
-    if (fuse) hoverLabel = { t: 'FUSE → ' + U[fuse.out].kanji + ' ' + U[fuse.out].name, x: colX(c), y: GY + r * RH + 22, col: ok ? '#8fe8f7' : '#7fa8b8' };
+    if (fuse) hoverLabel = {
+      t: dupe ? U[fuse.out].kanji + ' ALREADY FIELDED' : 'FUSE → ' + U[fuse.out].kanji + ' ' + U[fuse.out].name,
+      x: colX(c), y: GY + r * RH + 22, col: dupe ? '#ff9a8a' : ok ? '#8fe8f7' : '#7fa8b8' };
+    if (sealed) hoverLabel = { t: 'SEALED — LEVEL ' + sealed.unlock, x: colX(c), y: GY + r * RH + 22, col: '#9a86b8' };
   }
 
   // ---- wards
@@ -2271,8 +2403,11 @@ function render() {
     g.textAlign = 'center';
     g.font = '800 46px "Yu Mincho", Georgia, serif';
     g.lineWidth = 8; g.strokeStyle = 'rgba(8,4,14,.9)';
-    const big = R.wave % 10 === 0 ? '鬼 — WAVE ' + R.wave : 'WAVE ' + R.wave;
-    g.strokeText(big, VW / 2, 250); g.fillStyle = R.wave % 10 === 0 ? '#ff8a6a' : '#f0c987';
+    const big = R.eliteBanner ? '精鋭 — ELITE'
+      : R.wave >= R.target ? '最終波 — WAVE ' + R.wave
+        : R.wave % 10 === 0 ? '鬼 — WAVE ' + R.wave : 'WAVE ' + R.wave;
+    g.strokeText(big, VW / 2, 250);
+    g.fillStyle = R.eliteBanner ? '#ff6a4a' : R.wave % 10 === 0 ? '#ff8a6a' : '#f0c987';
     g.fillText(big, VW / 2, 250);
     g.globalAlpha = 1;
   }
@@ -2432,7 +2567,9 @@ function buildTray() {
 
 function syncHud() {
   kiVal.textContent = Math.floor(R.ki);
-  waveVal.textContent = R.wave;
+  waveVal.textContent = R.wave + ' / ' + R.target;
+  document.getElementById('lvlVal').textContent = R.level;
+  document.getElementById('valorVal').textContent = '+' + Math.round((valorDmg() - 1) * 100) + '%';
   scoreVal.textContent = Math.floor(R.score).toLocaleString();
   for (const c of cardEls) {
     if (c.id === '__shovel') { c.el.classList.toggle('sel', R.shovel); continue; }
@@ -2515,12 +2652,24 @@ cv.addEventListener('pointerdown', ev => {
   if (R.ki < def.cost) { toast('NOT ENOUGH 氣', true); SFX.bad(); return; }
   if (ex) {
     if (ex.id !== R.sel) {
-      if (!fusionOf(ex.id, R.sel)) { toast('THESE TWO DO NOT FUSE', true); SFX.bad(); return; }
+      const rec = fusionOf(ex.id, R.sel);
+      if (!rec) {
+        const gated = fusionLocked(ex.id, R.sel);
+        toast(gated ? 'RECIPE SEALED UNTIL LEVEL ' + gated.unlock : 'THESE TWO DO NOT FUSE', true);
+        SFX.bad(); return;
+      }
+      // one of each fused species may stand on the field at a time
+      if (fusionOnBoard(rec.out)) {
+        toast(U[rec.out].kanji + ' ALREADY ON THE FIELD', true); SFX.bad(); return;
+      }
     } else if (ex.lvl >= MAXLVL) { toast('ALREADY Lv3', true); SFX.bad(); return; }
   }
   R.ki -= def.cost;
   R.cds[R.sel] = def.cd;
-  placeUnit(R.sel, r, c);
+  if (placeUnit(R.sel, r, c) === false) {        // refused — hand the Ki back
+    R.ki += def.cost;
+    R.cds[R.sel] = 0;
+  }
 });
 
 addEventListener('keydown', ev => {
@@ -2549,7 +2698,11 @@ function toMenu() {
   mode = 'menu'; show('scMenu');
   document.getElementById('ui').classList.add('hidden');
   document.getElementById('mSp').textContent = S.sp.toLocaleString();
-  document.getElementById('mBest').textContent = S.bestWave || '—';
+  const L = Math.min(MAX_LEVEL, S.level || 1);
+  document.getElementById('mLevel').textContent = L;
+  document.getElementById('mGoal').textContent =
+    (S.cleared >= MAX_LEVEL ? 'CAMPAIGN COMPLETE — 鴨侍' : 'HOLD THE LINE TO WAVE ' + targetWave(L)) +
+    (isEliteLevel(L) ? ' · ELITE' : '');
 }
 function toggleSpeed() { speed = speed === 1 ? 2 : 1; document.getElementById('spdBtn').textContent = speed + '×'; }
 
@@ -2782,29 +2935,39 @@ function openCodex() {
 function renderCodex() {
   const found = S.found || {};
   const n = FUSIONS.filter(f => found[f.out]).length;
+  const openN = FUSIONS.filter(recipeUnlocked).length;
   document.getElementById('codexCount').innerHTML =
-    `<b>${n}</b> of <b>${FUSIONS.length}</b> fusions discovered`;
+    `<b>${n}</b> of <b>${FUSIONS.length}</b> discovered` +
+    ` &nbsp;·&nbsp; <span style="opacity:.7">${openN - n} unsealed and waiting, ${FUSIONS.length - openN} still sealed</span>`;
   const list = document.getElementById('codexList');
   list.innerHTML = '';
   for (const f of FUSIONS) {
     const a = U[f.a], b = U[f.b], out = U[f.out];
     const got = !!found[f.out];
+    const open = recipeUnlocked(f);
     const el = document.createElement('div');
-    el.className = 'recipe ' + (got ? 'found' : 'locked');
+    // Until you have actually made it, a recipe reveals nothing — not the
+    // result and not the pair that makes it. Finding out is the game.
+    el.className = 'recipe ' + (got ? 'found' : open ? 'sealed' : 'locked');
     el.innerHTML =
-      `<div class="ing"><canvas></canvas><div>${a.kanji} ${a.name}</div></div>` +
+      `<div class="ing"><canvas></canvas><div>${got ? a.kanji + ' ' + a.name : '???'}</div></div>` +
       `<div class="op">+</div>` +
-      `<div class="ing"><canvas></canvas><div>${b.kanji} ${b.name}</div></div>` +
+      `<div class="ing"><canvas></canvas><div>${got ? b.kanji + ' ' + b.name : '???'}</div></div>` +
       `<div class="op">→</div>` +
       `<canvas class="out"></canvas>` +
       `<div class="res">` +
         `<div class="rn">${got ? out.kanji + ' ' + out.name : '???'}</div>` +
-        `<div class="rb">${got ? out.blurb : 'Fuse them on the board to reveal this.'}</div>` +
+        `<div class="rb">${got ? out.blurb
+          : open ? 'Available now. Drop one unit onto another on the board to find it.'
+            : 'Sealed. Reach level ' + f.unlock + ' to make this combination possible.'}</div>` +
         (got ? `<div class="uchips">${unitStats(out).slice(0, 4).map(t => `<span class="chip">${t}</span>`).join('')}</div>` : '') +
-        `<div class="tag">${got ? 'DISCOVERED ×' + found[f.out] : (f.t2 ? 'TIER 2 — needs a fused unit' : 'UNDISCOVERED')}</div>` +
+        `<div class="tag">${got ? 'DISCOVERED ×' + found[f.out]
+          : open ? (f.t2 ? 'UNSEALED · TIER 2 — needs a fused unit' : 'UNSEALED — GO FIND IT')
+            : 'SEALED · LEVEL ' + f.unlock}</div>` +
       `</div>`;
     const cvs = el.querySelectorAll('canvas');
-    thumb(f.a, cvs[0]); thumb(f.b, cvs[1]); thumb(f.out, cvs[2]);
+    if (got) { thumb(f.a, cvs[0]); thumb(f.b, cvs[1]); thumb(f.out, cvs[2]); }
+    else { [0, 1, 2].forEach(i => mysteryThumb(cvs[i])); }
     list.appendChild(el);
   }
 }

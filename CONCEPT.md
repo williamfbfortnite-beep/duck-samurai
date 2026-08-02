@@ -13,7 +13,7 @@ gate. You are the last retainer. You have coin, conscripts, and until dawn.
 
 | PvZ does this | We do this instead |
 | --- | --- |
-| Waves end, level ends, you win | **Endless.** There is no win screen, only how long you lasted |
+| Waves end, level ends, you win | **A 100-level campaign** over one endless-feeling board — each level is a wave target you either hold or don't |
 | A tower is a tower forever | **Merge.** Drop a duplicate on a unit to fuse it — Lv1 → Lv2 → Lv3 |
 | Progress is a fixed level select | **Meta-loop.** Survival pays out points → crates → roster → multipliers |
 | One-shot resource clicking | Ki orbs auto-collect after a beat, so the game is about placement, not clicking |
@@ -47,6 +47,41 @@ Two currencies, deliberately not interchangeable:
 
 - **Ki (氣)** — in-run only, wiped at the end. Buys unit placements. Grown by Rice Paddies.
 - **Points (点)** — permanent. Earned by surviving. Buys crates and upgrades.
+
+---
+
+## 2b. The campaign
+
+100 levels in blocks of ten. Every level in a block shares a **wave target** —
+levels 1-10 all ask you to hold to wave 10, 11-20 to wave 20, and so on until
+91-100 ask for wave 100 — while difficulty climbs step by step *inside* each
+block. Every fifth level fields an **elite**: an enormously inflated Oni on the
+final wave, worth six times the points and impossible to ignore.
+
+```
+level    1 ─────── 10 │ 11 ─────── 20 │ … │ 91 ────── 100
+target       wave 10  │    wave 20     │   │   wave 100
+elite         5, 10   │    15, 20      │   │    95, 100
+```
+
+### Valor (武功) — why wave 100 is possible at all
+
+Towers cap out at Lv3 × 5★. Without something else, the player's ceiling is
+fixed while the tide keeps climbing, and wave 100 is arithmetically unwinnable.
+So **every wave you clear permanently strengthens the whole line for the rest of
+the run** — +5% damage, +4% HP, compounding to about ×6 by wave 100. Surviving
+is itself the scaling mechanic.
+
+The enemy curve was flattened to match. It used to be `1.115^(w-1)`, which
+reaches **47,886×** by wave 100; it is now linear-plus-gentle-quadratic, topping
+out near **25×**. Measured end to end by fast-forwarding real runs:
+
+| Board | Outcome at level 91 (target wave 100) |
+| --- | --- |
+| Lv3 fusions, 5★, all upgrades | **reached wave 100**, 3-15 zombies alive |
+| Plain Lv2 units, no fusions | **died at wave 72**, 156 zombies piled up |
+
+Reachable, but only with real investment.
 
 ---
 
@@ -116,9 +151,18 @@ Eleven recipes take two buildable units. The twelfth is **tier 2**: its left-han
 ingredient is itself a fusion, so you build a Bulwark on the board first and then
 drop a Frost Lantern card onto *that*. Same interaction, one layer deeper.
 
-The **Fusion Codex** on the menu lists every recipe. Ingredients are always readable
-so you can plan a loadout around one; the result stays a silhouette until you have
-actually made it, and then shows its stats and how many times you have made it.
+Two rules keep fusions special. **One of each species may stand on the field at a
+time** — a second Frostblade is refused, so a board is a spread of different
+fusions rather than five copies of the best one. And every recipe is **sealed
+behind a campaign level** (3, 6, 9, 13, 18, 24, 31, 39, 48, 58, 69, and 80 for
+the tier 2), so the roster opens across the whole 100 levels.
+
+The **Fusion Codex** on the menu tracks all twelve, and deliberately tells you
+almost nothing. Until you have actually made a fusion it hides **both ingredients
+and the result** — the codex only distinguishes *sealed* (locked by level) from
+*unsealed — go find it*. Discovery happens on the board: hovering a pair that
+works names the result before you commit, so experimenting is safe but the
+combination itself is yours to find.
 
 ### Every unit says what it does
 
@@ -164,13 +208,17 @@ times the wave-1 statline, which is what forces merging rather than sprawling.
 
 ## 7. Payout maths
 
+Payout is **per level cleared**, not per second survived:
+
 ```
-Score  +=  (1.5 + wave × 0.75) per second survived   +   kill value per corpse
-Points  =  floor( Score × (1 + CoinMultiplier) )
+clear a level :  (40 + 10 × level) × (1 + CoinMultiplier)
+fail a level  :  30% of that, scaled by how far you got
 ```
 
-Surviving deeper pays *super-linearly* — the per-second rate itself scales with
-wave — so the incentive is always "one more wave", never "farm wave 3 forever".
+The old formula paid by score, so a single deep run handed over 30-40,000 points
+— most of the campaign's entire economy in one sitting. Clearing all 100 levels
+once now pays **54,500** total, against roughly 64,000 of upgrades plus crates,
+so the meta is a campaign-length arc rather than an afternoon.
 
 ### Coin Multiplier — the requested ladder
 
