@@ -3154,6 +3154,7 @@ function pickRarity(odds) {
 }
 function openCrate(c) {
   if (S.sp < c.cost) { toastNo(); return; }
+  const spBefore = S.sp;
   S.sp -= c.cost;
   const odds = luckOdds(c.odds);
   const pulls = [];
@@ -3185,6 +3186,19 @@ function openCrate(c) {
     thumb(p.d.id, el.querySelector('canvas'));
     revealCards.appendChild(el);
   });
+  /* Show the money moving. The balance lives on the barracks screen, which this
+     overlay covers — so opening crates in a hurry never showed a single point
+     being spent and felt free, even though every crate is paid for the instant
+     it opens. Refunds from 5-star duplicates are netted off here too, since
+     they are the other reason the bank moves less than the sticker price. */
+  const refunded = S.sp - (spBefore - c.cost);
+  const ledger = document.createElement('div');
+  ledger.style.cssText = 'position:absolute;bottom:calc(var(--u)*68);width:100%;text-align:center;font-size:calc(var(--u)*16)';
+  ledger.innerHTML =
+    `<span style="color:#ff9a8a">−${c.cost.toLocaleString()} 点</span>` +
+    (refunded > 0 ? `<span style="color:#9be8ff">  +${refunded.toLocaleString()} 点 dust</span>` : '') +
+    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 点</span>`;
+  revealCards.appendChild(ledger);
   const tip = document.createElement('div');
   tip.style.cssText = 'position:absolute;bottom:calc(var(--u)*40);width:100%;text-align:center;opacity:.5;font-size:calc(var(--u)*14);letter-spacing:.25em';
   tip.textContent = 'CLICK TO CONTINUE';
