@@ -1313,6 +1313,16 @@ try {
   const raw = localStorage.getItem(KEY);
   if (raw) S = Object.assign(fresh(), JSON.parse(raw));
 } catch (e) { /* private mode / file:// — play unsaved */ }
+/* Scrub anything a fusion should never be recorded in. Fusions are discovered
+   on the board, not owned and not carried into a run; a save that lists one
+   would put a 0-氣 tier-2 unit in the tray forever. Discoveries live in S.found,
+   which is untouched. */
+let scrubbed = false;
+for (const id of Object.keys(S.owned)) if (!U[id] || U[id].fused) { delete S.owned[id]; scrubbed = true; }
+const keepLoadout = S.loadout.filter(id => U[id] && !U[id].fused);
+if (keepLoadout.length !== S.loadout.length) { S.loadout = keepLoadout; scrubbed = true; }
+// write it back, so the file on disk matches what the game is actually using
+if (scrubbed) persist();
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
 const coinMul = () => 1 + S.up.coin * 0.05;
@@ -1638,7 +1648,9 @@ const R = {
 let loadout = [];
 
 function startRun() {
-  loadout = S.loadout.filter(owns).slice(0, 6);
+  // never a fusion in the tray, whatever a save claims. They cost 0 氣, so one
+  // that slipped into the loadout would be an unlimited free tier-2 unit
+  loadout = S.loadout.filter(id => owns(id) && U[id] && !U[id].fused).slice(0, 6);
   if (!loadout.length) loadout = ['paddy', 'kunai', 'bamboo'].filter(owns);
   R.level = Math.min(MAX_LEVEL, S.level || 1);
   R.target = targetWave(R.level);
@@ -2955,7 +2967,13 @@ function renderBarracks() {
 
   const grid = document.getElementById('unitGrid');
   grid.innerHTML = '';
-  for (const d of UNITS) {
+  /* The flock is what crates can actually give you. Iterating every unit put
+     the twelve fusion results in here too, each reading "Locked — find it in a
+     crate", which is a promise the game cannot keep: a fusion exists only by
+     fusing two units on the board, never in a crate and never in the tray.
+     They live in the Fusion Codex, where they are discovered rather than
+     bought. Same list the crates draw from, so the two cannot disagree. */
+  for (const d of CRATE_POOL) {
     const have = owns(d.id);
     const picked = S.loadout.indexOf(d.id) >= 0;
     const el = document.createElement('div');
@@ -3003,7 +3021,10 @@ function openCrate(c) {
   for (let i = 0; i < c.pulls; i++) {
     let rar = pickRarity(odds);
     if (c.floor && i === c.pulls - 1 && !pulls.some(p => p.rar >= c.floor)) rar = c.floor;
-    const pool = UNITS.filter(u => u.rar === rar);
+    // draw from CRATE_POOL, not UNITS — fusion results are rarity 4 and no
+    // crate rolls that high, but going through the raw list is one balance
+    // tweak away from putting a fusion in a crate
+    const pool = CRATE_POOL.filter(u => u.rar === rar);
     const d = pool[(Math.random() * pool.length) | 0];
     let kind, at;
     if (!owns(d.id)) { S.owned[d.id] = 0; kind = 'new'; if (S.loadout.length < 6) S.loadout.push(d.id); }

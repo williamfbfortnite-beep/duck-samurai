@@ -184,6 +184,15 @@ at once. Spread wide and survive chip damage, or stack tall and pray.
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
 **★ star** to that unit (+6% damage and HP each, max 5), so crates never dead-end.
 
+The barracks roster and the crate pool are the **same list** — `CRATE_POOL`, the
+units minus the fusions. They used to be built separately, so the roster listed
+all twelve fusion results as locked cards reading *"find it in a crate"*, a
+promise the game cannot keep: a fusion exists only by fusing two units on the
+board. Fusions belong to the codex, where they are discovered rather than bought.
+They also cost 0 氣 — deliberately, since you pay with the two units consumed —
+so one reaching the tray would be an unlimited free tier-2 unit. A save claiming
+to own a fusion is scrubbed on load, and the tray is filtered again at run start.
+
 ### Fusion — the other half of the mechanic
 
 Dropping a **different** unit onto one already on the board fuses them, if the pair
