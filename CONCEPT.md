@@ -469,6 +469,14 @@ a plain `<audio>` element rather than the WebAudio graph on purpose: media
 playback is the one path iOS keeps in the "playback" audio session, so the music
 survives the ringer switch even where a bare AudioContext would not.
 
+**Death has its own cue.** A run ending stops the soundtrack dead and plays a
+4.25s recording over the silence — `assets/gameover.mp3`, also the player's own.
+It is a media element rather than a synthesized effect for the same reason the
+soundtrack is: media playback is the one path iOS keeps audible through the
+ringer switch. Every route out of the death screen — menu, barracks, or straight
+into another run — silences the cue and brings the music back, and muting kills
+it like everything else.
+
 Sound effects are still synthesized at runtime — throwing, impacts, biting,
 deaths, the ward, crates, the boss walking on, and fusion — so the only asset in
 the project is the music itself. It lives at `assets/music.mp3` and is referenced

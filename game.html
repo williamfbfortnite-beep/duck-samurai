@@ -352,6 +352,10 @@
   <canvas id="cv" width="1122" height="765"></canvas>
   <!-- BGM-SRC: the artifact build replaces this src with an inlined data URI -->
   <audio id="bgm" src="assets/music.mp3" loop preload="auto" playsinline></audio>
+  <!-- the death cue. Its own element rather than a synthesized effect, for the
+       same reason the soundtrack is one: media playback is the path iOS keeps
+       audible through the ringer switch. -->
+  <audio id="dirge" src="assets/gameover.mp3" preload="auto" playsinline></audio>
 
   <div id="ui" class="hidden">
     <div id="top">
@@ -1626,6 +1630,28 @@ function musicStop() {
   const el = musicEl();
   if (el) { try { el.pause(); } catch (e) {} }
 }
+
+/* The death cue. The soundtrack stops dead and this plays over the silence —
+   a run ending should sound like something stopped, not like the music carried
+   on regardless. Rewound each time so a second death fires it from the top.
+   Muting silences it like everything else, and a failure to play is ignored:
+   audio is never allowed to take the game down with it. */
+function dirgePlay() {
+  musicStop();
+  if (muted) return;
+  const el = document.getElementById('dirge');
+  if (!el) return;
+  try {
+    el.volume = 0.85;
+    el.currentTime = 0;
+    const p = el.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+function dirgeStop() {
+  const el = document.getElementById('dirge');
+  if (el) { try { el.pause(); el.currentTime = 0; } catch (e) {} }
+}
 // true when the soundtrack is genuinely rolling
 function musicLive() {
   const el = MUSIC.el;
@@ -1646,6 +1672,8 @@ const R = {
 let loadout = [];
 
 function startRun() {
+  dirgeStop();          // a new run silences whatever the last one ended on
+  if (!muted && !musicLive()) musicStart();
   // never a fusion in the tray, whatever a save claims. They cost 0 氣, so one
   // that slipped into the loadout would be an unlimited free tier-2 unit
   loadout = S.loadout.filter(id => owns(id) && U[id] && !U[id].fused).slice(0, 6);
@@ -2143,7 +2171,7 @@ function gameOver() {
     (S.up.coin < 8 ? `<br><span style="opacity:.5;font-size:calc(var(--u)*13)">Coin Multiplier tier ${S.up.coin}/8 — upgrade it to keep more of what you earn</span>` : '');
   document.getElementById('ui').classList.add('hidden');
   show('scOver');
-  SFX.bad();
+  dirgePlay();          // stops the soundtrack and plays the death cue over it
 }
 
 // name any fusion recipes this level just made available
@@ -2885,6 +2913,9 @@ function show(id) {
 function pause() { if (mode !== 'play') return; mode = 'paused'; show('scPause'); document.getElementById('ui').classList.add('hidden'); }
 function resume() { if (mode !== 'paused') return; mode = 'play'; show(null); document.getElementById('ui').classList.remove('hidden'); }
 function toMenu() {
+  // whatever ended the run is over now — silence the cue, resume the music
+  dirgeStop();
+  if (!muted && !musicLive()) musicStart();
   mode = 'menu'; show('scMenu');
   document.getElementById('ui').classList.add('hidden');
   document.getElementById('mSp').textContent = S.sp.toLocaleString();
@@ -2916,6 +2947,7 @@ document.getElementById('sndRouteBtn').onclick = safe(() => {
 });
 document.getElementById('sndMute').onclick = safe(() => {
   muted = !muted;
+  if (muted) dirgeStop();
   if (muted) musicStop(); else { ac(); musicStart(); }
   syncAudioBadge(); refreshSound();
 });
@@ -2988,6 +3020,8 @@ addEventListener('keydown', safe(ev => {
 
 /* ---------- barracks ---------- */
 function openBarracks() {
+  dirgeStop();
+  if (!muted && !musicLive()) musicStart();
   mode = 'menu'; show('scBarracks');
   document.getElementById('ui').classList.add('hidden');
   renderBarracks();
