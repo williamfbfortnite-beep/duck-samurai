@@ -1093,7 +1093,7 @@ const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic'];
 
 const UNITS = [
   { id: 'paddy', name: 'Rice Paddy', kanji: '稲', cost: 50, cd: 5, rar: 0, kind: 'ki', hp: 220,
-    blurb: 'Grows a Ki orb every 8s. Merging one saves space but three separate paddies out-earn it.' },
+    blurb: 'Grows a Ki orb every 8s. Click it to bank it — an orb left alone drains away. Merging one saves space but three separate paddies out-earn it.' },
   { id: 'kunai', name: 'Kunai Duck', kanji: '苦無', cost: 100, cd: 5, rar: 0, kind: 'shot', hp: 240,
     dmg: 22, rate: 1.5, proj: 'kunai', blurb: 'Throws down the lane. Reliable, cheap, everywhere.' },
   { id: 'bamboo', name: 'Bamboo Wall', kanji: '竹', cost: 50, cd: 11, rar: 0, kind: 'wall', hp: 450,
@@ -1183,7 +1183,7 @@ function unitStats(d) {
   if (d.thorns) out.push(`${d.thorns} thorns`);
   if (d.slowAura) out.push(`${Math.round(d.slowAura * 100)}% aura slow`);
   if (d.chains) out.push(`${d.chains} chains`);
-  if (d.drain) out.push('refunds 氣');
+  if (d.drain) out.push('sheds 氣 orbs');
   if (d.radius) out.push(`${Math.round(d.radius / CW * 10) / 10} tile blast`);
   if (d.range) out.push(`${Math.round(d.range / CW * 10) / 10} tile reach`);
   if (d.buff) out.push(`+${Math.round(d.buff * 100)}% nearby rate`);
@@ -1342,14 +1342,25 @@ const FIELD_BOT = LANES[ROWS - 1].bot;
 /* The ward sits out on the bank beside the nests, and a lane burns when
    something reaches it — so the trigger is measured from the paper, not from
    the grid. It used to be written as GX - 26, which happened to line up while
-   the field started at 124. Pulling the columns inside the garden border would
-   have moved the trigger two hundred pixels east of the talisman doing the
-   burning, and taken that distance off every lane: less ground to cover means
-   less time under fire, and the whole campaign was tuned against the old
-   length. Declared here with the rest of the geometry so nothing can use it
-   before it exists. */
-const WARD_X = 82;
+   the field started at 124; pulling the columns inside the garden border would
+   have put the trigger two hundred pixels east of the talisman doing the
+   burning. It sits at 167 rather than its old 82 so that, with the muster moved
+   east below, spawn-to-ward still measures 1064px. Declared here with the rest
+   of the geometry so nothing can use it before it exists. */
+const WARD_X = 167;
 const WARD_LINE = WARD_X + 16;
+
+/* How far east the tide forms up. This is not decoration — it sets how long a
+   zombie spends being shot at, which is the single biggest lever on difficulty.
+   What matters is not the length of the lane but the distance from the spawn to
+   each tower: damage taken is the sum, over every tower, of the time the zombie
+   spends east of it. Pulling the grid inside the garden moved the back rank
+   161px east, and the sum fell 12% — the campaign ceiling survived it, but a
+   mid-strength board that used to reach wave 72 died at 65. Moving the muster
+   85px east puts the sum back to 99.8%, and the ward moves east with it so the
+   total run stays 1064px, as it was before the grid ever moved. Re-simulated:
+   that board reaches wave 70 again, and a fully invested one still clears 100. */
+const SPAWN_X = VW + 125;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
    stone kerbs between them as dead space — about 15% of the board where a
@@ -1671,7 +1682,7 @@ function spawnZombie(id, lane, waveN, elite) {
   const mul = waveMul(waveN) * levelMul(R.level) * (elite ? 4.2 : 1);
   const hp = d.hp * mul;
   R.zombs.push({
-    d, lane, x: VW + 40 + Math.random() * 140, hp, maxHp: hp,
+    d, lane, x: SPAWN_X + Math.random() * 140, hp, maxHp: hp,
     dmg: d.dmg * (1 + 0.035 * (waveN - 1)) * (elite ? 1.8 : 1), atk: Math.random() * d.rate,
     elite: !!elite, pts: Math.round(d.pts * (elite ? 6 : 1)),
     slow: 0, slowT: 0, flash: 0, anim: Math.random() * 4, skin: id, helm: !!d.armor,
@@ -1888,7 +1899,10 @@ function update(dt) {
           const zy = footY(z.lane) - 38;
           R.fx.push({ t: 'bolt', x1: px, y1: py, x2: z.x, y2: zy, life: .16, max: .16 });
           damageZombie(z, unitStat(u, 'dmg'), 'quiet');
-          if (def.drain) R.ki += def.drain * 10 * LVL[u.lvl - 1].m;
+          // drop it as an orb rather than crediting it: the same rule has to
+          // hold for every source of Ki, or this one becomes the passive one
+          if (def.drain) R.orbs.push({ x: z.x, y: zy - 20, ty: footY(z.lane) - 6,
+            amount: Math.max(1, Math.round(def.drain * 10 * LVL[u.lvl - 1].m)), life: 9, vy: -70 });
           px = z.x; py = zy;
         }
         SFX.zap();
@@ -2003,7 +2017,16 @@ function update(dt) {
     if (o.sky) { o.y += 70 * dt; if (o.y > o.ty) o.y = o.ty; }
     else if (o.vy !== undefined) { o.vy += 260 * dt; o.y += o.vy * dt; if (o.y > o.ty) { o.y = o.ty; o.vy = 0; } }
     o.life -= dt;
-    if (o.life <= 0) { collectOrb(i); continue; }
+    /* Ki is earned by hand. An orb left alone used to be banked for free when
+       it timed out, which made every paddy a passive drip and the clicking
+       decorative. Now it drains away and is gone: watching the board and
+       picking your moment to bank is the cost of the economy. */
+    if (o.life <= 0) {
+      for (let k = 0; k < 5; k++) puff(o.x, o.y - 4, '#4a6b7a', 60);
+      text(o.x, o.y - 12, '氣 lost', 'rgba(140,180,200,.75)', .7);
+      R.orbs.splice(i, 1);
+      continue;
+    }
   }
 
   // ---- particles / texts / fx
@@ -2369,7 +2392,9 @@ function render() {
   // ---- ki orbs
   for (const o of R.orbs) {
     const pulse = 1 + Math.sin(R.elapsed * 5 + o.x) * .08;
-    const fade = o.life < 2 ? .4 + Math.abs(Math.sin(R.elapsed * 9)) * .6 : 1;
+    // the blink used to mean "about to be banked for you"; now it means "about
+    // to be lost", so give it longer and let it go harder
+    const fade = o.life < 3 ? .25 + Math.abs(Math.sin(R.elapsed * 11)) * .75 : 1;
     g.globalAlpha = fade;
     g.fillStyle = 'rgba(120,220,255,.20)';
     g.beginPath(); g.arc(o.x, o.y, 24 * pulse, 0, 6.283); g.fill();
@@ -2688,6 +2713,17 @@ cv.addEventListener('mousemove', ev => {
   const c = colOf(p.x), r = rowOf(p.y);
   R.hover = (c >= 0 && c < COLS && r >= 0 && r < ROWS) ? { r, c } : null;
 });
+/* Missing an orb now costs real income, so the grab must not shrink with the
+   board. 34 board units is a comfortable target on a desktop and about eleven
+   CSS pixels on a phone, which is half a fingertip. Take whichever is larger:
+   the old radius, or a 52px touch target expressed in board units — a shade
+   more than the 44px guideline, because the penalty for missing is losing the
+   Ki entirely. */
+function grabR2() {
+  const w = cv.getBoundingClientRect().width;
+  const r = Math.max(34, w > 0 ? 26 * VW / w : 34);
+  return r * r;
+}
 cv.addEventListener('mouseleave', () => R.hover = null);
 cv.addEventListener('contextmenu', ev => { ev.preventDefault(); R.sel = null; R.shovel = false; });
 
@@ -2699,7 +2735,7 @@ cv.addEventListener('pointerdown', ev => {
   // orb pickup first
   for (let i = R.orbs.length - 1; i >= 0; i--) {
     const o = R.orbs[i];
-    if ((o.x - p.x) ** 2 + (o.y - p.y) ** 2 < 34 * 34) { collectOrb(i); return; }
+    if ((o.x - p.x) ** 2 + (o.y - p.y) ** 2 < grabR2()) { collectOrb(i); return; }
   }
 
   const c = colOf(p.x), r = rowOf(p.y);

@@ -16,7 +16,7 @@ gate. You are the last retainer. You have coin, conscripts, and until dawn.
 | Waves end, level ends, you win | **A 100-level campaign** over one endless-feeling board — each level is a wave target you either hold or don't |
 | A tower is a tower forever | **Merge.** Drop a duplicate on a unit to fuse it — Lv1 → Lv2 → Lv3 |
 | Progress is a fixed level select | **Meta-loop.** Survival pays out points → crates → roster → multipliers |
-| One-shot resource clicking | Ki orbs auto-collect after a beat, so the game is about placement, not clicking |
+| Sun that vanishes if you miss it | **Same rule, kept.** A Ki orb has to be clicked to bank it — left alone it drains away and is gone. Income is something you attend to, not something that accrues |
 
 The fantasy: *your line gets stronger inside a run (merging) and across runs
 (crates + upgrades), so a wave that ended you an hour ago is now Tuesday.*
@@ -45,7 +45,13 @@ The fantasy: *your line gets stronger inside a run (merging) and across runs
 
 Two currencies, deliberately not interchangeable:
 
-- **Ki (氣)** — in-run only, wiped at the end. Buys unit placements. Grown by Rice Paddies.
+- **Ki (氣)** — in-run only, wiped at the end. Buys unit placements. Grown by Rice
+  Paddies, and **only ever obtained by clicking**. An orb sits for nine seconds,
+  blinks for the last three, then drains away with nothing banked. Nothing in the
+  game credits Ki passively: the chain fusion that used to refund straight to the
+  balance now sheds an orb like everything else, because one exception is all it
+  takes for the clicking to become decorative. The cost of a big economy is now
+  the attention it takes to harvest it.
 - **Points (点)** — permanent. Earned by surviving. Buys crates and upgrades.
 
 ---
@@ -79,7 +85,7 @@ out near **25×**. Measured end to end by fast-forwarding real runs:
 | Board | Outcome at level 91 (target wave 100) |
 | --- | --- |
 | Lv3 fusions, 5★, all upgrades | **reached wave 100**, 3-15 zombies alive |
-| Plain Lv2 units, no fusions | **died at wave 72**, 156 zombies piled up |
+| Plain Lv2 units, no fusions | **died at wave 70**, 134 zombies piled up |
 
 Reachable, but only with real investment.
 
@@ -100,7 +106,7 @@ the run.
  │ W │  shrubs  │ · · · · · · · · ·       │              │  ← lane 4    enter →
  │ A │          │ · · · · · · · · ·       │              │  ← lane 5
  └───┴──────────┴─────────────────────────┴──────────────┘
-  x82   the west approach   x300  9 columns  x1029      ↑ spawn
+ x167   the west approach   x300  9 columns  x1029    x1247 muster
    ↑ ward + loss line        the buildable grid
 ```
 
@@ -114,10 +120,28 @@ width against the painted pixels, **x 300..1029** is the widest span where all
 drawn as. Columns are 81px against a 64px duck, so the line is tighter than it
 was — which is what a defensive line should look like.
 
-Narrowing the grid does *not* shorten the lane. The ward sits out on the bank at
-x 82 beside the nests, and the trigger is measured from the paper rather than
-from the grid edge, so a breach still has the full approach to cross. Writing it
-as `GX - 26` was only ever correct by coincidence.
+Two things had to move with it, and both are difficulty levers disguised as
+geometry.
+
+The **ward** burns a lane when something reaches it, and that trigger was written
+as `GX - 26` — correct only by coincidence, while the field happened to start at
+124. Left alone it would have put the burn line two hundred pixels east of the
+paper doing the burning. Both now derive from `WARD_X`.
+
+The **muster point** is the subtle one. What sets difficulty is not the length of
+the lane but how long a zombie spends being shot at, and that is the sum, over
+every tower, of the distance it covers while east of that tower. Pulling the grid
+inside the garden moved the back rank 161px east and that sum fell 12%. The
+campaign ceiling survived — a fully invested board still cleared wave 100 — but a
+mid-strength board that used to reach wave 72 died at 65, a difficulty change
+nobody asked for, arriving as a side effect of a cosmetic fix. Moving the muster
+85px east puts the sum back to 99.8%, and the ward moves east to match so the
+total run stays 1064px, exactly as before the grid ever moved. Re-simulated end
+to end, that board reaches wave 70 again and an invested one still clears 100.
+
+The lesson worth keeping: *total lane length is not the difficulty knob.* Two
+boards can have identical spawn-to-ward distance and differ by 12% in damage
+taken, purely from where the towers sit inside it.
 
 ---
 
