@@ -365,7 +365,10 @@
       <div class="pill wave"><span class="lbl">WAVE</span><span id="waveVal">1</span></div>
       <div class="pill lvl"><span class="lbl">LV</span><span id="lvlVal">1</span></div>
       <div class="pill valor"><span class="lbl">武功</span><span id="valorVal">+0%</span></div>
-      <div class="pill score"><span class="lbl">点</span><span id="scoreVal">0</span></div>
+      <!-- 点 here means what it means on every other screen: points you spend on
+           crates. This pill used to show R.score, a survival tally nothing pays
+           out on, so the HUD promised hundreds of times what a run actually banked. -->
+      <div class="pill score" id="scorePill" title="Points you would bank if the line broke now"><span class="lbl">点</span><span id="scoreVal">0</span></div>
       <div class="spacer"></div>
       <button class="btn" id="spdBtn">1×</button>
       <button class="btn" id="muteBtn">🔊</button>
@@ -510,7 +513,7 @@
       <div class="stat">
         <div><span class="v" id="oWave">0</span><span class="k">Wave reached</span></div>
         <div><span class="v" id="oKills">0</span><span class="k">Slain</span></div>
-        <div><span class="v" id="oScore">0</span><span class="k">Score</span></div>
+        <div><span class="v" id="oScore">0</span><span class="k">Survival tally</span></div>
       </div>
       <div id="oPayout" style="font-size:calc(var(--u)*17);text-align:center;line-height:1.8"></div>
       <div class="row" style="margin-top:calc(var(--u)*18)">
@@ -2822,7 +2825,13 @@ function syncHud() {
   waveVal.textContent = R.wave + ' / ' + R.target;
   document.getElementById('lvlVal').textContent = R.level;
   document.getElementById('valorVal').textContent = '+' + Math.round((valorDmg() - 1) * 100) + '%';
-  scoreVal.textContent = Math.floor(R.score).toLocaleString();
+  /* Show what the run is actually worth, not the survival tally. payout(false)
+     is the die-now value, so this only ever under-promises: clearing the level
+     pays the full base rather than 30% of it, which makes the results screen a
+     small bonus instead of a 650x disappointment. */
+  const proj = payout(false);
+  scoreVal.textContent = proj.earned.toLocaleString();
+  scorePill.title = `Bank now: ${proj.earned} 点  ·  Clear the level: ${payout(true).earned} 点`;
   for (const c of cardEls) {
     if (c.id === '__shovel') { c.el.classList.toggle('sel', R.shovel); continue; }
     const d = U[c.id];
