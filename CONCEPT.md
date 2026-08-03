@@ -85,7 +85,7 @@ out near **25×**. Measured end to end by fast-forwarding real runs:
 | Board | Outcome at level 91 (target wave 100) |
 | --- | --- |
 | Lv3 fusions, 5★, all upgrades | **reached wave 100**, 3-15 zombies alive |
-| Plain Lv2 units, no fusions | **died at wave 70**, 134 zombies piled up |
+| Plain Lv2 units, no fusions | **died at wave 74**, 130 zombies piled up |
 
 Reachable, but only with real investment.
 
@@ -143,9 +143,12 @@ inside the garden moved the back rank 161px east and that sum fell 12%. The
 campaign ceiling survived — a fully invested board still cleared wave 100 — but a
 mid-strength board that used to reach wave 72 died at 65, a difficulty change
 nobody asked for, arriving as a side effect of a cosmetic fix. Moving the muster
-85px east puts the sum back to 99.8%, and the ward moves east to match so the
-total run stays 1064px, exactly as before the grid ever moved. Re-simulated end
-to end, that board reaches wave 70 again and an invested one still clears 100.
+the muster east puts the sum back to 99.9%, and the ward moves east to match so
+the total run stays 1064px, exactly as before the grid ever moved.
+
+Re-simulated end to end after the realignment, on the same five-column reference
+layout throughout — 72 originally, 65 once the grid moved, **74 now**, with an
+invested board still clearing wave 100. Restored, inside the noise.
 
 The lesson worth keeping: *total lane length is not the difficulty knob.* Two
 boards can have identical spawn-to-ward distance and differ by 12% in damage
