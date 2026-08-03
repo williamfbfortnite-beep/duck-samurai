@@ -93,15 +93,31 @@ talisman that immolates one lane, one time. Second breach in a lane is the end o
 the run.
 
 ```
- ┌───┬───────────────────────────────────────────────────┐
- │ 御 │ · · · · · · · · ·                                 │  ← lane 1  ward intact
- │ 札 │ · · · · · · · · ·                                 │  ← lane 2
- │   │ · · · · · · · · ·                                 │  ← lane 3   zombies
- │ W │ · · · · · · · · ·                                 │  ← lane 4    enter →
- │ A │ · · · · · · · · ·                                 │  ← lane 5
- └───┴───────────────────────────────────────────────────┘
-   ↑ wards            9 buildable columns              ↑ spawn
+ ┌───┬──────────┬─────────────────────────┬──────────────┐
+ │ 御 │          │ · · · · · · · · ·       │              │  ← lane 1  ward intact
+ │ 札 │  bank    │ · · · · · · · · ·       │  bonsai      │  ← lane 2
+ │   │  stones  │ · · · · · · · · ·       │  border      │  ← lane 3   zombies
+ │ W │  shrubs  │ · · · · · · · · ·       │              │  ← lane 4    enter →
+ │ A │          │ · · · · · · · · ·       │              │  ← lane 5
+ └───┴──────────┴─────────────────────────┴──────────────┘
+  x82   the west approach   x300  9 columns  x1029      ↑ spawn
+   ↑ ward + loss line        the buildable grid
 ```
+
+**The grid lives inside the garden, not across it.** The painting is decorated:
+mossy boulders and stepping stones down the west bank, a row of potted bonsai
+down the east, shrubs scattered along both. A grid spanning the full width put
+eleven of the 45 tiles on top of that scenery, so a duck placed there stood in
+the branches of a tree instead of on the lawn. Sweeping every offset and column
+width against the painted pixels, **x 300..1029** is the widest span where all
+45 footprints land on open ground; the decoration becomes the border it was
+drawn as. Columns are 81px against a 64px duck, so the line is tighter than it
+was — which is what a defensive line should look like.
+
+Narrowing the grid does *not* shorten the lane. The ward sits out on the bank at
+x 82 beside the nests, and the trigger is measured from the paper rather than
+from the grid edge, so a breach still has the full approach to cross. Writing it
+as `GX - 26` was only ever correct by coincidence.
 
 ---
 

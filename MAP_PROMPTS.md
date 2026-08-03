@@ -18,6 +18,7 @@ What went wrong last time, and why each rule exists:
 | **Exactly 1122 × 765** | Matches the canvas 1:1, so the art draws with no resampling. Any other size gets scaled and the pixels blur. |
 | **5 lanes, equal height, full width** | The engine is five lanes across nine columns. |
 | **Leave the left 130px as a bank** | The nests and ofuda wards live there. Lanes must not start until x≈130. |
+| **Keep x 300–1030 clear of standing objects** | This is the one that cost the most. The first map was decorated right across the lawn — potted bonsai, shrubs, boulders — and a full-width grid put eleven of the 45 tiles on top of scenery, so a duck placed there stood in the branches of a tree. The grid had to be pulled in to x 300..1029 and its columns narrowed from 110px to 81px to find clean ground. **Decoration belongs outside that window, or flat inside it.** Flat is fine — gravel, stone paving, moss, fallen leaves, a patch of different grass. What breaks it is anything with height: pots, bushes, rocks, lanterns, posts. |
 | **Keep the top 90px calm** | The HUD sits there. Busy art makes the numbers unreadable. |
 | **Keep the bottom 85px calm** | The card tray sits there. |
 | **Hard pixel edges, no anti-aliasing, no gradients, limited palette** | It's pixel art or it isn't. |
@@ -44,10 +45,15 @@ Ideal lane bands for a 1122×765 canvas, if the model will respect numbers:
 > a SNES tactics map: **no perspective, no isometric skew, no vanishing point.**
 > Five horizontal lanes of **identical height**, running the full width, each
 > separated by a clearly readable border (stone kerb, low hedge, plank edging or
-> water channel). Lanes are open and uncluttered — units get placed on them, so
-> keep the centre of each lane clean and readable, with decoration at the lane
-> edges. Reserve the leftmost ~130px as a distinct bank or threshold with no lane
-> content. Keep the top ~90px and bottom ~85px visually calm and low-contrast.
+> water channel). **Between x 300 and x 1030 the lanes must be flat and free of
+> any standing object** — no pots, bushes, rocks, lanterns, posts or statues;
+> units are placed there and anything with height ends up with a duck standing
+> in it. Flat detail inside that window is welcome and wanted: gravel, paving,
+> moss, fallen leaves, patches of different grass. Put every three-dimensional
+> prop in the margins — left of x 300 and right of x 1030 — where it reads as a
+> border. Reserve the leftmost ~130px as a distinct bank or threshold with no
+> lane content. Keep the top ~90px and bottom ~85px visually calm and
+> low-contrast.
 > Hard pixel edges, no anti-aliasing, no gradients, no blur, no drop shadows,
 > limited palette of roughly 32–48 colours, visible consistent pixel grid.
 > Japanese setting, no text or lettering anywhere in the image. Export as PNG.

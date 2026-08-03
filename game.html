@@ -1320,7 +1320,15 @@ const starMul = id => 1 + stars(id) * 0.06;
    bottom — so rows come from a measured table rather than a fixed pitch.
    Columns are uniform across the grass, which runs x 124..1114.        */
 const VW = 1122, VH = 765;
-const COLS = 9, ROWS = 5, CW = 110, GX = 124;
+/* Columns sit inside the map's clear ground, not across the whole width. The
+   painting is a garden, and it is decorated: mossy boulders and stepping
+   stones down the west bank, a row of bonsai in planters down the east. A grid
+   that spanned the full width put eleven of the 45 tiles on top of scenery, so
+   a duck placed there stood in the branches of a potted tree rather than on
+   the lawn. Sweeping every offset and column width against the painted pixels,
+   x 300..1029 is the widest span where all 45 footprints land on open ground.
+   The decoration becomes the border it was drawn as. */
+const COLS = 9, ROWS = 5, CW = 81, GX = 300;
 const LANES = [
   { top: 167, bot: 232 },
   { top: 252, bot: 337 },
@@ -1330,6 +1338,18 @@ const LANES = [
 ];
 const GY = LANES[0].top;
 const FIELD_BOT = LANES[ROWS - 1].bot;
+
+/* The ward sits out on the bank beside the nests, and a lane burns when
+   something reaches it — so the trigger is measured from the paper, not from
+   the grid. It used to be written as GX - 26, which happened to line up while
+   the field started at 124. Pulling the columns inside the garden border would
+   have moved the trigger two hundred pixels east of the talisman doing the
+   burning, and taken that distance off every lane: less ground to cover means
+   less time under fire, and the whole campaign was tuned against the old
+   length. Declared here with the rest of the geometry so nothing can use it
+   before it exists. */
+const WARD_X = 82;
+const WARD_LINE = WARD_X + 16;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
    stone kerbs between them as dead space — about 15% of the board where a
@@ -1961,7 +1981,7 @@ function update(dt) {
       const sp = z.d.spd * (1 - z.slow);
       z.x -= sp * dt;
       z.anim += dt * (sp / 8);
-      if (z.x < GX - 26) {
+      if (z.x < WARD_LINE) {
         if (R.wards[z.lane] > 0) {
           R.wards[z.lane]--;
           for (const o of R.zombs) if (o.lane === z.lane && !o.dead) killZombie(o);
@@ -2215,7 +2235,7 @@ function drawField(g, phase, t) {
 }
 
 function drawWard(g, r) {
-  const x = 82, y = rowY(r);
+  const x = WARD_X, y = rowY(r);
   const n = R.wards[r];
   if (n <= 0) {
     g.globalAlpha = .25;
