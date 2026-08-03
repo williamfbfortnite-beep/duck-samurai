@@ -93,32 +93,40 @@ Reachable, but only with real investment.
 
 ## 3. The board
 
-Five lanes × nine columns. Zombies enter from the east (right), walk west, and
+Five lanes × eight columns. Zombies enter from the east (right), walk west, and
 eat anything in the way. Past column 0 sits each lane's **Ofuda Ward** — a paper
 talisman that immolates one lane, one time. Second breach in a lane is the end of
 the run.
 
 ```
- ┌───┬──────────┬─────────────────────────┬──────────────┐
- │ 御 │          │ · · · · · · · · ·       │              │  ← lane 1  ward intact
- │ 札 │  bank    │ · · · · · · · · ·       │  bonsai      │  ← lane 2
- │   │  stones  │ · · · · · · · · ·       │  border      │  ← lane 3   zombies
- │ W │  shrubs  │ · · · · · · · · ·       │              │  ← lane 4    enter →
- │ A │          │ · · · · · · · · ·       │              │  ← lane 5
- └───┴──────────┴─────────────────────────┴──────────────┘
- x167   the west approach   x300  9 columns  x1029    x1247 muster
-   ↑ ward + loss line        the buildable grid
+ ┌───┬───────┬───────────────────────────┬──────────────┐
+ │ 御 │       │ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 1  ward intact
+ │ 札 │ bank  │ ·  ·  ·  ·  ·  ·  ·  ·    │  bonsai      │  ← lane 2
+ │   │ stones│ ·  ·  ·  ·  ·  ·  ·  ·    │  border      │  ← lane 3   zombies
+ │ W │ shrubs│ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 4    enter →
+ │ A │       │ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 5
+ └───┴───────┴───────────────────────────┴──────────────┘
+ x184  approach  x276   8 columns × 94px   x1028    x1264 muster
+   ↑ ward + loss line     one per painted square
 ```
 
-**The grid lives inside the garden, not across it.** The painting is decorated:
-mossy boulders and stepping stones down the west bank, a row of potted bonsai
-down the east, shrubs scattered along both. A grid spanning the full width put
-eleven of the 45 tiles on top of that scenery, so a duck placed there stood in
-the branches of a tree instead of on the lawn. Sweeping every offset and column
-width against the painted pixels, **x 300..1029** is the widest span where all
-45 footprints land on open ground; the decoration becomes the border it was
-drawn as. Columns are 81px against a 64px duck, so the line is tighter than it
-was — which is what a defensive line should look like.
+**The map draws its own grid, and the code uses it.** Each lane is painted as a
+checkerboard of alternating grass squares, and *that* is the grid a player reads.
+A duck centred in a code tile that does not line up with the paint stands half in
+one square and half in the next however perfectly centred it is on its own tile —
+which is exactly what it looked like. Measured out of the art, the seams run at a
+pitch of **93.83px with the first at x 182**: ten squares across the board.
+
+The westmost sits on the boulders and the eastmost inside the bonsai border, so
+eight are on open ground — **x 276..1028, at 94px steps, tracking the painted
+seams to within 1.4px across the whole width.** That is why the board is eight
+columns and not nine: nine cannot be aligned to this map at *any* offset, because
+the painted pitch does not divide that way. The decoration becomes the border it
+was drawn as, and every duck stands in the middle of a square.
+
+This also fixed the older problem it was masking. A grid spanning the full width
+had put eleven of the 45 tiles on top of scenery, so a duck placed at the west end
+of lane 3 stood in the branches of a potted tree.
 
 Two things had to move with it, and both are difficulty levers disguised as
 geometry.

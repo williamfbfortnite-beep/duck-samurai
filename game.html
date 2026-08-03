@@ -1320,15 +1320,21 @@ const starMul = id => 1 + stars(id) * 0.06;
    bottom — so rows come from a measured table rather than a fixed pitch.
    Columns are uniform across the grass, which runs x 124..1114.        */
 const VW = 1122, VH = 765;
-/* Columns sit inside the map's clear ground, not across the whole width. The
-   painting is a garden, and it is decorated: mossy boulders and stepping
-   stones down the west bank, a row of bonsai in planters down the east. A grid
-   that spanned the full width put eleven of the 45 tiles on top of scenery, so
-   a duck placed there stood in the branches of a potted tree rather than on
-   the lawn. Sweeping every offset and column width against the painted pixels,
-   x 300..1029 is the widest span where all 45 footprints land on open ground.
-   The decoration becomes the border it was drawn as. */
-const COLS = 9, ROWS = 5, CW = 81, GX = 300;
+/* The map draws its own grid, and the code has to use it.
+
+   Each lane is painted as a checkerboard of alternating grass squares, and that
+   is the grid a player reads — so a duck centred in a code tile that does not
+   line up with the paint stands half in one square and half in the next, no
+   matter how perfectly centred it is on its own tile. Measuring the seams out
+   of the art gives a pitch of 93.83px with the first at x 182: ten squares
+   across the board, of which the westmost sits on the boulders and the eastmost
+   in the bonsai border, leaving eight on open ground.
+
+   So the board is eight columns, not nine. Nine cannot be aligned to this map
+   at any offset — the painted pitch simply does not divide that way — and a
+   grid that ignores the paint is the thing that looked wrong. 94px steps track
+   the seams to within a pixel across the whole width. */
+const COLS = 8, ROWS = 5, CW = 94, GX = 276;
 const LANES = [
   { top: 167, bot: 232 },
   { top: 252, bot: 337 },
@@ -1344,10 +1350,10 @@ const FIELD_BOT = LANES[ROWS - 1].bot;
    the grid. It used to be written as GX - 26, which happened to line up while
    the field started at 124; pulling the columns inside the garden border would
    have put the trigger two hundred pixels east of the talisman doing the
-   burning. It sits at 167 rather than its old 82 so that, with the muster moved
-   east below, spawn-to-ward still measures 1064px. Declared here with the rest
+   burning. It sits well east of its old 82 so that, with the muster moved east
+   below, spawn-to-ward still measures 1064px. Declared here with the rest
    of the geometry so nothing can use it before it exists. */
-const WARD_X = 167;
+const WARD_X = 184;
 const WARD_LINE = WARD_X + 16;
 
 /* How far east the tide forms up. This is not decoration — it sets how long a
@@ -1355,12 +1361,12 @@ const WARD_LINE = WARD_X + 16;
    What matters is not the length of the lane but the distance from the spawn to
    each tower: damage taken is the sum, over every tower, of the time the zombie
    spends east of it. Pulling the grid inside the garden moved the back rank
-   161px east, and the sum fell 12% — the campaign ceiling survived it, but a
-   mid-strength board that used to reach wave 72 died at 65. Moving the muster
-   85px east puts the sum back to 99.8%, and the ward moves east with it so the
-   total run stays 1064px, as it was before the grid ever moved. Re-simulated:
-   that board reaches wave 70 again, and a fully invested one still clears 100. */
-const SPAWN_X = VW + 125;
+   161px east, and the sum fell 12% — a difficulty change nobody asked for,
+   invisible because spawn-to-ward distance never moved. Aligning to the painted
+   grid shifted the ranks again. The muster is set so the sum comes back to the
+   pre-map value, and the ward moves east with it so the total run stays 1064px,
+   as it was before any of this. */
+const SPAWN_X = VW + 142;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
    stone kerbs between them as dead space — about 15% of the board where a
