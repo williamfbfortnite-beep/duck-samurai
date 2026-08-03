@@ -463,8 +463,14 @@ size is now set in script from `VW`/`VH`, so the two cannot drift again.
 
 ## 9. Audio
 
-The soundtrack is **an original recording by the player** — a 2:38 track,
-looped, replacing the synthesized score that used to sit here. It plays through
+The soundtrack is **two original recordings by the player**, and they alternate:
+each track plays to its end and hands over to the other, so a long session hears
+both rather than one loop forever. They are not the same tempo — 148 BPM against
+81 — which matters because the head bob is locked to the music. Each track
+carries its own tempo, its own first beat, and its own divisor: the fast one
+bobs at half-time because on every beat would be a twitch, the slow one bobs on
+the beat because half-time would be a dirge. Both land near 0.75-0.81s a nod, so
+the groove reads the same across the handover even though the songs do not. It plays through
 a plain `<audio>` element rather than the WebAudio graph on purpose: media
 playback is the one path iOS keeps in the "playback" audio session, so the music
 survives the ringer switch even where a bare AudioContext would not.

@@ -350,8 +350,10 @@
 <div id="stage">
   <!-- pre-boot values only; fit() sizes the buffer to the display -->
   <canvas id="cv" width="1122" height="765"></canvas>
-  <!-- BGM-SRC: the artifact build replaces this src with an inlined data URI -->
-  <audio id="bgm" src="assets/music.mp3" loop preload="auto" playsinline></audio>
+  <!-- BGM-SRC: the artifact build replaces both srcs with inlined data URIs.
+       No `loop`: the element ends, and the handler swaps in the other track. -->
+  <audio id="bgm" src="assets/music.mp3" preload="auto" playsinline></audio>
+  <audio id="bgm2" src="assets/music2.mp3" preload="none" playsinline></audio>
   <!-- the death cue. Its own element rather than a synthesized effect, for the
        same reason the soundtrack is one: media playback is the path iOS keeps
        audible through the ringer switch. -->
@@ -1023,14 +1025,28 @@ function objThumb(name, el) {
 /* ── head bob ─────────────────────────────────────────────────────────
    Every duck on the field bobs along to the soundtrack — head thrust
    forward on the beat and drawn back after, the way a chicken walks,
-   rather than a vertical nod. The tempo was measured off the track itself
-   (148.25 BPM, first beat at 0.03s) and it runs at half-time, which reads
-   as a groove rather than a twitch. Driven by the audio element's own
+   rather than a vertical nod. Each track's tempo was measured off the audio
+   itself. Driven by the audio element's own
    playhead so it stays in time however long the loop has been running;
    falls back to the game clock when the music is off, because the ducks
    should vibe regardless.                                            */
-const BGM_BPM = 148.25, BGM_OFF = 0.03;
-const NOD_PERIOD = 120 / BGM_BPM;                 // half-time, ~0.81s
+/* Two tracks now, and they are not the same tempo — 148 against 81 — so the
+   bob has to travel with whichever is playing or the ducks fall off the beat
+   the moment the soundtrack changes. Each carries its own tempo, its own first
+   beat, and its own divisor: the fast track bobs at half-time because on every
+   beat would be a twitch, the slow one bobs on the beat because half-time would
+   be a dirge. Both land near 0.75-0.81s a nod, so the groove reads the same
+   across the switch even though the songs do not. */
+/* No src here on purpose. The audio elements own the sources, and the artifact
+   build rewrites those to multi-megabyte data URIs — a path duplicated here
+   would survive the build and be silently wrong the moment anything used it. */
+const BGM_TRACKS = [
+  { bpm: 148.25, off: 0.03, div: 120 },   // music.mp3  — fast, so half-time
+  { bpm: 80.75,  off: 0.11, div: 60 }     // music2.mp3 — slow, so on the beat
+];
+let trackIdx = 0;
+const nodPeriod = () => BGM_TRACKS[trackIdx].div / BGM_TRACKS[trackIdx].bpm;
+const beatOff = () => BGM_TRACKS[trackIdx].off;
 function beatClock() {
   const el = MUSIC.el;
   if (el && !el.paused && el.currentTime > 0) return el.currentTime;
@@ -1038,8 +1054,9 @@ function beatClock() {
 }
 // 0..1 nod amount: quick drop on the beat, slow ease back up
 function nodAmt(shift) {
-  const t = beatClock() - BGM_OFF + (shift || 0);
-  let p = (t % NOD_PERIOD) / NOD_PERIOD;
+  const P = nodPeriod();
+  const t = beatClock() - beatOff() + (shift || 0);
+  let p = (t % P) / P;
   if (p < 0) p += 1;
   const e = p < .3 ? p / .3 : 1 - (p - .3) / .7;
   return e * e * (3 - 2 * e);
@@ -1340,10 +1357,11 @@ const starMul = id => 1 + stars(id) * 0.06;
    BOARD GEOMETRY
    ══════════════════════════════════════════════════════════════════════ */
 /* ── board geometry, fitted to the painted map ─────────────────────────
-   The canvas matches assets/map.png exactly (1122x765) so the art draws
+   The canvas matches the painted map exactly (1140x768) so the art draws
    1:1 with no resampling. The map's lanes are not uniform — it has a
-   slight perspective, with bands from 66px at the top to 114px at the
-   bottom — so rows come from a measured table rather than a fixed pitch.
+   slight perspective, with bands from 77px at the top to 114px at the
+   bottom — so rows come from a table measured off the painted kerbs
+   rather than a fixed pitch.
    Columns are uniform across the grass, which runs x 124..1114.        */
 const VW = 1140, VH = 768;
 /* The map draws its own grid, and the code uses it. Each lane is painted as a
@@ -1610,11 +1628,38 @@ function musicEl() {
   if (MUSIC.el || MUSIC.failed) return MUSIC.el;
   const el = document.getElementById('bgm');
   if (!el) { MUSIC.failed = true; return null; }
-  el.loop = true;
+  // remember track 0's src before anything swaps it — in the artifact this is
+  // a multi-megabyte data URI that cannot be reconstructed from a path
+  if (!MUSIC.src0) MUSIC.src0 = el.getAttribute('src');
+  /* The soundtrack alternates. Rather than loop one track forever, each ends
+     and hands over to the other, so a long session hears both. The second
+     element exists only to hold the second src through the artifact build —
+     playback always happens on this one, whose src is swapped. */
+  el.loop = false;
   el.volume = MUSIC_VOL;
   el.addEventListener('error', () => { MUSIC.failed = true; MUSIC.on = false; });
+  el.addEventListener('ended', () => { if (!muted) nextTrack(); });
   MUSIC.el = el;
   return el;
+}
+/* Swap to the other track and play it from the top. trackIdx also drives the
+   head bob's tempo, so it must change before playback starts or the ducks nod
+   to the previous song for a frame. */
+function nextTrack() {
+  const el = MUSIC.el || musicEl();
+  if (!el) return;
+  trackIdx = (trackIdx + 1) % BGM_TRACKS.length;
+  const alt = document.getElementById('bgm2');
+  // the build inlines each src on its own element; read it back rather than
+  // rebuilding a path that would be wrong in the artifact
+  const src = trackIdx === 0 ? MUSIC.src0 : (alt && alt.getAttribute('src'));
+  if (!src) { trackIdx = 0; return; }
+  try {
+    el.src = src;
+    el.currentTime = 0;
+    const p = el.play();
+    if (p && p.catch) p.catch(() => { MUSIC.on = false; });
+  } catch (e) { MUSIC.on = false; }
 }
 function musicStart() {
   if (muted) return;
@@ -2367,7 +2412,7 @@ function drawZombie(g, z) {
       g.fillStyle = 'rgba(143,232,247,.22)';
       g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
     }
-    const zThrust = thrustPx(NOD_PERIOD * .5 + z.wob * .01, z.scale);
+    const zThrust = thrustPx(nodPeriod() * .5 + z.wob * .01, z.scale);
     drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zThrust);
     if (z.hp < z.maxHp - 1) {
       const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
@@ -2665,7 +2710,7 @@ function menuRender(dt) {
     g.fillStyle = 'rgba(0,0,0,.3)';
     g.beginPath(); g.ellipse(z.x, y + 2, 26, 8, 0, 0, 6.283); g.fill();
     drawSprite(g, z.skin, CYCLE[(z.anim | 0) % 4], z.x, y + BOB[(z.anim | 0) % 4] * PXS * SCL, SCL, true, 'normal',
-      thrustPx(NOD_PERIOD * .5 + z.lane * .02, SCL));
+      thrustPx(nodPeriod() * .5 + z.lane * .02, SCL));
   }
 
   drawProps(g, -1e9, 1e9);   // the garden stands in front of the idlers too
