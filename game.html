@@ -1341,28 +1341,23 @@ const starMul = id => 1 + stars(id) * 0.06;
    slight perspective, with bands from 66px at the top to 114px at the
    bottom — so rows come from a measured table rather than a fixed pitch.
    Columns are uniform across the grass, which runs x 124..1114.        */
-const VW = 1122, VH = 765;
-/* The map draws its own grid, and the code has to use it.
+const VW = 1407, VH = 768;
+/* The map draws its own grid, and the code uses it. Each lane is painted as a
+   checkerboard, and that is the grid a player reads — a duck centred in a code
+   tile that does not line up with the paint stands half in one square and half
+   in the next.
 
-   Each lane is painted as a checkerboard of alternating grass squares, and that
-   is the grid a player reads — so a duck centred in a code tile that does not
-   line up with the paint stands half in one square and half in the next, no
-   matter how perfectly centred it is on its own tile. Measuring the seams out
-   of the art gives a pitch of 93.83px with the first at x 182: ten squares
-   across the board, of which the westmost sits on the boulders and the eastmost
-   in the bonsai border, leaving eight on open ground.
-
-   So the board is eight columns, not nine. Nine cannot be aligned to this map
-   at any offset — the painted pitch simply does not divide that way — and a
-   grid that ignores the paint is the thing that looked wrong. 94px steps track
-   the seams to within a pixel across the whole width. */
-const COLS = 8, ROWS = 5, CW = 94, GX = 276;
+   Measured off this map: squares of 95px starting at x 285, nine of them,
+   ending at 1140. Nine fit here because the standing props sit on the kerbs and
+   margins rather than in the lane centres, which is what forced the previous
+   map's grid inward and cost a column. */
+const COLS = 9, ROWS = 5, CW = 95, GX = 285;
 const LANES = [
-  { top: 167, bot: 232 },
-  { top: 252, bot: 337 },
-  { top: 357, bot: 443 },
-  { top: 464, bot: 548 },
-  { top: 569, bot: 682 }
+  { top: 158, bot: 235 },
+  { top: 245, bot: 340 },
+  { top: 351, bot: 446 },
+  { top: 457, bot: 551 },
+  { top: 562, bot: 676 }
 ];
 const GY = LANES[0].top;
 const FIELD_BOT = LANES[ROWS - 1].bot;
@@ -1375,20 +1370,21 @@ const FIELD_BOT = LANES[ROWS - 1].bot;
    burning. It sits well east of its old 82 so that, with the muster moved east
    below, spawn-to-ward still measures 1064px. Declared here with the rest
    of the geometry so nothing can use it before it exists. */
-const WARD_X = 184;
+const WARD_X = 180;
 const WARD_LINE = WARD_X + 16;
 
-/* How far east the tide forms up. This is not decoration — it sets how long a
-   zombie spends being shot at, which is the single biggest lever on difficulty.
-   What matters is not the length of the lane but the distance from the spawn to
-   each tower: damage taken is the sum, over every tower, of the time the zombie
-   spends east of it. Pulling the grid inside the garden moved the back rank
-   161px east, and the sum fell 12% — a difficulty change nobody asked for,
-   invisible because spawn-to-ward distance never moved. Aligning to the painted
-   grid shifted the ranks again. The muster is set so the sum comes back to the
-   pre-map value, and the ward moves east with it so the total run stays 1064px,
-   as it was before any of this. */
-const SPAWN_X = VW + 142;
+/* How far east the tide forms up. This sets how long a zombie spends being
+   shot at — the sum, over every tower, of the distance it covers while east of
+   that tower — which is the single biggest lever on difficulty.
+
+   This map is wider than the last (1407 vs 1122) while the grid sits in the
+   same relative place, so the same off-screen muster gives every tower a longer
+   window: 124% of the value the campaign was tuned against. Holding the old
+   number would mean mustering at x 1277, which is 131px INSIDE the canvas —
+   zombies would blink into existence in front of the player. Visible pop-in is
+   a worse defect than a board that plays a little kinder, so the muster stays
+   off-screen and the difficulty is re-measured rather than assumed. */
+const SPAWN_X = VW + 40;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
    stone kerbs between them as dead space — about 15% of the board where a
@@ -2256,6 +2252,110 @@ mapImg.onload = () => { mapReady = true; };
 mapImg.onerror = () => { mapReady = false; };
 mapImg.src = 'assets/map.png';          // artifact build swaps in a data URI
 
+/* ── the foreground: props that stand in front of what is behind them ──
+   The map ships in two layers. The base is flat ground — lawn, kerbs, gravel,
+   water — and everything standing on it (the shrubs, the potted bonsai, the
+   fox) lives in a second image with alpha, aligned to the same canvas.
+
+   That second layer is what lets a duck be occluded by the shrub in front of
+   it and cover the one behind it. Each object is listed with the y its base
+   sits on: draw it before every unit whose feet are lower down the screen, and
+   after every unit whose feet are higher. Extracting these from a flattened
+   painting was impossible — a green shrub on green lawn is closer to its
+   background than the image's own noise — so they come as their own file. */
+const propImg = new Image();
+let propReady = false;
+propImg.onload = () => { propReady = true; };
+propImg.onerror = () => { propReady = false; };
+propImg.src = 'assets/props.png';       // artifact build swaps in a data URI
+
+// measured off the alpha channel: one entry per separable object, `b` = base y
+const PROPS = [
+  { x: 991, y: 105, w: 147, h: 158, b: 262 },
+  { x: 270, y: 201, w:  66, h:  63, b: 263 },
+  { x: 998, y: 297, w: 140, h:  79, b: 375 },
+  { x: 268, y: 308, w: 142, h:  68, b: 375 },
+  { x: 263, y: 417, w:  71, h:  64, b: 480 },
+  { x: 1076, y: 407, w: 64, h:  76, b: 482 },
+  { x: 1072, y: 525, w: 69, h:  62, b: 586 },
+  { x: 264, y: 512, w:  62, h:  77, b: 588 },
+  { x: 333, y: 540, w:  49, h:  49, b: 588 }
+].sort((a, b) => a.b - b.b);
+
+function drawUnit(g, u) {
+    const marching = u.march < 1;
+    const x = u.x - (1 - u.march) * 74;
+    const frame = marching ? CYCLE[(u.anim | 0) % 4] : 0;
+    // whole sprite pixels only, or the body slides sub-pixel against the head
+    const sc = SCL + u.pop * .13;
+    /* Only a duck that is walking bobs. A planted one used to hop a whole
+       sprite pixel every couple of seconds, which at this scale is a four-pixel
+       jump on screen — it read as the sprite twitching rather than breathing,
+       and it fought the head thrust that is already carrying the idle. */
+    const bob = (marching ? BOB[(u.anim | 0) % 4] : 0) * PXS * sc;
+
+    // shadow
+    g.fillStyle = 'rgba(0,0,0,.32)';
+    g.beginPath(); g.ellipse(x, u.y + 2, 26 * sc / SCL, 8, 0, 0, 6.283); g.fill();
+
+    if (u.lvl > 1) { // level aura
+      g.fillStyle = u.lvl === 3 ? 'rgba(240,201,135,.20)' : 'rgba(240,201,135,.10)';
+      g.beginPath(); g.arc(x, u.y - 34, 34 + Math.sin(R.elapsed * 3) * 2, 0, 6.283); g.fill();
+    }
+    const uThrust = marching ? 0 : thrustPx(u.c * .012 + u.r * .006, sc);
+    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uThrust);
+
+    // hp bar when hurt
+    if (u.hp < u.maxHp - 1) {
+      const w = 44, hpx = x - w / 2, hpy = u.y - 84;
+      g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hpx - 1, hpy - 1, w + 2, 7);
+      g.fillStyle = '#6fd48a'; g.fillRect(hpx, hpy, w * Math.max(0, u.hp / u.maxHp), 5);
+    }
+    // level pips
+    if (u.lvl > 1) {
+      for (let i = 0; i < u.lvl; i++) {
+        g.fillStyle = '#f0c987';
+        g.beginPath(); g.arc(x - (u.lvl - 1) * 5 + i * 10, u.y - 92, 3.4, 0, 6.283); g.fill();
+      }
+    }
+    // shrine aura ring
+    if (u.def.kind === 'aura') {
+      g.strokeStyle = `rgba(240,201,135,${.14 + Math.sin(R.elapsed * 2.6) * .06})`;
+      g.lineWidth = 2;
+      const r0 = Math.max(0, u.r - 1), r1 = Math.min(ROWS - 1, u.r + 1);
+      g.strokeRect(GX + (u.c - 1) * CW, laneTop(r0), CW * 3, LANES[r1].bot - laneTop(r0));
+    }
+}
+
+function drawZombie(g, z) {
+    const y = footY(z.lane);
+    const frame = CYCLE[(z.anim | 0) % 4];
+    const bob = BOB[(z.anim | 0) % 4] * PXS * z.scale;
+    g.fillStyle = 'rgba(0,0,0,.32)';
+    g.beginPath(); g.ellipse(z.x, y + 2, 26 * z.scale / SCL, 8 * z.scale / SCL, 0, 0, 6.283); g.fill();
+    if (z.slow > 0) {
+      g.fillStyle = 'rgba(143,232,247,.22)';
+      g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
+    }
+    const zThrust = thrustPx(NOD_PERIOD * .5 + z.wob * .01, z.scale);
+    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zThrust);
+    if (z.hp < z.maxHp - 1) {
+      const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
+      g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hx - 1, hy - 1, w + 2, 7);
+      g.fillStyle = z.d.boss ? '#ff7a5a' : '#c0392b'; g.fillRect(hx, hy, w * Math.max(0, z.hp / z.maxHp), 5);
+    }
+}
+
+// draw every prop whose base lies in (fromY, toY] — the slice of the scene that
+// belongs between two entities in the depth order
+function drawProps(g, fromY, toY) {
+  if (!propReady) return;
+  for (const p of PROPS) {
+    if (p.b <= fromY || p.b > toY) continue;
+    g.drawImage(propImg, p.x, p.y, p.w, p.h, p.x, p.y, p.w, p.h);
+  }
+}
+
 /* Compositing the field means a full-surface scaled blit plus a full-surface
    fill. At one screen pixel per art pixel that was cheap; at a retina buffer it
    is most of the frame budget, and on a 4K display it cost twenty frames a
@@ -2375,51 +2475,19 @@ function render() {
   // ---- wards
   for (let r = 0; r < ROWS; r++) drawWard(g, r);
 
-  // ---- units (sorted by row so lower rows overlap upper)
-  const drawList = R.units.slice().sort((a, b) => a.r - b.r);
-  for (const u of drawList) {
-    const marching = u.march < 1;
-    const x = u.x - (1 - u.march) * 74;
-    const frame = marching ? CYCLE[(u.anim | 0) % 4] : 0;
-    // whole sprite pixels only, or the body slides sub-pixel against the head
-    const sc = SCL + u.pop * .13;
-    /* Only a duck that is walking bobs. A planted one used to hop a whole
-       sprite pixel every couple of seconds, which at this scale is a four-pixel
-       jump on screen — it read as the sprite twitching rather than breathing,
-       and it fought the head thrust that is already carrying the idle. */
-    const bob = (marching ? BOB[(u.anim | 0) % 4] : 0) * PXS * sc;
-
-    // shadow
-    g.fillStyle = 'rgba(0,0,0,.32)';
-    g.beginPath(); g.ellipse(x, u.y + 2, 26 * sc / SCL, 8, 0, 0, 6.283); g.fill();
-
-    if (u.lvl > 1) { // level aura
-      g.fillStyle = u.lvl === 3 ? 'rgba(240,201,135,.20)' : 'rgba(240,201,135,.10)';
-      g.beginPath(); g.arc(x, u.y - 34, 34 + Math.sin(R.elapsed * 3) * 2, 0, 6.283); g.fill();
-    }
-    const uThrust = marching ? 0 : thrustPx(u.c * .012 + u.r * .006, sc);
-    drawSprite(g, u.id, frame, x, u.y + bob, sc, false, u.flash > 0 ? 'flash' : 'normal', uThrust);
-
-    // hp bar when hurt
-    if (u.hp < u.maxHp - 1) {
-      const w = 44, hpx = x - w / 2, hpy = u.y - 84;
-      g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hpx - 1, hpy - 1, w + 2, 7);
-      g.fillStyle = '#6fd48a'; g.fillRect(hpx, hpy, w * Math.max(0, u.hp / u.maxHp), 5);
-    }
-    // level pips
-    if (u.lvl > 1) {
-      for (let i = 0; i < u.lvl; i++) {
-        g.fillStyle = '#f0c987';
-        g.beginPath(); g.arc(x - (u.lvl - 1) * 5 + i * 10, u.y - 92, 3.4, 0, 6.283); g.fill();
-      }
-    }
-    // shrine aura ring
-    if (u.def.kind === 'aura') {
-      g.strokeStyle = `rgba(240,201,135,${.14 + Math.sin(R.elapsed * 2.6) * .06})`;
-      g.lineWidth = 2;
-      const r0 = Math.max(0, u.r - 1), r1 = Math.min(ROWS - 1, u.r + 1);
-      g.strokeRect(GX + (u.c - 1) * CW, laneTop(r0), CW * 3, LANES[r1].bot - laneTop(r0));
-    }
+  /* ---- one depth pass: lane by lane, entities then the props that stand in
+     front of them. Units and zombies used to be two separate sweeps, so every
+     zombie drew over every unit regardless of which lane each was in, and there
+     was nowhere to put a prop that had to sit between them. Sorting the whole
+     scene by the row it stands on fixes both: a duck in lane 3 covers a shrub
+     whose base is up in lane 2, and that same shrub covers the duck in lane 1
+     behind it. */
+  const unitsIn = r => R.units.filter(u => u.r === r);
+  const zombsIn = r => R.zombs.filter(z => z.lane === r);
+  for (let r = 0; r < ROWS; r++) {
+    for (const u of unitsIn(r)) drawUnit(g, u);
+    for (const z of zombsIn(r)) drawZombie(g, z);
+    drawProps(g, footY(r), r + 1 < ROWS ? footY(r + 1) : 1e9);
   }
 
   // ---- ki orbs
@@ -2435,26 +2503,6 @@ function render() {
     drawObj(g, 'orb', o.x, o.y, .74 * pulse, 0, fade);
   }
 
-  // ---- zombies
-  const zl = R.zombs.slice().sort((a, b) => a.lane - b.lane);
-  for (const z of zl) {
-    const y = footY(z.lane);
-    const frame = CYCLE[(z.anim | 0) % 4];
-    const bob = BOB[(z.anim | 0) % 4] * PXS * z.scale;
-    g.fillStyle = 'rgba(0,0,0,.32)';
-    g.beginPath(); g.ellipse(z.x, y + 2, 26 * z.scale / SCL, 8 * z.scale / SCL, 0, 0, 6.283); g.fill();
-    if (z.slow > 0) {
-      g.fillStyle = 'rgba(143,232,247,.22)';
-      g.beginPath(); g.arc(z.x, y - 34 * z.scale, 30 * z.scale, 0, 6.283); g.fill();
-    }
-    const zThrust = thrustPx(NOD_PERIOD * .5 + z.wob * .01, z.scale);
-    drawSprite(g, z.skin, frame, z.x, y + bob, z.scale, true, z.flash > 0 ? 'flash' : 'normal', zThrust);
-    if (z.hp < z.maxHp - 1) {
-      const w = 46 * z.scale, hx = z.x - w / 2, hy = y - 78 * z.scale;
-      g.fillStyle = 'rgba(10,5,16,.8)'; g.fillRect(hx - 1, hy - 1, w + 2, 7);
-      g.fillStyle = z.d.boss ? '#ff7a5a' : '#c0392b'; g.fillRect(hx, hy, w * Math.max(0, z.hp / z.maxHp), 5);
-    }
-  }
 
   // ---- projectiles
   for (const p of R.shots) drawProj(g, p);
@@ -2590,6 +2638,7 @@ function menuRender(dt) {
       thrustPx(NOD_PERIOD * .5 + z.lane * .02, SCL));
   }
 
+  drawProps(g, -1e9, 1e9);   // the garden stands in front of the idlers too
   // the last retainer, breathing, facing them down
   const hx2 = GX + 150, hy = footY(HERO_LANE);
   g.fillStyle = 'rgba(0,0,0,.34)';

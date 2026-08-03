@@ -101,40 +101,34 @@ Reachable, but only with real investment.
 
 ## 3. The board
 
-Five lanes × eight columns. Zombies enter from the east (right), walk west, and
+Five lanes × nine columns. Zombies enter from the east (right), walk west, and
 eat anything in the way. Past column 0 sits each lane's **Ofuda Ward** — a paper
 talisman that immolates one lane, one time. Second breach in a lane is the end of
 the run.
 
 ```
- ┌───┬───────┬───────────────────────────┬──────────────┐
- │ 御 │       │ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 1  ward intact
- │ 札 │ bank  │ ·  ·  ·  ·  ·  ·  ·  ·    │  bonsai      │  ← lane 2
- │   │ stones│ ·  ·  ·  ·  ·  ·  ·  ·    │  border      │  ← lane 3   zombies
- │ W │ shrubs│ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 4    enter →
- │ A │       │ ·  ·  ·  ·  ·  ·  ·  ·    │              │  ← lane 5
- └───┴───────┴───────────────────────────┴──────────────┘
- x184  approach  x276   8 columns × 94px   x1028    x1264 muster
+ ┌────┬────────┬────────────────────────────┬───────────┐
+ │ 御 │        │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 1  ward intact
+ │ 札 │ bank   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │ walkway   │  ← lane 2
+ │    │ pond   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │ rocks     │  ← lane 3   zombies
+ │ W  │ rocks  │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 4    enter →
+ │ A  │        │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 5
+ └────┴────────┴────────────────────────────┴───────────┘
+ x180  approach  x285   9 columns × 95px  x1140      x1447 muster
    ↑ ward + loss line     one per painted square
 ```
 
 **The map draws its own grid, and the code uses it.** Each lane is painted as a
-checkerboard of alternating grass squares, and *that* is the grid a player reads.
-A duck centred in a code tile that does not line up with the paint stands half in
-one square and half in the next however perfectly centred it is on its own tile —
-which is exactly what it looked like. Measured out of the art, the seams run at a
-pitch of **93.83px with the first at x 182**: ten squares across the board.
+checkerboard, and *that* is the grid a player reads — a duck centred in a code
+tile that does not line up with the paint stands half in one square and half in
+the next. Measured off this map: squares of **95px starting at x 285**, nine of
+them, ending at 1140. Every column centres on its square to within **0.0px**.
 
-The westmost sits on the boulders and the eastmost inside the bonsai border, so
-eight are on open ground — **x 276..1028, at 94px steps, tracking the painted
-seams to within 1.4px across the whole width.** That is why the board is eight
-columns and not nine: nine cannot be aligned to this map at *any* offset, because
-the painted pitch does not divide that way. The decoration becomes the border it
-was drawn as, and every duck stands in the middle of a square.
-
-This also fixed the older problem it was masking. A grid spanning the full width
-had put eleven of the 45 tiles on top of scenery, so a duck placed at the west end
-of lane 3 stood in the branches of a potted tree.
+Nine fit here because the standing props sit on the kerbs and margins rather
+than in the lane centres. On the previous map the potted bonsai were planted in
+the middle of the lanes, which forced the grid inward and cost a column — and
+before that, a duck placed at the west end of lane 3 stood in the branches of a
+tree. Props on kerbs cost nothing and read better.
 
 Two things had to move with it, and both are difficulty levers disguised as
 geometry.
@@ -387,11 +381,27 @@ seconds — the ground is cached once, the sky is redrawn each frame from an
 interpolated palette, the sun and moon ride the same arc half a cycle apart, stars
 fade in, and the whole field is washed in the light of whatever hour it is.
 
-**The battlefield is painted, not generated.** A hand-drawn 1122×765 pixel map
-(`assets/map.png`) is the ground now, drawn 1:1 with no resampling — the canvas
-was resized to the art rather than the art squeezed into the canvas — and the
-day/night cycle tints it rather than rebuilding it. The procedural tile field it
-replaced is gone.
+**The battlefield is painted, and it ships in two layers.** The base
+(`assets/map.png`, 1407×768) is flat ground — lawn, kerbs, gravel, water — drawn
+1:1 with no resampling. Everything that *stands* on it (the shrubs, the potted
+bonsai, the fox) lives in `assets/props.png`, an image with alpha aligned to the
+same canvas.
+
+The second layer is what makes depth possible: a duck is covered by the shrub in
+front of it and covers the one behind it. Each object is listed with the y its
+base sits on, and the scene is drawn **one lane at a time** — that lane's units,
+then its zombies, then every prop whose base falls before the next lane's feet.
+That single pass also fixed an older bug: units and zombies used to be two
+separate sweeps, so *every* zombie drew over *every* unit no matter which lane
+each was in.
+
+Getting that second layer had to happen at the source. Extracting props from a
+flattened painting was tried six ways and is not possible on art like this — a
+green shrub on green lawn measured **47** units of colour distance from its
+background while the file's own JPEG noise was the same order, so no threshold
+separates them. A boulder on pond water measured 146 and keyed perfectly, which
+is exactly the point: it works when the colours differ and never when they
+don't. Ask for two files instead.
 
 Because the map is drawn at a slight angle, its lanes are not uniform: they run
 65px at the top and 113px at the bottom. The bands were measured out of the
