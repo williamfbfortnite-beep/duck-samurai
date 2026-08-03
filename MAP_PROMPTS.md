@@ -23,6 +23,7 @@ What went wrong last time, and why each rule exists:
 | **Keep the top 90px calm** | The HUD sits there. Busy art makes the numbers unreadable. |
 | **Keep the bottom 85px calm** | The card tray sits there. |
 | **Hard pixel edges, no anti-aliasing, no gradients, limited palette** | It's pixel art or it isn't. |
+| **Export the props on a separate transparent layer** | The one that would save the most work next time. We want props to overlap units that stand behind them and be covered by units in front — a depth-sorted foreground layer. That needs each prop as pixels with alpha, and extracting them from a flattened painting does not work. Measured on the current map: a boulder sitting on pond water is 146 units of colour distance from its background and keys perfectly; a shrub sitting on lawn is **47** — closer than the JPEG's own smear — so any flood that separates the shrub also eats the lawn, and vice versa. Green on green is not separable at any threshold. **Ask for two files: the flattened map, and the same map with only the standing props on transparency.** Then there is nothing to detect. |
 | **Export PNG** | The first map came inside a PDF as a JPEG — 95,926 distinct colours where pixel art uses dozens. It works, but the palette is permanently smeared. **PNG, never JPEG, never inside a PDF.** |
 
 Ideal lane bands for a 1122×765 canvas, if the model will respect numbers:
