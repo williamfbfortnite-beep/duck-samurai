@@ -54,6 +54,14 @@ Two currencies, deliberately not interchangeable:
   the attention it takes to harvest it.
 - **Points (点)** — permanent. Earned by surviving. Buys crates and upgrades.
 
+A save can be retired two ways. **切腹 START OVER** in the barracks wipes points,
+stars, unlocks and campaign progress back to a fresh file; it takes two presses
+because there is no undo, and the arming lapses after four seconds so a stray tap
+cannot be confirmed later by an unrelated one. Separately, the storage key
+carries a version — bumping it orphans older saves rather than deleting them, so
+a payout change that would otherwise leave a player holding a roster the current
+curve could never earn does not follow them forward.
+
 ---
 
 ## 2b. The campaign
@@ -347,6 +355,12 @@ and it runs at half-time, which reads as a groove rather than a twitch. It is
 driven by the audio element's own playhead, so it stays in time however long the
 loop has been running, and falls back to the game clock when the music is off.
 The defenders bob on the beat; the dead bob half a beat late.
+
+The bob is **purely horizontal** for anything standing still. A planted duck used
+to also hop one sprite pixel every couple of seconds, which at this scale is four
+screen pixels — big enough to read as a twitch rather than a breath, and it
+fought the head thrust already carrying the idle. Only a duck that is walking
+moves vertically now, because there the bob *is* the step.
 
 **Objects** are a second, free-size layer over the same idea: each has its own
 grid and palette. Twenty of them cover the projectiles (shuriken, war fan, ice

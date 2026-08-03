@@ -73,6 +73,10 @@
   .btn:hover { filter: brightness(1.25); }
   .btn:active { transform: translateY(calc(var(--u) * 2)); }
   .btn.on { background: linear-gradient(#8a6a2a, #5c4418); border-color: var(--gold); color: #fff5df; }
+  /* armed destructive action — it should not look like the rest of the menu */
+  .btn.danger { background: linear-gradient(#7a2320, #45120f); border-color: var(--blood); color: #ffd9d2;
+    animation: dangerPulse .7s steps(2, end) infinite; }
+  @keyframes dangerPulse { 50% { filter: brightness(1.45); } }
 
   /* ---------------- card tray ---------------- */
   #tray {
@@ -419,7 +423,10 @@
       <div class="crates" id="crateRow"></div>
       <h2 class="sect">The Flock — pick up to 6 for your loadout</h2>
       <div class="grid" id="unitGrid"></div>
-      <div class="row" style="margin-top:calc(var(--u)*16)"><button class="btn big" id="bBack">◀ BACK</button></div>
+      <div class="row" style="margin-top:calc(var(--u)*16)">
+        <button class="btn big" id="bBack">◀ BACK</button>
+        <button class="btn" id="bWipe" title="Wipe all points, stars, unlocks and campaign progress">切腹 START OVER</button>
+      </div>
     </div>
 
     <!-- SOUND CHECK -->
@@ -1287,7 +1294,12 @@ const TRACKS = [
 /* ══════════════════════════════════════════════════════════════════════
    SAVE
    ══════════════════════════════════════════════════════════════════════ */
-const KEY = 'duckSamuraiTD_v1';
+/* Bumped to v2 to retire the saves built while the economy was still paying out
+   tens of thousands a run. Those files hold a fully bought roster the current
+   payout curve would take a campaign to earn, so they read as finished before
+   you start. Old data is orphaned rather than deleted — nothing is destroyed,
+   the game simply stops reading it. */
+const KEY = 'duckSamuraiTD_v2';
 const fresh = () => ({
   sp: 0, bestWave: 0, runs: 0, level: 1, cleared: 0,
   owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> stars
@@ -2359,8 +2371,11 @@ function render() {
     const frame = marching ? CYCLE[(u.anim | 0) % 4] : 0;
     // whole sprite pixels only, or the body slides sub-pixel against the head
     const sc = SCL + u.pop * .13;
-    const bob = (marching ? BOB[(u.anim | 0) % 4]
-      : (Math.sin(R.elapsed * 2.4 + u.c) > .55 ? -1 : 0)) * PXS * sc;
+    /* Only a duck that is walking bobs. A planted one used to hop a whole
+       sprite pixel every couple of seconds, which at this scale is a four-pixel
+       jump on screen — it read as the sprite twitching rather than breathing,
+       and it fought the head thrust that is already carrying the idle. */
+    const bob = (marching ? BOB[(u.anim | 0) % 4] : 0) * PXS * sc;
 
     // shadow
     g.fillStyle = 'rgba(0,0,0,.32)';
@@ -2569,7 +2584,8 @@ function menuRender(dt) {
   g.beginPath(); g.ellipse(hx2, hy + 2, 30, 9, 0, 0, 6.283); g.fill();
   g.fillStyle = `rgba(240,201,135,${.10 + Math.sin(menuT * 1.6) * .04})`;
   g.beginPath(); g.arc(hx2, hy - 40, 52, 0, 6.283); g.fill();
-  drawSprite(g, 'naginata', 0, hx2, hy + (Math.sin(menuT * 1.9) > .55 ? -1 : 0) * PXS * SCL, SCL * 1.35, false, 'normal',
+  // the last retainer stands still too — same reason as the units on the field
+  drawSprite(g, 'naginata', 0, hx2, hy, SCL * 1.35, false, 'normal',
     thrustPx(0, SCL * 1.35));
 
   // petals on the wind
@@ -2841,6 +2857,33 @@ document.getElementById('sndMute').onclick = safe(() => {
   syncAudioBadge(); refreshSound();
 });
 document.getElementById('bBack').onclick = safe(toMenu);
+
+/* Start over. Two presses, because there is no undo — the first arms it, the
+   second wipes. Arming lapses after a few seconds so a stray tap can't sit
+   there waiting to be confirmed by an unrelated one. */
+let wipeArmed = 0;
+document.getElementById('bWipe').onclick = safe(() => {
+  const b = document.getElementById('bWipe');
+  if (!wipeArmed || Date.now() > wipeArmed) {
+    wipeArmed = Date.now() + 4000;
+    b.textContent = '本当に? TAP AGAIN TO WIPE';
+    b.classList.add('danger');
+    setTimeout(() => {
+      if (Date.now() > wipeArmed - 50) {
+        wipeArmed = 0; b.textContent = '切腹 START OVER'; b.classList.remove('danger');
+      }
+    }, 4100);
+    return;
+  }
+  wipeArmed = 0;
+  S = fresh();
+  persist();
+  b.textContent = '切腹 START OVER';
+  b.classList.remove('danger');
+  renderBarracks();
+  toast('PROGRESS WIPED — LEVEL 1', true);
+  SFX.bad();
+});
 document.getElementById('uBack').onclick = safe(toMenu);
 document.getElementById('pResume').onclick = safe(resume);
 document.getElementById('pQuit').onclick = safe(() => { gameOver(); });
