@@ -110,11 +110,11 @@ the run.
  ┌────┬────────┬────────────────────────────┬───────────┐
  │ 御 │        │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 1  ward intact
  │ 札 │ bank   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │ walkway   │  ← lane 2
- │    │ pond   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │ rocks     │  ← lane 3   zombies
+ │    │ pond   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 3   zombies
  │ W  │ rocks  │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 4    enter →
  │ A  │        │ ·  ·  ·  ·  ·  ·  ·  ·  ·  │           │  ← lane 5
  └────┴────────┴────────────────────────────┴───────────┘
- x180  approach  x285   9 columns × 95px  x1140      x1447 muster
+ x180  approach  x285   9 columns × 95px  x1140      x1180 muster
    ↑ ward + loss line     one per painted square
 ```
 
@@ -382,7 +382,7 @@ interpolated palette, the sun and moon ride the same arc half a cycle apart, sta
 fade in, and the whole field is washed in the light of whatever hour it is.
 
 **The battlefield is painted, and it ships in two layers.** The base
-(`assets/map.png`, 1407×768) is flat ground — lawn, kerbs, gravel, water — drawn
+(`assets/map.png`, 1140×768) is flat ground — lawn, kerbs, gravel, water — drawn
 1:1 with no resampling. Everything that *stands* on it (the shrubs, the potted
 bonsai, the fox) lives in `assets/props.png`, an image with alpha aligned to the
 same canvas.

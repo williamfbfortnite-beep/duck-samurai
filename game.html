@@ -1341,7 +1341,7 @@ const starMul = id => 1 + stars(id) * 0.06;
    slight perspective, with bands from 66px at the top to 114px at the
    bottom — so rows come from a measured table rather than a fixed pitch.
    Columns are uniform across the grass, which runs x 124..1114.        */
-const VW = 1407, VH = 768;
+const VW = 1140, VH = 768;
 /* The map draws its own grid, and the code uses it. Each lane is painted as a
    checkerboard, and that is the grid a player reads — a duck centred in a code
    tile that does not line up with the paint stands half in one square and half
@@ -1373,17 +1373,19 @@ const FIELD_BOT = LANES[ROWS - 1].bot;
 const WARD_X = 180;
 const WARD_LINE = WARD_X + 16;
 
-/* How far east the tide forms up. This sets how long a zombie spends being
-   shot at — the sum, over every tower, of the distance it covers while east of
-   that tower — which is the single biggest lever on difficulty.
+/* How far east the tide forms up — this sets how long a zombie spends being
+   shot at, the sum over every tower of the distance covered while east of it.
 
-   This map is wider than the last (1407 vs 1122) while the grid sits in the
-   same relative place, so the same off-screen muster gives every tower a longer
-   window: 124% of the value the campaign was tuned against. Holding the old
-   number would mean mustering at x 1277, which is 131px INSIDE the canvas —
-   zombies would blink into existence in front of the player. Visible pop-in is
-   a worse defect than a board that plays a little kinder, so the muster stays
-   off-screen and the difficulty is re-measured rather than assumed. */
+   The map is cropped to 1200 so that everything east of the lawn is gone. At
+   full width the tide mustered out past the veranda and the roof and was
+   visibly walking across elevated architecture on its way in, with no gate or
+   threshold to explain where it came from. Now it forms up just off the lawn's
+   own edge and walks straight on.
+
+   The arithmetic here has been unreliable: the uncropped board computed to 124%
+   of the reference shot-at distance yet simulated at wave 69 against a
+   reference of 72 — inside this sim's own +/-5 spread. So the muster sits at a
+   plain offset and the campaign is measured rather than predicted. */
 const SPAWN_X = VW + 40;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
