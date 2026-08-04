@@ -768,8 +768,27 @@ and the first two passed while measuring nothing:
   wave clock, and the comparison still reported a pass at 1.00×.
 
 What difficulty actually moves is how long a given line holds, so the live probe
-runs the same under-strength defence on the same level until it loses, and reads
-the wave it died on. A test that can only pass is not a test.
+runs the same under-strength defence on the same level until it loses. Its first
+version left two lanes open, which meant a zombie strolled to the ward untouched
+and the run ended on the wave clock — identical on every difficulty, for the
+same reason as before. With all five lanes held, at level 55 with one shooter
+each:
+
+| | died on | kills | survived |
+| --- | --- | --- | --- |
+| Easy | wave 5 | **35** | 70s |
+| Medium | wave 5 | 29 | 63s |
+| Hard | wave 5 | 27 | 63s |
+
+Kills and survival order correctly; the wave number ties, because at level 55 a
+five-shooter line is overwhelmed in wave 5 whatever the multipliers are. That
+measure is too coarse here — the run is bound by what spawns, not by what the
+line can kill — so 1.30× on kills is a floor on the effect rather than its size.
+Payout and opening 氣 separate cleanly and exactly as configured: 5 / 8 / 14 点
+for the same run, and 250 / 175 / 175 氣 to open.
+
+A test that can only pass is not a test, and three of the four written for this
+could only pass.
 
 ## 9. Audio
 
