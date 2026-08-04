@@ -653,6 +653,29 @@ A unit already at ★5 has nothing left to buy, so its duplicates go back to
 paying dust — which is what the old five-star refund did, kept for the same
 reason.
 
+**Fusions inherit the better of their parents' ranks**, and getting that right
+meant changing where rank lives. It was a lookup by unit id, and a fusion has an
+id of its own that can never appear in `S.owned` — fused units are scrubbed out
+of it on load, because they are not ownable. So every fused unit was silently
+built at a flat ★0, and fusing a unit you had raised threw away all 26 cards and
+every point you had spent on it. The more you invested, the worse fusing became.
+
+Rank is now a number carried on the placed unit rather than read from its id, so
+a fusion can be handed one. It takes `max(tile unit, dropped unit)`: the level
+rule already says the fusion keeps the level of the unit already on the tile,
+because level is board state you built this run, but rank is account-level
+investment and taking the lower of the two would punish having raised either
+parent. There is deliberately no id-based `starMul` left beside the value-based
+one — having two ways to ask the same question is exactly how the engine ended
+up asking the wrong one.
+
+Measured, and measured against the bug: Rice Paddy + Fox Shrine makes the
+Harvest Spirit, a 氣 unit, so the orb probe reads it directly. From ★0 parents it
+earns **4.48 氣/s**; from ★5 parents, **9.28** — 2.07x, against the 1.92x the
+arithmetic predicts. Reverting just the inheritance and running the same test
+gives 4.48 against 4.48, exactly 1.00x, which is what makes the test worth
+having.
+
 **Verified against the simulation, not against the save.** A Rice Paddy is the
 cleanest probe, because both abilities touch the one timer it runs on: 25 氣
 every 8s at ★0, against 25 × 1.30 × 1.25 every 8 ÷ 1.18s at ★5. Banking orbs by

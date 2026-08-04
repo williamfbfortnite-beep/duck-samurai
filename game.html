@@ -735,7 +735,9 @@
       <div id="codexList"></div>
       <div class="hint" style="max-width:52em">
         The fused unit keeps the level of the one already on the tile — fuse onto a
-        <b>Lv3</b> and you get a <b>Lv3</b>. Fusion results never appear in crates.
+        <b>Lv3</b> and you get a <b>Lv3</b> — and the <b>higher ★ rank</b> of the two, so
+        fusing never wastes the 札 you spent raising either of them.
+        Fusion results never appear in crates and cannot be raised with 札 themselves.
       </div>
       <div class="row" style="margin-top:calc(var(--u)*14)"><button class="btn big" id="cBack">◀ BACK</button></div>
     </div>
@@ -1847,13 +1849,21 @@ const upCost = id => maxRank(id) ? null : {
   coin: Math.round(COIN_STEP[stars(id)] * (1 + (U[id] ? U[id].rar : 0) * 0.35))
 };
 const canUp = id => { const c = upCost(id); return !!c && toks(id) >= c.tok && S.sp >= c.coin; };
-const starMul = id => 1 + stars(id) * 0.06;
+/* Rank reaches the simulation as a number carried on the placed unit, not as a
+   lookup by id — a fusion has an id of its own that can never appear in
+   S.owned, so an id lookup would hand every fused unit a flat ★0 and quietly
+   throw away everything its parents cost. */
+const starMulOf = rank => 1 + rank * 0.06;
+const swiftOf = rank => rank >= SWIFT_AT ? 1.18 : 1;
+const masteredOf = rank => rank >= MASTER_AT;
 /* 疾 Swift (★3) — everything the unit does on a clock runs this much faster,
-   which is the one bonus that means something to every kind including 氣. */
-const swift = id => stars(id) >= SWIFT_AT ? 1.18 : 1;
+   which is the one bonus that means something to every kind including 氣.
+   There is deliberately no starMul(id)/swift(id) pair beside these: having two
+   ways to ask the same question is exactly how the engine ended up asking by
+   id and handing fusions a flat ★0. */
 /* 極 Mastery (★5) — one perk per kind, each of them a field the simulation
    already reads, applied where that field is read. */
-const mastered = id => stars(id) >= MASTER_AT;
+const mastered = id => masteredOf(stars(id));
 const MASTERY = {
   ki:    'orbs worth +25%',   shot:  'shots pierce',
   wall:  'thorns +60%',       melee: 'reach +25%',
@@ -2310,16 +2320,17 @@ function spawnZombie(id, lane, waveN, elite) {
   if (d.boss || elite) SFX.roar();
 }
 function unitStat(u, key) {
-  return (u.def[key] || 0) * LVL[u.lvl - 1].m * starMul(u.def.id) * valorDmg();
+  return (u.def[key] || 0) * LVL[u.lvl - 1].m * starMulOf(u.rank) * valorDmg();
 }
 function unitRate(u) {
-  return u.def.rate / (LVL[u.lvl - 1].r * (1 + u.buff) * swift(u.def.id));
+  return u.def.rate / (LVL[u.lvl - 1].r * (1 + u.buff) * swiftOf(u.rank));
 }
-function spawnUnit(id, r, c, lvl) {
+function spawnUnit(id, r, c, lvl, rank) {
   const def = U[id];
-  const hp = def.hp * LVL[lvl - 1].m * starMul(id) * valorHp();
+  const rk = rank === undefined ? stars(id) : rank;
+  const hp = def.hp * LVL[lvl - 1].m * starMulOf(rk) * valorHp();
   const u = {
-    def, id, lvl, r, c, x: colX(c), y: footY(r), hp, maxHp: hp,
+    def, id, lvl, rank: rk, r, c, x: colX(c), y: footY(r), hp, maxHp: hp,
     t: Math.random() * 0.4, march: 1, anim: 0, buff: 0, flash: 0, pop: 1
   };
   R.units.push(u);
@@ -2337,8 +2348,14 @@ function placeUnit(id, r, c) {
     if (!rec || fusionOnBoard(rec.out)) return false;
     const out = U[rec.out];
     const lvl = ex.lvl;
+    /* The fusion keeps the level of the unit already on the tile — that rule
+       is older than this one — and the *better* of the two ranks. Rank is
+       account-level investment rather than board state, so taking the lower
+       one would make fusing a unit you had raised a punishment for having
+       raised it. */
+    const rank = Math.max(ex.rank, stars(id));
     R.units.splice(R.units.indexOf(ex), 1);
-    const u = spawnUnit(rec.out, r, c, lvl);
+    const u = spawnUnit(rec.out, r, c, lvl, rank);
     u.pop = 1.4;
     if (!S.found) S.found = {};
     const first = !S.found[rec.out];
@@ -2355,7 +2372,7 @@ function placeUnit(id, r, c) {
 
   if (ex) { // merge
     ex.lvl++;
-    ex.hp = ex.maxHp = def.hp * LVL[ex.lvl - 1].m * starMul(id) * valorHp();
+    ex.hp = ex.maxHp = def.hp * LVL[ex.lvl - 1].m * starMulOf(ex.rank) * valorHp();
     ex.pop = 1;
     for (let i = 0; i < 22; i++) puff(colX(c), rowY(r), '#f0c987');
     text(colX(c), rowY(r) - 30, 'Lv' + ex.lvl + ' MERGE', '#f0c987', 1.4);
@@ -2434,7 +2451,7 @@ function update(dt) {
   for (const u of R.units) u.buff = 0;
   for (const s of R.units) {
     if (!(s.def.kind === 'aura' || s.def.aura) || s.march < 1) continue;
-    const b = s.def.buff * LVL[s.lvl - 1].m * (mastered(s.def.id) ? 1.5 : 1);
+    const b = s.def.buff * LVL[s.lvl - 1].m * (masteredOf(s.rank) ? 1.5 : 1);
     for (const u of R.units) {
       if (u === s) continue;
       if (Math.abs(u.r - s.r) <= 1 && Math.abs(u.c - s.c) <= 1) u.buff = Math.max(u.buff, b);
@@ -2462,10 +2479,10 @@ function update(dt) {
     if (def.kind === 'ki') {
       const tier = KI_LVL[u.lvl - 1];
       // the fused Harvest Spirit runs the same table, a third faster
-      const period = tier.period / ((1 + u.buff) * swift(def.id)) * (def.aura ? .66 : 1);
+      const period = tier.period / ((1 + u.buff) * swiftOf(u.rank)) * (def.aura ? .66 : 1);
       if (u.t >= period) {
         u.t = 0;
-        const amt = Math.round(tier.amount * starMul(def.id) * (mastered(def.id) ? 1.25 : 1));
+        const amt = Math.round(tier.amount * starMulOf(u.rank) * (masteredOf(u.rank) ? 1.25 : 1));
         R.orbs.push({ x: u.x + (Math.random() - .5) * 26, y: u.y - 44, ty: u.y - 6, amount: amt, life: 9, vy: -90 });
         u.pop = .6;
       }
@@ -2474,7 +2491,7 @@ function update(dt) {
         u.kt = (u.kt || 0) + dt;
         if (u.kt >= 14) {
           u.kt = 0;
-          R.orbs.push({ x: u.x + (Math.random() - .5) * 26, y: u.y - 44, ty: u.y - 6, amount: Math.round(25 * starMul(def.id)), life: 9, vy: -90 });
+          R.orbs.push({ x: u.x + (Math.random() - .5) * 26, y: u.y - 44, ty: u.y - 6, amount: Math.round(25 * starMulOf(u.rank)), life: 9, vy: -90 });
           u.pop = .6;
         }
       }
@@ -2484,7 +2501,7 @@ function update(dt) {
         for (let k = 0; k < n; k++) {
           R.shots.push({
             x: u.x + 26, y: u.y - 42 + (k - (n - 1) / 2) * 13, vx: def.proj === 'arrow' ? 900 : 460,
-            lane: u.r, dmg: unitStat(u, 'dmg'), type: def.proj, pierce: !!def.pierce || mastered(def.id),
+            lane: u.r, dmg: unitStat(u, 'dmg'), type: def.proj, pierce: !!def.pierce || masteredOf(u.rank),
             slow: def.slow || 0, slowT: def.slowT || 0, hit: [], rot: 0, life: 4,
             splash: def.splash || 0, splashDmg: def.splashDmg || 0
           });
@@ -2492,7 +2509,7 @@ function update(dt) {
         SFX.shoot();
       }
     } else if (def.kind === 'melee') {
-      const rng = def.range * (mastered(def.id) ? 1.25 : 1);
+      const rng = def.range * (masteredOf(u.rank) ? 1.25 : 1);
       if (def.slowAura) {                              // Tide Warden's drag
         for (const z of lane) {
           if (Math.abs(z.x - u.x) < rng * 1.5) { z.slow = Math.max(z.slow, def.slowAura); z.slowT = Math.max(z.slowT, .3); }
@@ -2510,7 +2527,7 @@ function update(dt) {
       }
     } else if (def.kind === 'chain') {
       const near = R.zombs.filter(z => !z.dead && Math.abs(z.lane - u.r) <= 1 && z.x > u.x - 30 && z.x - u.x < 520)
-        .sort((a, b) => (a.x - u.x) - (b.x - u.x)).slice(0, def.chains + (mastered(def.id) ? 1 : 0));
+        .sort((a, b) => (a.x - u.x) - (b.x - u.x)).slice(0, def.chains + (masteredOf(u.rank) ? 1 : 0));
       if (near.length && u.t >= unitRate(u)) {
         u.t = 0; u.pop = .5;
         let px = u.x, py = u.y - 46;
@@ -2597,7 +2614,7 @@ function update(dt) {
         biting.hp -= z.dmg; biting.flash = .12;
         for (let k = 0; k < 4; k++) puff(biting.x + 14, biting.y - 34, '#cdc2ae');
         if (biting.def.thorns) {                       // Thorn Wall bites back
-          damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m * (mastered(biting.def.id) ? 1.6 : 1), 'quiet');
+          damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m * (masteredOf(biting.rank) ? 1.6 : 1), 'quiet');
           for (let k = 0; k < 3; k++) puff(z.x - 10, footY(z.lane) - 34, '#a8d47a');
         }
         SFX.bite();
