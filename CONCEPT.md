@@ -852,6 +852,32 @@ once on the way. It reported the keyboard as broken, because it asked for a
 second Rice Paddy five seconds after placing the first, and the card was still
 on cooldown. It uses a unit it has not spent when it checks that path now.
 
+### The codex is three tabs
+
+Forty-six recipes in one list told you nothing about *why* any of them was
+sealed. It is three tabs now, and they partition the book exactly:
+
+- **開 UNLOCKED** — open to you now, whether or not you have found it yet.
+- **段 LEVEL LOCK** — waiting on a campaign level, sorted by how far off it is,
+  so the next one to come within reach sits at the top.
+- **巻物 CRATE LOCK** — the campaign never hands these out; a 巻物 scroll from
+  the barracks is the only way to them.
+
+Every recipe is in exactly one, nothing is in two, and nothing falls through:
+the level tab takes everything not yet open that is not scroll-only, so a
+recipe with neither gate would still appear rather than vanish. A recipe you
+have already fused files under UNLOCKED whatever its gate now says — in normal
+play the best-level figure never drops so it cannot come apart, but a recipe you
+have *made* listed under LEVEL LOCK would be nonsense on its face.
+
+**Building this exposed an older bug.** The tab strip kept scrolling out of
+reach, which looked like a test problem and was not: `.screen` centres its
+column, and a centred flex column that overflows spills past *both* ends — the
+top end being unreachable by scrolling. Three screens had already been added to
+a `justify-content: flex-start` list for exactly this reason and `#scCodex` was
+never one of them, so with forty-six recipes its title had been sitting above
+the scroll origin, permanently unreachable. `#scSound` had the same hole.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

@@ -187,7 +187,11 @@
   }
   .screen.on { display: flex; }
   /* tall, scrolling screens must start at the top or flex centring clips them */
-  #scBarracks, #scUpgrades, #scSettings, #scLevels { justify-content: flex-start; }
+  /* Every screen whose content can outgrow the stage. A centred flex column
+     that overflows spills past BOTH ends, and the top end cannot be scrolled
+     back to — #scCodex was missing from this list, so with 46 recipes its
+     title and tabs sat above the scroll origin, permanently unreachable. */
+  #scBarracks, #scUpgrades, #scSettings, #scLevels, #scCodex, #scSound { justify-content: flex-start; }
   #scBarracks, #scUpgrades, #scCodex, #scSound, #scSettings, #scLevels { padding-bottom: calc(var(--u) * 104); }
   /* The title screen is a standoff: the hero holds the left of the field, so
      the plate sits right of centre and lets the scene breathe behind it. */
@@ -340,7 +344,7 @@
     box-shadow: 0 0 calc(var(--u) * 6) rgba(192,57,43,.9);
   }
   .lvchip.now.elite::after { background: #7a2320; }
-  #diffTabs .btn.sel { color: var(--gold); text-shadow: 0 0 calc(var(--u) * 8) rgba(240,201,135,.5); }
+  #diffTabs .btn.sel, #codexTabs .btn.sel { color: var(--gold); text-shadow: 0 0 calc(var(--u) * 8) rgba(240,201,135,.5); }
   #diffTabs .btn.shut { filter: grayscale(.9) brightness(.6); cursor: not-allowed; }
   @media (prefers-reduced-motion: reduce) { .lvchip.now { animation: none; } }
 
@@ -788,7 +792,9 @@
       <h1 class="title" style="font-size:calc(var(--u)*40)">巻物 THE CODEX</h1>
       <div class="sub" style="margin-bottom:calc(var(--u)*4)">Place one unit on the other, on the board, mid-run</div>
       <div class="bank"><span id="codexCount" style="font-size:calc(var(--u)*15)"></span></div>
+      <div class="row" id="codexTabs" style="margin-top:calc(var(--u)*8)"></div>
       <div id="codexList"></div>
+      <div class="sub" id="codexEmpty" style="display:none;text-transform:none;font-style:normal;letter-spacing:.08em;margin-top:calc(var(--u)*20)"></div>
       <div class="hint" style="max-width:52em">
         The fused unit keeps the level of the one already on the tile — fuse onto a
         <b>Lv3</b> and you get a <b>Lv3</b> — and the <b>higher ★ rank</b> of the two, so
@@ -4290,6 +4296,25 @@ function openCodex() {
   document.getElementById('ui').classList.add('hidden');
   renderCodex();
 }
+/* Three tabs, and they partition the book exactly: a recipe is either open to
+   you, or waiting on a campaign level, or waiting on a 巻物 scroll from the
+   barracks. Nothing is in two of them and nothing falls through — the level
+   tab takes everything not yet open that is not scroll-only, so a recipe with
+   neither gate would still show up rather than vanish. */
+/* Something you have already made is open to you whatever the gate now says.
+   In normal play best-level never drops so this cannot come apart, but filing a
+   recipe you have fused under LEVEL LOCK would be nonsense on the face of it. */
+const codexOpen = f => recipeUnlocked(f) || !!(S.found && S.found[f.out]);
+const CODEX_TABS = [
+  { id: 'open',  kanji: '開',   name: 'UNLOCKED',   has: f => codexOpen(f),
+    empty: 'Nothing is open yet. Clear levels to unseal recipes.' },
+  { id: 'level', kanji: '段',   name: 'LEVEL LOCK', has: f => !codexOpen(f) && !f.scrollOnly,
+    empty: 'Every level-gated recipe is open. Nothing left to reach for.' },
+  { id: 'crate', kanji: '巻物', name: 'CRATE LOCK', has: f => !codexOpen(f) && !!f.scrollOnly,
+    empty: 'Every sealed recipe has been bought. The book is complete.' }
+];
+let codexTab = 'open';
+
 function renderCodex() {
   const found = S.found || {};
   const n = FUSIONS.filter(f => found[f.out]).length;
@@ -4297,9 +4322,29 @@ function renderCodex() {
   document.getElementById('codexCount').innerHTML =
     `<b>${n}</b> of <b>${FUSIONS.length}</b> discovered` +
     ` &nbsp;·&nbsp; <span style="opacity:.7">${openN - n} unsealed and waiting, ${FUSIONS.length - openN} still sealed</span>`;
+
+  const tabs = document.getElementById('codexTabs');
+  tabs.innerHTML = '';
+  for (const t of CODEX_TABS) {
+    const count = FUSIONS.filter(t.has).length;
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (t.id === codexTab ? ' sel' : '');
+    btn.textContent = `${t.kanji} ${t.name} ${count}`;
+    btn.onclick = safe(() => { codexTab = t.id; renderCodex(); blip(520, .06, 'triangle', .05); });
+    tabs.appendChild(btn);
+  }
+  const tab = CODEX_TABS.find(t => t.id === codexTab) || CODEX_TABS[0];
+  /* Sorted by the thing the tab is about: the level tab by how far off it is,
+     so the next one to come within reach is at the top. */
+  const rows = FUSIONS.filter(tab.has);
+  if (tab.id === 'level') rows.sort((x, y) => (x.unlock || 0) - (y.unlock || 0));
+  const none = document.getElementById('codexEmpty');
+  none.style.display = rows.length ? 'none' : '';
+  none.textContent = tab.empty;
+
   const list = document.getElementById('codexList');
   list.innerHTML = '';
-  for (const f of FUSIONS) {
+  for (const f of rows) {
     const a = U[f.a], b = U[f.b], out = U[f.out];
     const got = !!found[f.out];
     const open = recipeUnlocked(f);
