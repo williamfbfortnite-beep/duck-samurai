@@ -382,6 +382,19 @@
   }
   .chip.cost { color: #9be8ff; border-color: rgba(155,232,255,.35); }
   .chip.star { color: var(--gold); border-color: rgba(240,201,135,.4); }
+  .chip.short { color: #ff8a7a; border-color: rgba(255,138,122,.35); }
+
+  /* rank line on a unit card */
+  .urank {
+    display: flex; align-items: center; gap: calc(var(--u) * 5);
+    margin-top: calc(var(--u) * 5);
+  }
+  .urank .pips { color: var(--gold); font-size: calc(var(--u) * 12); letter-spacing: -.06em; }
+  .urank .btn {
+    margin-left: auto; font-size: calc(var(--u) * 12);
+    padding: 0 calc(var(--u) * 2); min-width: calc(var(--u) * 54);
+  }
+  .urank .btn.poor { filter: grayscale(.9) brightness(.6); cursor: not-allowed; }
   .ucard {
     position: relative; background-image: linear-gradient(#241a35, #140d20);
     border-width: calc(var(--u) * 12);
@@ -619,7 +632,7 @@
         <div class="row">
           <button class="btn big on" id="btnPlay">出陣 &nbsp;DEPLOY</button>
           <button class="btn" id="btnBarracks">兵舎 &nbsp;BARRACKS</button>
-          <button class="btn" id="btnCodex">巻物 &nbsp;FUSION CODEX</button>
+          <button class="btn" id="btnCodex">巻物 &nbsp;CODEX</button>
           <button class="btn" id="btnUpgrades">強化 &nbsp;UPGRADES</button>
           <button class="btn" id="btnSettings">設定 &nbsp;SETTINGS</button>
         </div>
@@ -638,6 +651,11 @@
       <h2 class="sect">Supply Crates</h2>
       <div class="crates" id="crateRow"></div>
       <h2 class="sect">The Flock — pick up to 6 for your loadout</h2>
+      <div class="hint" style="margin-top:0;max-width:52em">
+        A crate that draws a unit you already have pays its <b>札</b> instead. Spend 札 and
+        points to raise a unit's rank: every star is <b>+6%</b> damage, health and 氣, with
+        <b>疾 SWIFT</b> at ★3 and <b>極 MASTERY</b> at ★5.
+      </div>
       <div class="grid" id="unitGrid"></div>
       <div class="row" style="margin-top:calc(var(--u)*16)">
         <button class="btn big" id="bBack">◀ BACK</button>
@@ -711,7 +729,7 @@
 
     <!-- FUSION CODEX -->
     <div class="screen" id="scCodex">
-      <h1 class="title" style="font-size:calc(var(--u)*40)">巻物 FUSION CODEX</h1>
+      <h1 class="title" style="font-size:calc(var(--u)*40)">巻物 THE CODEX</h1>
       <div class="sub" style="margin-bottom:calc(var(--u)*4)">Place one unit on the other, on the board, mid-run</div>
       <div class="bank"><span id="codexCount" style="font-size:calc(var(--u)*15)"></span></div>
       <div id="codexList"></div>
@@ -1775,7 +1793,8 @@ const TRACKS = [
 const KEY = 'duckSamuraiTD_v2';
 const fresh = () => ({
   sp: 0, bestWave: 0, runs: 0, level: 1, cleared: 0,
-  owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> stars
+  owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> rank (stars)
+  tok: {},                                       // id -> 札 cards held toward the next rank
   found: {},                                     // fusion id -> times discovered
   scrolls: {},                                   // fusion id -> bought outright, skips the level gate
   mediaRoute: null,                              // null = use the platform default
@@ -1794,6 +1813,8 @@ try {
    which is untouched. */
 let scrubbed = false;
 for (const id of Object.keys(S.owned)) if (!U[id] || U[id].fused) { delete S.owned[id]; scrubbed = true; }
+if (!S.tok || typeof S.tok !== 'object') { S.tok = {}; scrubbed = true; }
+for (const id of Object.keys(S.tok)) if (!U[id] || U[id].fused) { delete S.tok[id]; scrubbed = true; }
 const keepLoadout = S.loadout.filter(id => U[id] && !U[id].fused);
 if (keepLoadout.length !== S.loadout.length) { S.loadout = keepLoadout; scrubbed = true; }
 // write it back, so the file on disk matches what the game is actually using
@@ -1804,9 +1825,42 @@ function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch
 const coinMul = () => 1 + S.up.coin * 0.05;
 const startKi = () => 175 + S.up.ki * 25;
 const wardCount = () => 1 + S.up.ward;
+/* ── Ranks, cards and the two abilities ────────────────────────────────────
+   A crate that hands you a unit you already have gives its 札 — the card, not
+   the unit. Cards buy rank, and rank is what carries the numbers: a flat +6%
+   to damage, health and 氣 per star, plus an ability at ★3 and another at ★5.
+
+   Both costs climb, and the coin side climbs again with rarity, so raising a
+   Common you keep pulling is cheap and finishing an Epic is the long project it
+   ought to be. */
+const MAX_STAR = 5;
+const TOK_STEP  = [1, 2, 4, 7, 12];              // cards to reach ★1 … ★5
+const COIN_STEP = [200, 500, 1200, 2600, 5500];  // points to reach ★1 … ★5
+const SWIFT_AT = 3, MASTER_AT = 5;
+
 const stars = id => S.owned[id] || 0;
 const owns = id => S.owned[id] !== undefined;
+const toks = id => (S.tok && S.tok[id]) || 0;
+const maxRank = id => stars(id) >= MAX_STAR;
+const upCost = id => maxRank(id) ? null : {
+  tok: TOK_STEP[stars(id)],
+  coin: Math.round(COIN_STEP[stars(id)] * (1 + (U[id] ? U[id].rar : 0) * 0.35))
+};
+const canUp = id => { const c = upCost(id); return !!c && toks(id) >= c.tok && S.sp >= c.coin; };
 const starMul = id => 1 + stars(id) * 0.06;
+/* 疾 Swift (★3) — everything the unit does on a clock runs this much faster,
+   which is the one bonus that means something to every kind including 氣. */
+const swift = id => stars(id) >= SWIFT_AT ? 1.18 : 1;
+/* 極 Mastery (★5) — one perk per kind, each of them a field the simulation
+   already reads, applied where that field is read. */
+const mastered = id => stars(id) >= MASTER_AT;
+const MASTERY = {
+  ki:    'orbs worth +25%',   shot:  'shots pierce',
+  wall:  'thorns +60%',       melee: 'reach +25%',
+  mine:  'blast +35%',        chain: 'one extra arc',
+  aura:  'aura +50%'
+};
+const masteryOf = d => MASTERY[d.kind] || 'damage +15%';
 
 /* ══════════════════════════════════════════════════════════════════════
    BOARD GEOMETRY
@@ -2259,7 +2313,7 @@ function unitStat(u, key) {
   return (u.def[key] || 0) * LVL[u.lvl - 1].m * starMul(u.def.id) * valorDmg();
 }
 function unitRate(u) {
-  return u.def.rate / (LVL[u.lvl - 1].r * (1 + u.buff));
+  return u.def.rate / (LVL[u.lvl - 1].r * (1 + u.buff) * swift(u.def.id));
 }
 function spawnUnit(id, r, c, lvl) {
   const def = U[id];
@@ -2380,7 +2434,7 @@ function update(dt) {
   for (const u of R.units) u.buff = 0;
   for (const s of R.units) {
     if (!(s.def.kind === 'aura' || s.def.aura) || s.march < 1) continue;
-    const b = s.def.buff * LVL[s.lvl - 1].m / 1;
+    const b = s.def.buff * LVL[s.lvl - 1].m * (mastered(s.def.id) ? 1.5 : 1);
     for (const u of R.units) {
       if (u === s) continue;
       if (Math.abs(u.r - s.r) <= 1 && Math.abs(u.c - s.c) <= 1) u.buff = Math.max(u.buff, b);
@@ -2408,10 +2462,10 @@ function update(dt) {
     if (def.kind === 'ki') {
       const tier = KI_LVL[u.lvl - 1];
       // the fused Harvest Spirit runs the same table, a third faster
-      const period = tier.period / (1 + u.buff) * (def.aura ? .66 : 1);
+      const period = tier.period / ((1 + u.buff) * swift(def.id)) * (def.aura ? .66 : 1);
       if (u.t >= period) {
         u.t = 0;
-        const amt = Math.round(tier.amount * starMul(def.id));
+        const amt = Math.round(tier.amount * starMul(def.id) * (mastered(def.id) ? 1.25 : 1));
         R.orbs.push({ x: u.x + (Math.random() - .5) * 26, y: u.y - 44, ty: u.y - 6, amount: amt, life: 9, vy: -90 });
         u.pop = .6;
       }
@@ -2430,7 +2484,7 @@ function update(dt) {
         for (let k = 0; k < n; k++) {
           R.shots.push({
             x: u.x + 26, y: u.y - 42 + (k - (n - 1) / 2) * 13, vx: def.proj === 'arrow' ? 900 : 460,
-            lane: u.r, dmg: unitStat(u, 'dmg'), type: def.proj, pierce: !!def.pierce,
+            lane: u.r, dmg: unitStat(u, 'dmg'), type: def.proj, pierce: !!def.pierce || mastered(def.id),
             slow: def.slow || 0, slowT: def.slowT || 0, hit: [], rot: 0, life: 4,
             splash: def.splash || 0, splashDmg: def.splashDmg || 0
           });
@@ -2438,7 +2492,7 @@ function update(dt) {
         SFX.shoot();
       }
     } else if (def.kind === 'melee') {
-      const rng = def.range;
+      const rng = def.range * (mastered(def.id) ? 1.25 : 1);
       if (def.slowAura) {                              // Tide Warden's drag
         for (const z of lane) {
           if (Math.abs(z.x - u.x) < rng * 1.5) { z.slow = Math.max(z.slow, def.slowAura); z.slowT = Math.max(z.slowT, .3); }
@@ -2456,7 +2510,7 @@ function update(dt) {
       }
     } else if (def.kind === 'chain') {
       const near = R.zombs.filter(z => !z.dead && Math.abs(z.lane - u.r) <= 1 && z.x > u.x - 30 && z.x - u.x < 520)
-        .sort((a, b) => (a.x - u.x) - (b.x - u.x)).slice(0, def.chains);
+        .sort((a, b) => (a.x - u.x) - (b.x - u.x)).slice(0, def.chains + (mastered(def.id) ? 1 : 0));
       if (near.length && u.t >= unitRate(u)) {
         u.t = 0; u.pop = .5;
         let px = u.x, py = u.y - 46;
@@ -2543,7 +2597,7 @@ function update(dt) {
         biting.hp -= z.dmg; biting.flash = .12;
         for (let k = 0; k < 4; k++) puff(biting.x + 14, biting.y - 34, '#cdc2ae');
         if (biting.def.thorns) {                       // Thorn Wall bites back
-          damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m, 'quiet');
+          damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m * (mastered(biting.def.id) ? 1.6 : 1), 'quiet');
           for (let k = 0; k < 3; k++) puff(z.x - 10, footY(z.lane) - 34, '#a8d47a');
         }
         SFX.bite();
@@ -3645,6 +3699,43 @@ function luckOdds(base) {
   o[0] -= take; o[2] += take * .6; o[3] += take * .4;
   return o;
 }
+/* The rank line: what the unit is now, what the next star costs, and whether
+   you can pay for it. Shown even at 0 cards, because a player needs to see that
+   duplicates go somewhere before they start pulling them. */
+function rankRow(d) {
+  const st = stars(d.id);
+  const pips = '★'.repeat(st) + '☆'.repeat(MAX_STAR - st);
+  if (maxRank(d.id)) return `<div class="urank"><span class="pips">${pips}</span>` +
+    `<span class="chip star">MAX RANK</span></div>`;
+  const c = upCost(d.id), t = toks(d.id), ready = canUp(d.id);
+  const next = st + 1;
+  const earns = next === SWIFT_AT ? ' · unlocks 疾 SWIFT'
+    : next === MASTER_AT ? ' · unlocks 極 ' + masteryOf(d).toUpperCase() : '';
+  return `<div class="urank">` +
+    `<span class="pips">${pips}</span>` +
+    `<span class="chip${t >= c.tok ? ' star' : ''}">札 ${t}/${c.tok}</span>` +
+    `<span class="chip cost${S.sp >= c.coin ? '' : ' short'}">${c.coin.toLocaleString()} 点</span>` +
+    `<button class="btn up${ready ? '' : ' poor'}" title="Raise to ★${next}${earns}">強化</button>` +
+    `</div>`;
+}
+
+/* Spend cards and points for a rank. Both are checked again here rather than
+   trusted from the button's state — renderBarracks runs on a lot of paths, and
+   a stale card is the kind of thing that hands out a free star. */
+function upgrade(id) {
+  if (!owns(id) || !canUp(id)) { toastNo(); return; }
+  const c = upCost(id);
+  S.tok[id] = toks(id) - c.tok;
+  S.sp -= c.coin;
+  S.owned[id] = stars(id) + 1;
+  persist();
+  const st = stars(id);
+  toast(U[id].name + '  ' + '★'.repeat(st) +
+    (st === SWIFT_AT ? '  疾 SWIFT' : st === MASTER_AT ? '  極 ' + masteryOf(U[id]).toUpperCase() : ''));
+  SFX.merge();
+  renderBarracks();
+}
+
 function renderBarracks() {
   // unlocking a unit makes this list taller, which moves where its end is
   requestAnimationFrame(frameEdges);
@@ -3699,10 +3790,15 @@ function renderBarracks() {
               `<div class="uchips">` +
                 `<span class="chip cost">${d.cost} 氣</span>` +
                 unitStats(d).map(t => `<span class="chip">${t}</span>`).join('') +
-                (stars(d.id) ? `<span class="chip star">${'★'.repeat(stars(d.id))} +${stars(d.id) * 6}%</span>` : '') +
-              `</div>` : '') +
+                (stars(d.id) ? `<span class="chip star">+${stars(d.id) * 6}%</span>` : '') +
+                (stars(d.id) >= SWIFT_AT ? `<span class="chip star" title="Everything on a clock runs 18% faster">疾 SWIFT</span>` : '') +
+                (mastered(d.id) ? `<span class="chip star" title="${masteryOf(d)}">極 ${masteryOf(d).toUpperCase()}</span>` : '') +
+              `</div>` + rankRow(d) : '') +
       `</div><div class="pick">✓</div>`;
     thumb(d.id, el.querySelector('canvas'));
+    const up = el.querySelector('.up');
+    // the card itself toggles the loadout, so the upgrade must not fall through
+    if (up) up.onclick = ev => { ev.stopPropagation(); upgrade(d.id); };
     if (have) {
       el.onclick = () => {
         const i = S.loadout.indexOf(d.id);
@@ -3742,10 +3838,13 @@ function openCrate(c) {
     const pool = CRATE_POOL.filter(u => u.rar === rar);
     const d = pool[(Math.random() * pool.length) | 0];
     let kind, at;
+    /* A duplicate no longer raises the rank on its own — it pays out the
+       unit's 札, which the barracks spends on rank alongside points. Once a
+       unit is maxed its cards have nothing to buy, so it goes back to dust. */
     if (!owns(d.id)) { S.owned[d.id] = 0; kind = 'new'; if (S.loadout.length < 6) S.loadout.push(d.id); }
-    else if (S.owned[d.id] < 5) { kind = 'star'; at = ++S.owned[d.id]; }
-    else { at = 100 + rar * 140; S.sp += at; kind = 'dust'; }   // already 5★ — refund, scaled by rarity
-    pulls.push({ d, rar, kind, at });   // snapshot the star count — later pulls can raise it again
+    else if (!maxRank(d.id)) { kind = 'tok'; at = 1; S.tok[d.id] = toks(d.id) + at; }
+    else { at = 100 + rar * 140; S.sp += at; kind = 'dust'; }
+    pulls.push({ d, rar, kind, at });
   }
   persist();
   SFX.crate();
@@ -3757,14 +3856,15 @@ function openCrate(c) {
     el.innerHTML = `<canvas></canvas>` +
       `<div class="pt" style="color:${RAR_COL[p.rar]}">${RARITY[p.rar]}</div>` +
       `<div class="pn">${p.d.name}</div>` +
-      `<div class="new">${p.kind === 'new' ? 'NEW!' : p.kind === 'star' ? '★'.repeat(p.at) : '+' + p.at + ' 点'}</div>`;
+      `<div class="new">${p.kind === 'new' ? 'NEW!'
+        : p.kind === 'tok' ? '+' + p.at + ' 札' : '+' + p.at + ' 点'}</div>`;
     thumb(p.d.id, el.querySelector('canvas'));
     revealCards.appendChild(el);
   });
   /* Show the money moving. The balance lives on the barracks screen, which this
      overlay covers — so opening crates in a hurry never showed a single point
      being spent and felt free, even though every crate is paid for the instant
-     it opens. Refunds from 5-star duplicates are netted off here too, since
+     it opens. Refunds from maxed-out duplicates are netted off here too, since
      they are the other reason the bank moves less than the sticker price. */
   const refunded = S.sp - (spBefore - c.cost);
   const ledger = document.createElement('div');

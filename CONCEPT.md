@@ -618,6 +618,58 @@ it and concludes the screen is already at its end — which is how all four
 ornaments appeared on a barracks list nobody had scrolled yet. A second
 measurement on the next animation frame sees the filled screen.
 
+### Cards, ranks and the two abilities
+
+A crate that draws a unit you already own no longer hands you a free star. It
+pays that unit's **札** — the card, not the duck — and 札 plus points buy rank in
+the barracks. Both costs climb, and the points side climbs again with rarity, so
+raising a Common you keep pulling is cheap and finishing an Epic is the long
+project it should be:
+
+```
+        ★1     ★2      ★3       ★4       ★5        total
+札       1      2       4        7        12          26
+点     200    500   1,200    2,600    5,500      10,000   (x1 + rarity x0.35)
+```
+
+Rank carries three things. Every star is a flat **+6%** to damage, health and 氣
+— the multiplier that was already there. **★3 unlocks 疾 SWIFT**: everything the
+unit does on a clock runs 18% faster, which is the one bonus that means
+something to every kind, economy included. **★5 unlocks 極 MASTERY**, one perk
+per kind, each of them a field the simulation already reads, applied at the
+point that field is read:
+
+| kind | ★5 |
+| --- | --- |
+| 氣 economy | orbs worth +25% |
+| shooter | shots pierce |
+| wall | thorns +60% |
+| melee | reach +25% |
+| mine | blast +35% |
+| chain | one extra arc |
+| support | aura +50% |
+
+A unit already at ★5 has nothing left to buy, so its duplicates go back to
+paying dust — which is what the old five-star refund did, kept for the same
+reason.
+
+**Verified against the simulation, not against the save.** A Rice Paddy is the
+cleanest probe, because both abilities touch the one timer it runs on: 25 氣
+every 8s at ★0, against 25 × 1.30 × 1.25 every 8 ÷ 1.18s at ★5. Banking orbs by
+hand for 22 seconds each measured **3.36 氣/s against 5.50**, near enough the
+3.13 and 5.99 the arithmetic predicts — the shortfall is orbs that drained
+before the harness clicked them.
+
+That test lied the first time. The run left the tray card armed, so every
+banking click built another paddy at 50 氣 and the ★0 side measured *negative*
+income — and the ratio still came out "passing" because it was negative. The
+harness now proves the cursor is disarmed by clicking bare ground and checking
+氣 did not move, and it throws rather than reporting a number if it wasn't.
+
+**One name collision, caught by the parser.** `master` was already the audio
+master-gain node, so the mastery predicate had to become `mastered` — the same
+trap `TRACKS` sprang earlier in the project.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:
