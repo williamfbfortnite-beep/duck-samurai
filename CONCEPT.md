@@ -828,6 +828,30 @@ one. It now waits for the Energy to actually leave the bank on each placement
 and throws if a lane never gets its wall. The lesson is the same one this
 project keeps relearning: a harness that runs is not a harness that measured.
 
+### Placing is a drag
+
+Press a card, pull it onto a tile, let go. The unit rides the cursor the whole
+way, so the thing you are about to spend Energy on is drawn over the tile before
+you commit to it — which select-then-click never showed you.
+
+**A press that never moves is not a placement.** The old behaviour armed a
+click, which meant a stray tap left the board loaded and the next tap *anywhere*
+spent your Energy. A tap now says `DRAG IT ONTO THE FIELD` and disarms.
+
+Every rule about whether a unit may stand on a tile moved into one `dropUnit`,
+because the drag drop and the keyboard's press-a-number-then-click both need it
+and the two must never disagree about what is legal.
+
+**The keyboard route is deliberately untouched.** Number keys still select and a
+click still places: a game that can only be played by dragging cannot be played
+without a pointer. So a mouse must drag, and a keyboard need not.
+
+The test covers the whole contract — a drag places, a tap does not, a drag that
+ends off the board costs nothing, and the keyboard still works — and it lied
+once on the way. It reported the keyboard as broken, because it asked for a
+second Rice Paddy five seconds after placing the first, and the card was still
+on cooldown. It uses a unit it has not spent when it checks that path now.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

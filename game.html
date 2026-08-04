@@ -134,9 +134,11 @@
     border-image-source: url('assets/ui/slim.png');
     border-image-slice: 12;
     border-image-width: calc(var(--u) * 12);
-    cursor: pointer; overflow: hidden; transition: transform .1s, filter .12s;
+    cursor: grab; overflow: hidden; transition: transform .1s, filter .12s;
+    touch-action: none;
   }
   .card:hover { transform: translateY(calc(var(--u) * -4)); }
+  .card:active { cursor: grabbing; }
   /* The frame is the same art when selected — a swap would have to be the same
      slice depth to keep the card from resizing, and none of the kit's brighter
      frames are. Lift, glow and brighten instead. */
@@ -3348,6 +3350,14 @@ function render() {
   }
   g.globalAlpha = 1;
 
+  // ---- the unit being dragged, riding the cursor over everything else
+  if (R.drag) {
+    g.save();
+    g.globalAlpha = R.drag.on ? .82 : .45;
+    drawSprite(g, R.drag.id, 0, R.drag.x, R.drag.y + 22, SCL, false, 'normal', 0);
+    g.restore();
+  }
+
   // ---- hover label, above everything on the board
   if (hoverLabel) {
     g.textAlign = 'center';
@@ -3519,7 +3529,7 @@ function buildTray() {
       (stars(id) ? `<div class="stars">${'★'.repeat(stars(id))}</div>` : '') +
       `<div class="cdmask" style="transform:scaleY(0)"></div>`;
     thumb(id, el.querySelector('canvas'));
-    el.onclick = () => { R.shovel = false; R.sel = R.sel === id ? null : id; };
+    el.addEventListener('pointerdown', ev => dragStart(id, ev));
     el.onmouseenter = () => showTip(d);
     el.onmouseleave = hideTip;
     trayEl.appendChild(el);
@@ -3635,30 +3645,78 @@ cv.addEventListener('pointerdown', ev => {
     return;
   }
   if (!R.sel) return;
-  const def = U[R.sel];
-  if (R.cds[R.sel] > 0) { toast('NOT READY', true); SFX.bad(); return; }
-  if (R.ki < def.cost) { toast('NOT ENOUGH ENERGY', true); SFX.bad(); return; }
+  dropUnit(R.sel, r, c);
+});
+
+/* Every rule about whether a unit may stand on a tile, in one place — the drag
+   drop and the keyboard's press-a-number-then-click both land here, so the two
+   can never disagree about what is legal. */
+function dropUnit(id, r, c) {
+  const def = U[id];
+  const ex = unitAt(r, c);
+  if (R.cds[id] > 0) { toast('NOT READY', true); SFX.bad(); return false; }
+  if (R.ki < def.cost) { toast('NOT ENOUGH ENERGY', true); SFX.bad(); return false; }
   if (ex) {
-    if (ex.id !== R.sel) {
-      const rec = fusionOf(ex.id, R.sel);
+    if (ex.id !== id) {
+      const rec = fusionOf(ex.id, id);
       if (!rec) {
-        const gated = fusionLocked(ex.id, R.sel);
+        const gated = fusionLocked(ex.id, id);
         toast(gated ? 'RECIPE SEALED UNTIL LEVEL ' + gated.unlock : 'THESE TWO DO NOT FUSE', true);
-        SFX.bad(); return;
+        SFX.bad(); return false;
       }
       // one of each fused species may stand on the field at a time
       if (fusionOnBoard(rec.out)) {
-        toast(U[rec.out].kanji + ' ALREADY ON THE FIELD', true); SFX.bad(); return;
+        toast(U[rec.out].kanji + ' ALREADY ON THE FIELD', true); SFX.bad(); return false;
       }
-    } else if (ex.lvl >= MAXLVL) { toast('ALREADY Lv3', true); SFX.bad(); return; }
+    } else if (ex.lvl >= MAXLVL) { toast('ALREADY Lv3', true); SFX.bad(); return false; }
   }
   R.ki -= def.cost;
-  R.cds[R.sel] = def.cd;
-  if (placeUnit(R.sel, r, c) === false) {        // refused — hand the Energy back
+  R.cds[id] = def.cd;
+  if (placeUnit(id, r, c) === false) {           // refused — hand the Energy back
     R.ki += def.cost;
-    R.cds[R.sel] = 0;
+    R.cds[id] = 0;
+    return false;
   }
+  return true;
+}
+
+/* ── Placing is a drag ─────────────────────────────────────────────────────
+   Press a card, pull it onto a tile, let go. The unit rides the cursor the
+   whole way, so the thing you are about to spend Energy on is visible over the
+   tile before you commit — which select-then-click never showed.
+
+   A press that never moves is not a placement. It used to arm a click, so a
+   stray tap left the board loaded and the next tap anywhere spent the Energy;
+   now it says what to do instead. The keyboard route is deliberately untouched:
+   number keys still select and a click still places, because a game that can
+   only be played by dragging cannot be played without a pointer. */
+let dragId = null, dragMoved = false;
+function dragTo(ev) {
+  const p = toBoard(ev);
+  const c = colOf(p.x), r = rowOf(p.y);
+  const on = c >= 0 && c < COLS && r >= 0 && r < ROWS;
+  R.drag = { id: dragId, x: p.x, y: p.y, on };
+  R.hover = on ? { r, c } : null;
+}
+function dragStart(id, ev) {
+  if (mode !== 'play' || ev.button > 0) return;
+  ac();
+  dragId = id; dragMoved = false;
+  R.shovel = false; R.sel = id;
+  dragTo(ev);
+  ev.preventDefault();
+}
+addEventListener('pointermove', ev => { if (dragId) { dragMoved = true; dragTo(ev); } });
+addEventListener('pointerup', ev => {
+  if (!dragId) return;
+  const id = dragId;
+  dragId = null; R.drag = null; R.hover = null; R.sel = null;
+  if (!dragMoved) { toast('DRAG IT ONTO THE FIELD', true); toastNo(); return; }
+  const p = toBoard(ev);
+  const c = colOf(p.x), r = rowOf(p.y);
+  if (c >= 0 && c < COLS && r >= 0 && r < ROWS) dropUnit(id, r, c);
 });
+addEventListener('pointercancel', () => { dragId = null; R.drag = null; R.hover = null; R.sel = null; });
 
 addEventListener('keydown', ev => {
   if (ev.key === 'Escape') {
