@@ -193,7 +193,19 @@
     background: linear-gradient(100deg, rgba(6,3,12,.30) 0%, rgba(8,4,16,.42) 34%, rgba(10,5,20,.86) 58%, rgba(6,3,12,.94) 100%);
     align-items: flex-end; justify-content: center;
     padding-right: calc(var(--u) * 70);
+    /* room for #menuNav, which is out of flow along the bottom — without this
+       the title block centres on the whole screen and lands on top of it */
+    padding-bottom: calc(var(--u) * 250);
   }
+  /* Anchored to the bottom edge and centred on the board, not on the title
+     block: the hero holds the left of the frame at mid-height, so the bottom
+     strip is the one place a full-width row of buttons sits on empty ground. */
+  #menuNav {
+    position: absolute; left: 0; right: 0; bottom: calc(var(--u) * 20);
+    display: flex; flex-direction: column; align-items: center;
+    gap: calc(var(--u) * 10);
+  }
+  #menuNav .hint { margin-top: calc(var(--u) * 2); max-width: calc(var(--u) * 760); }
   #menuPlate { display: flex; flex-direction: column; align-items: center; text-align: center; }
   #menuPlate .crest {
     font-family: "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
@@ -594,20 +606,23 @@
         <div class="sub">Siege of the Rotting Reeds</div>
         <div class="bank"><span>点 <b id="mSp">0</b></span><span style="opacity:.75">LEVEL <b id="mLevel">1</b> <span style="opacity:.6;font-size:calc(var(--u)*13)">of 100</span></span></div>
         <div class="sub" id="mGoal" style="margin-top:calc(var(--u)*6);letter-spacing:.2em"></div>
-        <div class="row" style="margin-top:calc(var(--u)*14)">
+      </div>
+      <!-- The buttons sit along the bottom edge rather than under the title, so
+           the middle of the frame belongs to the artwork. Four secondaries fit
+           one row at 1140 wide, which reads tidier than the 3 + 1 it was. -->
+      <div id="menuNav">
+        <div class="row">
           <button class="btn big on" id="btnPlay">出陣 &nbsp;DEPLOY</button>
         </div>
-        <div class="row" style="margin-top:calc(var(--u)*9)">
+        <div class="row">
           <button class="btn" id="btnBarracks">兵舎 &nbsp;BARRACKS</button>
           <button class="btn" id="btnCodex">巻物 &nbsp;FUSION CODEX</button>
           <button class="btn" id="btnUpgrades">強化 &nbsp;UPGRADES</button>
-        </div>
-        <div class="row" style="margin-top:calc(var(--u)*8)">
           <button class="btn" id="btnSettings">設定 &nbsp;SETTINGS</button>
         </div>
         <div class="hint">
           The rotting flock is marching west on the <b>nests</b> — five clutches of
-          eggs at the far end of the garden, one behind each lane.<br>
+          eggs at the far end of the garden, one behind each lane.
           Drop a unit on its twin to <b>MERGE</b> it; drop a <i>different</i> one to <b>FUSE</b>.
         </div>
       </div>

@@ -580,6 +580,13 @@ chrome to the HUD row; at wave 100 of 100 with a seven-figure bank it still has
 
 ### Settings, and corners that know where the list ends
 
+The title screen's buttons sit along the **bottom edge** rather than stacked
+under the title, so the middle of the frame belongs to the artwork and the hero
+is not competing with a column of chrome. The four secondaries fit one row at
+1140 wide, which reads tidier than the 3 + 1 they were in. The title block stays
+right of centre — the standoff composition the backdrop was drawn for — and is
+pushed up by a reserved band at the foot of the screen.
+
 Audio, battle speed, campaign progress and the destructive actions live on one
 **設定 SETTINGS** screen, reachable from the title and from the pause screen.
 Which one you came from is remembered, so BACK returns you to the run you were
