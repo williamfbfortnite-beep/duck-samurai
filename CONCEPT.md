@@ -582,8 +582,10 @@ chrome to the HUD row; at wave 100 of 100 with a seven-figure bank it still has
 
 The title screen's buttons sit along the **bottom edge** rather than stacked
 under the title, so the middle of the frame belongs to the artwork and the hero
-is not competing with a column of chrome. The four secondaries fit one row at
-1140 wide, which reads tidier than the 3 + 1 they were in. The title block stays
+is not competing with a column of chrome. All five fit one row at 1140 wide —
+出陣 DEPLOY at the left in its parchment frame, then the four secondaries — which
+spans 1010 of the 1088 usable, so it is lifted clear of the bottom corner
+ornaments rather than clipping them. The title block stays
 right of centre — the standoff composition the backdrop was drawn for — and is
 pushed up by a reserved band at the foot of the screen.
 

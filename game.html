@@ -201,7 +201,12 @@
      block: the hero holds the left of the frame at mid-height, so the bottom
      strip is the one place a full-width row of buttons sits on empty ground. */
   #menuNav {
-    position: absolute; left: 0; right: 0; bottom: calc(var(--u) * 20);
+    position: absolute; left: 0; right: 0;
+    /* 44, not 20: the row is wide enough that its outer buttons reach into the
+       bottom corner ornaments, which sit 91u square at a 7u inset. This lifts
+       the buttons clear of them. The hint below can sit in that band — it is
+       centred and narrow, so it never reaches the corners horizontally. */
+    bottom: calc(var(--u) * 44);
     display: flex; flex-direction: column; align-items: center;
     gap: calc(var(--u) * 10);
   }
@@ -613,8 +618,6 @@
       <div id="menuNav">
         <div class="row">
           <button class="btn big on" id="btnPlay">出陣 &nbsp;DEPLOY</button>
-        </div>
-        <div class="row">
           <button class="btn" id="btnBarracks">兵舎 &nbsp;BARRACKS</button>
           <button class="btn" id="btnCodex">巻物 &nbsp;FUSION CODEX</button>
           <button class="btn" id="btnUpgrades">強化 &nbsp;UPGRADES</button>

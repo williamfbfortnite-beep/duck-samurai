@@ -96,6 +96,32 @@ fog and dark. Strongest for a small screen.
 
 ---
 
+## If it comes back "too detailed, very small pixels"
+
+That already happened once, and it is now fixable rather than a reason to
+regenerate.
+
+The UI kit came back with the same fault, and measuring it explained why: a
+200x60 button held **1,759 distinct colours** and the largest panel held 4,331.
+The generator does not produce limited-palette pixel art. It produces painterly
+work with per-pixel noise that only reads as pixel art from a distance — which
+is exactly what "very detailed, very small pixels" describes.
+
+`tools/uikit.mjs` carries a median-cut quantiser that collapses that noise onto
+a real palette. On the kit it cut 48 colours a piece at a mean colour shift of
+1-6 out of a possible 441 — invisible — and the result reads as pixel art in a
+way the source did not. Point it at a title screen and it will do the same.
+
+So: if a generation has the right composition but the wrong surface, keep it and
+send it anyway. The palette is recoverable. What is *not* recoverable is
+composition, framing, or lettering baked into the art.
+
+One other thing that pass taught us, and it matters if you want the two-layer
+version below: **when this generator is asked for transparency it paints a
+checkerboard.** The file comes back 100% opaque with the pattern drawn into the
+image. It keys out — the checkerboard is two flat neutral greys against art
+that is either coloured or much darker — but do not assume the alpha is real.
+
 ## When it comes back
 
 Send the **PNG** and I'll wire it in. It becomes the menu backdrop in place of
