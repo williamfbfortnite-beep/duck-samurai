@@ -175,6 +175,27 @@ out-damages three Lv1s *and* leaves two tiles free. But merging concentrates you
 line — one well-placed Ronin eats a Lv3 and you've lost three units' worth of Ki
 at once. Spread wide and survive chip damage, or stack tall and pray.
 
+**Every pair fuses.** All 45 combinations of the ten buildable units have a
+recipe and a distinct result — 34 were added at once, each with a sprite built
+from its two parents: the parts each wears, deduped and capped at three, over
+their merged palettes. A result always looks descended from the pair that made
+it.
+
+Their stats were shaped by a real constraint. The engine reads each modifier
+inside one behaviour branch: `slowAura` and `burn` only fire for melee, `drain`
+only for chain, `freeze` only for mine, while `aura`/`buff` and `thorns` apply
+to any kind. A slow written onto a `ki` unit would read as design and do
+nothing, so the paddy hybrids keep their economy and take thorns or an aura
+instead of a chill. A generator asserts every field against that table rather
+than trusting it.
+
+**巻物 — the fusion scroll.** Recipes otherwise open only by reaching their
+campaign level, which leaves a player who wants one particular pairing with no
+way to chase it. A scroll opens a random sealed recipe outright and marks it
+discovered, so the codex shows what the money bought. It starts at 2,200 点 and
+climbs 900 per scroll owned — skipping the ladder should never be the cheap
+route to a full codex.
+
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
 **★ star** to that unit (+6% damage and HP each, max 5), so crates never dead-end.
 

@@ -215,6 +215,7 @@
   .crate.ash  { border-color: #7d6a55; } .crate.ash .cname  { color: #cbb79b; }
   .crate.iron { border-color: #7f93a8; } .crate.iron .cname { color: #bcd2e6; }
   .crate.gold { border-color: #d4a94e; } .crate.gold .cname { color: #ffd98a; }
+  .crate.scroll { border-color: #9a6fbf; } .crate.scroll .cname { color: #d9b6ff; }
 
   .grid { display: grid; grid-template-columns: repeat(3, calc(var(--u) * 320)); gap: calc(var(--u) * 9); }
   .ucard .ubody { min-width: 0; flex: 1; }
@@ -1418,7 +1419,15 @@ const FUSIONS = [
   { a: 'yumi', b: 'drum', out: 'stormbow', unlock: 96 },
   { a: 'yumi', b: 'shrine', out: 'oraclebow', unlock: 99 }
 ];
-const recipeUnlocked = f => (S.level || 1) >= f.unlock;
+/* A recipe opens either by reaching its campaign level or by buying its scroll.
+   The scroll is the only way past the ladder, so it prices itself up each time
+   one is bought — see scrollCost. */
+const recipeUnlocked = f => (S.level || 1) >= f.unlock || !!(S.scrolls && S.scrolls[f.out]);
+const scrollsOwned = () => Object.keys(S.scrolls || {}).length;
+// starts near a gold crate and climbs steeply: skipping the campaign should
+// never be the cheap route to a full codex
+const scrollCost = () => 2200 + scrollsOwned() * 900;
+const lockedRecipes = () => FUSIONS.filter(f => !recipeUnlocked(f));
 const recipeFound = f => !!(S.found && S.found[f.out]);
 function fusionOf(x, y) {
   const f = FUSIONS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x));
@@ -1506,6 +1515,7 @@ const fresh = () => ({
   sp: 0, bestWave: 0, runs: 0, level: 1, cleared: 0,
   owned: { paddy: 0, kunai: 0, bamboo: 0 },      // id -> stars
   found: {},                                     // fusion id -> times discovered
+  scrolls: {},                                   // fusion id -> bought outright, skips the level gate
   mediaRoute: null,                              // null = use the platform default
   loadout: ['paddy', 'kunai', 'bamboo'],
   up: { coin: 0, ki: 0, ward: 0, luck: 0 }
@@ -1525,6 +1535,7 @@ const keepLoadout = S.loadout.filter(id => U[id] && !U[id].fused);
 if (keepLoadout.length !== S.loadout.length) { S.loadout = keepLoadout; scrubbed = true; }
 // write it back, so the file on disk matches what the game is actually using
 if (scrubbed) persist();
+if (!S.scrolls) S.scrolls = {};     // saves written before scrolls existed
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
 const coinMul = () => 1 + S.up.coin * 0.05;
@@ -3282,6 +3293,21 @@ function renderBarracks() {
     cr.appendChild(el);
   }
 
+  /* 巻物 — buy a recipe outright. Fusions otherwise open only by reaching their
+     campaign level, which means a player who wants a particular pairing has no
+     way to chase it. This is that way, priced so it is never the cheap route:
+     it climbs 900 点 per scroll already owned. */
+  const locked = lockedRecipes();
+  const sc = document.createElement('div');
+  const scost = scrollCost();
+  sc.className = 'crate scroll' + (S.sp < scost || !locked.length ? ' poor' : '');
+  sc.innerHTML = `<canvas class="cimg"></canvas><div class="cname">巻物 SCROLL</div>` +
+    `<div class="cdesc">${locked.length ? 'Opens one sealed recipe<br>' + locked.length + ' still sealed' : 'Every recipe is open'}</div>` +
+    `<div class="cprice">${locked.length ? scost.toLocaleString() + ' 点' : '—'}</div>`;
+  objThumb('ofuda', sc.querySelector('canvas'));
+  sc.onclick = () => buyScroll();
+  cr.appendChild(sc);
+
   const grid = document.getElementById('unitGrid');
   grid.innerHTML = '';
   /* The flock is what crates can actually give you. Iterating every unit put
@@ -3375,6 +3401,42 @@ function openCrate(c) {
   ledger.innerHTML =
     `<span style="color:#ff9a8a">−${c.cost.toLocaleString()} 点</span>` +
     (refunded > 0 ? `<span style="color:#9be8ff">  +${refunded.toLocaleString()} 点 dust</span>` : '') +
+    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 点</span>`;
+  revealCards.appendChild(ledger);
+  const tip = document.createElement('div');
+  tip.style.cssText = 'position:absolute;bottom:calc(var(--u)*40);width:100%;text-align:center;opacity:.5;font-size:calc(var(--u)*14);letter-spacing:.25em';
+  tip.textContent = 'CLICK TO CONTINUE';
+  revealCards.appendChild(tip);
+  revealEl.classList.add('on');
+  renderBarracks();
+}
+/* Buying a scroll opens a random sealed recipe and marks it discovered, so the
+   codex shows what the money bought — a scroll you cannot read would be a
+   strange thing to sell. */
+function buyScroll() {
+  const locked = lockedRecipes();
+  if (!locked.length) { toastNo(); return; }
+  const cost = scrollCost();
+  if (S.sp < cost) { toastNo(); return; }
+  S.sp -= cost;
+  const f = locked[(Math.random() * locked.length) | 0];
+  S.scrolls[f.out] = true;
+  S.found[f.out] = (S.found[f.out] || 0) + 1;
+  persist();
+  SFX.crate();
+  const out = U[f.out];
+  revealCards.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'pull n3';
+  el.innerHTML = `<canvas></canvas>` +
+    `<div class="pt" style="color:#d78fff">RECIPE UNSEALED</div>` +
+    `<div class="pn">${out.kanji} ${out.name}</div>` +
+    `<div class="new">${U[f.a].kanji} + ${U[f.b].kanji}</div>`;
+  thumb(f.out, el.querySelector('canvas'));
+  revealCards.appendChild(el);
+  const ledger = document.createElement('div');
+  ledger.style.cssText = 'position:absolute;bottom:calc(var(--u)*68);width:100%;text-align:center;font-size:calc(var(--u)*16)';
+  ledger.innerHTML = `<span style="color:#ff9a8a">−${cost.toLocaleString()} 点</span>` +
     `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 点</span>`;
   revealCards.appendChild(ledger);
   const tip = document.createElement('div');
