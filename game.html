@@ -1367,67 +1367,91 @@ function unitStats(d) {
 
 /* ── fusion recipes ── order-independent: A + B and B + A both work ── */
 const FUSIONS = [
-  // tier 1 — two buildable units. `unlock` is the campaign level that makes
-  // the recipe work at all; until then the pair simply refuses to fuse.
-  { a: 'kunai', b: 'paddy', out: 'sunwake', unlock: 3 },
-  { a: 'kunai', b: 'frost', out: 'frostblade', unlock: 6 },
-  { a: 'bamboo', b: 'bomb', out: 'thornwall', unlock: 9 },
-  { a: 'bamboo', b: 'naginata', out: 'bulwark', unlock: 13 },
-  { a: 'frost', b: 'bomb', out: 'frostmine', unlock: 18 },
-  { a: 'kunai', b: 'naginata', out: 'embermonk', unlock: 24 },
-  { a: 'fan', b: 'yumi', out: 'windherald', unlock: 31 },
-  { a: 'yumi', b: 'bomb', out: 'bombardier', unlock: 39 },
-  { a: 'paddy', b: 'shrine', out: 'harvest', unlock: 48 },
-  { a: 'fan', b: 'drum', out: 'stormfan', unlock: 58 },
-  { a: 'drum', b: 'shrine', out: 'gravebell', unlock: 69 },
-  // tier 2 — a fusion result is itself an ingredient. The board unit is the
-  // fused one; the card you drop on it is an ordinary buildable unit.
-  { a: 'bulwark', b: 'frost', out: 'tidewarden', unlock: 80, t2: true },
-  // the rest of the matrix — every pair of buildable units now fuses
-  { a: 'paddy', b: 'bamboo', out: 'ricewall', unlock: 2 },
-  { a: 'paddy', b: 'fan', out: 'windmill', unlock: 7 },
-  { a: 'paddy', b: 'frost', out: 'icepaddy', unlock: 10 },
-  { a: 'paddy', b: 'bomb', out: 'fertile', unlock: 14 },
-  { a: 'paddy', b: 'naginata', out: 'harvester', unlock: 16 },
-  { a: 'paddy', b: 'yumi', out: 'longfield', unlock: 20 },
-  { a: 'paddy', b: 'drum', out: 'festival', unlock: 22 },
-  { a: 'kunai', b: 'bamboo', out: 'thicket', unlock: 26 },
-  { a: 'kunai', b: 'fan', out: 'flurry', unlock: 29 },
-  { a: 'kunai', b: 'bomb', out: 'clusterduck', unlock: 32 },
-  { a: 'kunai', b: 'yumi', out: 'ironsight', unlock: 35 },
-  { a: 'kunai', b: 'drum', out: 'stormblade', unlock: 37 },
-  { a: 'kunai', b: 'shrine', out: 'foxblade', unlock: 41 },
-  { a: 'bamboo', b: 'fan', out: 'windbreak', unlock: 43 },
-  { a: 'bamboo', b: 'frost', out: 'icewall', unlock: 46 },
-  { a: 'bamboo', b: 'yumi', out: 'palisade', unlock: 50 },
-  { a: 'bamboo', b: 'drum', out: 'warfence', unlock: 52 },
-  { a: 'bamboo', b: 'shrine', out: 'sacredgrove', unlock: 55 },
-  { a: 'fan', b: 'frost', out: 'snowfan', unlock: 57 },
-  { a: 'fan', b: 'bomb', out: 'shrapnel', unlock: 61 },
-  { a: 'fan', b: 'naginata', out: 'windblade', unlock: 64 },
-  { a: 'fan', b: 'shrine', out: 'prayerfan', unlock: 66 },
-  { a: 'frost', b: 'naginata', out: 'glacier', unlock: 70 },
-  { a: 'frost', b: 'yumi', out: 'icicle', unlock: 72 },
-  { a: 'frost', b: 'drum', out: 'hailstorm', unlock: 75 },
-  { a: 'frost', b: 'shrine', out: 'winterfox', unlock: 77 },
-  { a: 'bomb', b: 'naginata', out: 'sapper', unlock: 81 },
-  { a: 'bomb', b: 'drum', out: 'thunderkeg', unlock: 84 },
-  { a: 'bomb', b: 'shrine', out: 'foxfire', unlock: 86 },
-  { a: 'naginata', b: 'yumi', out: 'sentinel', unlock: 89 },
-  { a: 'naginata', b: 'drum', out: 'warlord', unlock: 91 },
-  { a: 'naginata', b: 'shrine', out: 'templeguard', unlock: 94 },
-  { a: 'yumi', b: 'drum', out: 'stormbow', unlock: 96 },
-  { a: 'yumi', b: 'shrine', out: 'oraclebow', unlock: 99 }
+  /* tier = the two parents' rarities added up, so fusing rare units gives a
+     rare result. Recipes at sum 2 or below open by reaching their campaign
+     level; the rest are scrollOnly and never open by playing, so a scroll
+     always sells something the ladder would not have given you. */
+  // --- earned by playing
+  { a: 'kunai', b: 'paddy', out: 'sunwake', tier: 0, unlock: 2 },
+  { a: 'paddy', b: 'bamboo', out: 'ricewall', tier: 0, unlock: 7 },
+  { a: 'kunai', b: 'bamboo', out: 'thicket', tier: 0, unlock: 12 },
+  { a: 'kunai', b: 'frost', out: 'frostblade', tier: 0, unlock: 17 },
+  { a: 'bamboo', b: 'bomb', out: 'thornwall', tier: 0, unlock: 21 },
+  { a: 'paddy', b: 'fan', out: 'windmill', tier: 0, unlock: 26 },
+  { a: 'paddy', b: 'frost', out: 'icepaddy', tier: 0, unlock: 31 },
+  { a: 'paddy', b: 'bomb', out: 'fertile', tier: 0, unlock: 36 },
+  { a: 'kunai', b: 'fan', out: 'flurry', tier: 0, unlock: 41 },
+  { a: 'kunai', b: 'bomb', out: 'clusterduck', tier: 0, unlock: 46 },
+  { a: 'bamboo', b: 'fan', out: 'windbreak', tier: 0, unlock: 51 },
+  { a: 'bamboo', b: 'frost', out: 'icewall', tier: 0, unlock: 55 },
+  { a: 'bamboo', b: 'naginata', out: 'bulwark', tier: 1, unlock: 60 },
+  { a: 'frost', b: 'bomb', out: 'frostmine', tier: 1, unlock: 65 },
+  { a: 'kunai', b: 'naginata', out: 'embermonk', tier: 1, unlock: 70 },
+  { a: 'paddy', b: 'naginata', out: 'harvester', tier: 1, unlock: 75 },
+  { a: 'paddy', b: 'yumi', out: 'longfield', tier: 1, unlock: 80 },
+  { a: 'kunai', b: 'yumi', out: 'ironsight', tier: 1, unlock: 84 },
+  { a: 'bamboo', b: 'yumi', out: 'palisade', tier: 1, unlock: 89 },
+  { a: 'fan', b: 'frost', out: 'snowfan', tier: 1, unlock: 94 },
+  { a: 'fan', b: 'bomb', out: 'shrapnel', tier: 1, unlock: 99 },
+  // --- scroll-only, weighted by tier when a scroll is opened
+  { a: 'fan', b: 'yumi', out: 'windherald', tier: 1, scrollOnly: true },
+  { a: 'yumi', b: 'bomb', out: 'bombardier', tier: 1, scrollOnly: true },
+  { a: 'paddy', b: 'shrine', out: 'harvest', tier: 1, scrollOnly: true },
+  { a: 'fan', b: 'drum', out: 'stormfan', tier: 2, scrollOnly: true },
+  { a: 'drum', b: 'shrine', out: 'gravebell', tier: 3, scrollOnly: true },
+  { a: 'bulwark', b: 'frost', out: 'tidewarden', tier: 3, scrollOnly: true, t2: true },
+  { a: 'paddy', b: 'drum', out: 'festival', tier: 1, scrollOnly: true },
+  { a: 'kunai', b: 'drum', out: 'stormblade', tier: 1, scrollOnly: true },
+  { a: 'kunai', b: 'shrine', out: 'foxblade', tier: 1, scrollOnly: true },
+  { a: 'bamboo', b: 'drum', out: 'warfence', tier: 1, scrollOnly: true },
+  { a: 'bamboo', b: 'shrine', out: 'sacredgrove', tier: 1, scrollOnly: true },
+  { a: 'fan', b: 'naginata', out: 'windblade', tier: 1, scrollOnly: true },
+  { a: 'fan', b: 'shrine', out: 'prayerfan', tier: 2, scrollOnly: true },
+  { a: 'frost', b: 'naginata', out: 'glacier', tier: 1, scrollOnly: true },
+  { a: 'frost', b: 'yumi', out: 'icicle', tier: 1, scrollOnly: true },
+  { a: 'frost', b: 'drum', out: 'hailstorm', tier: 2, scrollOnly: true },
+  { a: 'frost', b: 'shrine', out: 'winterfox', tier: 2, scrollOnly: true },
+  { a: 'bomb', b: 'naginata', out: 'sapper', tier: 1, scrollOnly: true },
+  { a: 'bomb', b: 'drum', out: 'thunderkeg', tier: 2, scrollOnly: true },
+  { a: 'bomb', b: 'shrine', out: 'foxfire', tier: 2, scrollOnly: true },
+  { a: 'naginata', b: 'yumi', out: 'sentinel', tier: 2, scrollOnly: true },
+  { a: 'naginata', b: 'drum', out: 'warlord', tier: 2, scrollOnly: true },
+  { a: 'naginata', b: 'shrine', out: 'templeguard', tier: 2, scrollOnly: true },
+  { a: 'yumi', b: 'drum', out: 'stormbow', tier: 2, scrollOnly: true },
+  { a: 'yumi', b: 'shrine', out: 'oraclebow', tier: 2, scrollOnly: true },
 ];
 /* A recipe opens either by reaching its campaign level or by buying its scroll.
    The scroll is the only way past the ladder, so it prices itself up each time
    one is bought — see scrollCost. */
-const recipeUnlocked = f => (S.level || 1) >= f.unlock || !!(S.scrolls && S.scrolls[f.out]);
+/* A campaign recipe opens at its level. A scrollOnly recipe has no level and
+   opens only when its scroll is bought — so the two sets never overlap and a
+   scroll cannot sell you something you were going to be handed anyway. */
+const recipeUnlocked = f => (f.unlock != null && (S.level || 1) >= f.unlock) || !!(S.scrolls && S.scrolls[f.out]);
 const scrollsOwned = () => Object.keys(S.scrolls || {}).length;
-// starts near a gold crate and climbs steeply: skipping the campaign should
-// never be the cheap route to a full codex
-const scrollCost = () => 2200 + scrollsOwned() * 900;
-const lockedRecipes = () => FUSIONS.filter(f => !recipeUnlocked(f));
+const scrollCost = () => 1500 + scrollsOwned() * 250;
+// what a scroll can still give you: the scroll-only recipes you don't own
+const scrollPool = () => FUSIONS.filter(f => f.scrollOnly && !(S.scrolls && S.scrolls[f.out]));
+
+/* Rarer fusions are rarer to pull. Weights per tier, before luck; Fortune's
+   Favour shifts weight off the common end and onto the top two exactly as it
+   does for crates, so the upgrade means the same thing everywhere. */
+const TIER_NAME = ['Common', 'Uncommon', 'Rare', 'Mythic'];
+const TIER_COL = ['#8d99a8', '#5fb37a', '#5b8fd6', '#d78fff'];
+const TIER_W = [0, 62, 30, 8];
+function scrollWeights() {
+  const w = TIER_W.slice();
+  const shift = Math.min(w[1], S.up.luck * 4);
+  w[1] -= shift; w[2] += shift * .6; w[3] += shift * .4;
+  return w;
+}
+function rollScroll(pool) {
+  const w = scrollWeights();
+  let total = 0;
+  for (const f of pool) total += w[f.tier] || 1;
+  let r = Math.random() * total;
+  for (const f of pool) { r -= (w[f.tier] || 1); if (r <= 0) return f; }
+  return pool[pool.length - 1];
+}
 const recipeFound = f => !!(S.found && S.found[f.out]);
 function fusionOf(x, y) {
   const f = FUSIONS.find(r => (r.a === x && r.b === y) || (r.a === y && r.b === x));
@@ -3297,7 +3321,7 @@ function renderBarracks() {
      campaign level, which means a player who wants a particular pairing has no
      way to chase it. This is that way, priced so it is never the cheap route:
      it climbs 900 点 per scroll already owned. */
-  const locked = lockedRecipes();
+  const locked = scrollPool();
   const sc = document.createElement('div');
   const scost = scrollCost();
   sc.className = 'crate scroll' + (S.sp < scost || !locked.length ? ' poor' : '');
@@ -3414,12 +3438,12 @@ function openCrate(c) {
    codex shows what the money bought — a scroll you cannot read would be a
    strange thing to sell. */
 function buyScroll() {
-  const locked = lockedRecipes();
+  const locked = scrollPool();
   if (!locked.length) { toastNo(); return; }
   const cost = scrollCost();
   if (S.sp < cost) { toastNo(); return; }
   S.sp -= cost;
-  const f = locked[(Math.random() * locked.length) | 0];
+  const f = rollScroll(locked);   // weighted, so a mythic is a real find
   S.scrolls[f.out] = true;
   S.found[f.out] = (S.found[f.out] || 0) + 1;
   persist();
@@ -3429,7 +3453,7 @@ function buyScroll() {
   const el = document.createElement('div');
   el.className = 'pull n3';
   el.innerHTML = `<canvas></canvas>` +
-    `<div class="pt" style="color:#d78fff">RECIPE UNSEALED</div>` +
+    `<div class="pt" style="color:${TIER_COL[f.tier]}">${TIER_NAME[f.tier]} RECIPE</div>` +
     `<div class="pn">${out.kanji} ${out.name}</div>` +
     `<div class="new">${U[f.a].kanji} + ${U[f.b].kanji}</div>`;
   thumb(f.out, el.querySelector('canvas'));

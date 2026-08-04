@@ -189,12 +189,37 @@ nothing, so the paddy hybrids keep their economy and take thorns or an aura
 instead of a chill. A generator asserts every field against that table rather
 than trusting it.
 
-**巻物 — the fusion scroll.** Recipes otherwise open only by reaching their
-campaign level, which leaves a player who wants one particular pairing with no
-way to chase it. A scroll opens a random sealed recipe outright and marks it
-discovered, so the codex shows what the money bought. It starts at 2,200 点 and
-climbs 900 per scroll owned — skipping the ladder should never be the cheap
-route to a full codex.
+**Fusions have rarity, and the two ways of getting them do not overlap.** A
+fusion's tier is the sum of its parents' rarities — fusing two rare units gives
+something rare, which needs no explaining to a player. Everything at sum 2 or
+below is **earned by playing**: 21 recipes on the campaign ladder, spread from
+level 2 to 99. Everything above is **scroll-only**: 25 recipes with no level
+gate at all, reachable only by buying them.
+
+| | Earned by playing | Scroll only |
+| --- | --- | --- |
+| Common | 12 | — |
+| Uncommon | 9 | 12 |
+| Rare | — | 11 |
+| Mythic | — | 2 |
+
+The two sets are disjoint on purpose, so a scroll can never sell you something
+the ladder was going to hand you anyway.
+
+**巻物 — the fusion scroll.** Opens one sealed recipe and marks it discovered,
+so the codex shows what the money bought. The draw is weighted by tier, and
+Fortune's Favour shifts it exactly as it does for crates — so the upgrade means
+the same thing everywhere. Measured over 4,000 rolls:
+
+| Luck | Uncommon | Rare | Mythic |
+| --- | --- | --- | --- |
+| 0 | 67.8% | 30.7% | 1.4% |
+| 4 | 54.9% | 42.4% | 2.7% |
+| 8 | 38.0% | 57.4% | 4.6% |
+
+At 1,500 点 rising 250 per scroll owned, the full set of 25 costs 112,500 —
+about one and a half campaigns of income at a maxed coin multiplier. A
+completionist goal, not a weekend one.
 
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
 **★ star** to that unit (+6% damage and HP each, max 5), so crates never dead-end.
