@@ -796,6 +796,38 @@ for the same run, and 250 / 175 / 175 力 to open.
 A test that can only pass is not a test, and three of the four written for this
 could only pass.
 
+### Walls had no answer to a growing bite
+
+A Bamboo Wall was 450 health and nothing else, and its problem was never its
+opening health — it was that the opening health is all it ever had. A zombie's
+bite grows 3.5% a wave, so a wall placed at wave 1 and kept alive is chewed
+through in fewer and fewer bites as a run goes on, while a freshly placed one
+gets valor and the old one does not. The wall you have been nursing is the
+weakest thing on your board.
+
+It is 700 health now, on an 8-second cooldown rather than 11, with two rules
+that apply to every `kind: 'wall'` so the thorn fusions inherit them:
+
+- **Regrowth.** Untouched for 2.5 seconds, a wall grows back at 6% of its
+  maximum a second — full in about seventeen. This is what makes a wall worth
+  *keeping* rather than replacing: it survives the gap between waves instead of
+  arriving at the next one already half eaten. It is also what bamboo does.
+- **Valor tracking.** A wall's ceiling rises with the run exactly as a newly
+  placed one's would, and the gain is handed straight over as health rather than
+  only widening the distance to full. A wall held since wave 1 is as strong as
+  one dropped at wave 50.
+
+Measured with five walls and no shooters at all, so nothing can kill a zombie
+and the only variable is how long the walls last: **44.6s before, 52.7s after**
+at level 30.
+
+That test lied twice before it worked. Its first version clicked five placements
+in half a second — but the card has a cooldown, so it placed *one* wall and
+silently refused four, and reported the buffed wall as **worse** than the old
+one. It now waits for the Energy to actually leave the bank on each placement
+and throws if a lane never gets its wall. The lesson is the same one this
+project keeps relearning: a harness that runs is not a harness that measured.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

@@ -1492,8 +1492,8 @@ const UNITS = [
     blurb: 'Grows an Energy orb every 8s. Click it to bank it — an orb left alone drains away. Merging one saves space but three separate paddies out-earn it.' },
   { id: 'kunai', name: 'Kunai Duck', kanji: '苦無', cost: 100, cd: 5, rar: 0, kind: 'shot', hp: 240,
     dmg: 22, rate: 1.5, proj: 'kunai', blurb: 'Throws down the lane. Reliable, cheap, everywhere.' },
-  { id: 'bamboo', name: 'Bamboo Wall', kanji: '竹', cost: 50, cd: 11, rar: 0, kind: 'wall', hp: 450,
-    blurb: 'Does nothing but refuse to die. Buys your shooters time.' },
+  { id: 'bamboo', name: 'Bamboo Wall', kanji: '竹', cost: 50, cd: 8, rar: 0, kind: 'wall', hp: 700,
+    blurb: 'Does nothing but refuse to die — and grows back whenever nothing is chewing on it. Buys your shooters time.' },
   { id: 'fan', name: 'Twin Fan', kanji: '扇', cost: 175, cd: 7, rar: 1, kind: 'shot', hp: 240,
     dmg: 15, rate: 1.2, proj: 'fan', count: 2, blurb: 'Two blades a volley. Shreds light waves.' },
   { id: 'frost', name: 'Frost Lantern', kanji: '氷', cost: 150, cd: 7, rar: 1, kind: 'shot', hp: 260,
@@ -1682,6 +1682,7 @@ function unitStats(d) {
   if (d.slow) out.push(`${Math.round(d.slow * 100)}% slow`);
   if (d.freeze) out.push(`freezes ${d.freeze}s`);
   if (d.burn) out.push(`burns ${d.burn}/s`);
+  if (d.kind === 'wall') out.push('regrows');
   if (d.thorns) out.push(`${d.thorns} thorns`);
   if (d.slowAura) out.push(`${Math.round(d.slowAura * 100)}% aura slow`);
   if (d.chains) out.push(`${d.chains} chains`);
@@ -1846,6 +1847,27 @@ const isEliteLevel = L => L % 5 === 0;
 // quadratic reaches ~25x instead, which a scaled-up board can actually fight.
 const waveMul = w => 1 + 0.08 * (w - 1) + 0.0016 * (w - 1) * (w - 1);
 const levelMul = L => 1 + blockStep(L) * 0.06;
+
+/* ── Walls ────────────────────────────────────────────────────────────────
+   A wall's problem was never its opening HP, it was that the opening HP is all
+   it ever had. A zombie's bite grows 3.5% a wave, so a wall placed at wave 1
+   and kept alive is chewed through in fewer and fewer bites as the run goes on,
+   while a freshly-placed one benefits from valor and the old one does not.
+
+   Two rules fix that, and both are what bamboo would actually do:
+
+   REGROWTH — untouched for a moment, a wall grows back. This is what makes a
+   wall worth keeping rather than replacing: it survives the gap between waves
+   instead of arriving at the next one already half eaten.
+
+   VALOR TRACKING — a wall's ceiling rises with the run the same way a newly
+   placed one would, and the gain is handed straight over as health rather than
+   only widening the distance to full. A wall you have held since wave 1 is as
+   strong as one you drop at wave 50.
+
+   Both apply to every kind: 'wall', so the thorn fusions inherit them. */
+const WALL_CALM = 2.5;      // seconds unbitten before it starts growing back
+const WALL_REGROW = 0.06;   // of max health a second, so full in about 17s
 
 /* ── Valor (武功) ──────────────────────────────────────────────────────
    Towers cap out at Lv3 x 5 stars, so without this the player's ceiling is
@@ -2472,7 +2494,7 @@ function spawnUnit(id, r, c, lvl, rank) {
   const hp = def.hp * LVL[lvl - 1].m * starMulOf(rk) * valorHp();
   const u = {
     def, id, lvl, rank: rk, r, c, x: colX(c), y: footY(r), hp, maxHp: hp,
-    t: Math.random() * 0.4, march: 1, anim: 0, buff: 0, flash: 0, pop: 1
+    t: Math.random() * 0.4, march: 1, anim: 0, buff: 0, flash: 0, pop: 1, calm: 0
   };
   R.units.push(u);
   return u;
@@ -2617,7 +2639,15 @@ function update(dt) {
     const ahead = lane.filter(z => z.x > u.x - 24);
     u.t += dt;
 
-    if (def.kind === 'ki') {
+    if (def.kind === 'wall') {
+      const cap = def.hp * LVL[u.lvl - 1].m * starMulOf(u.rank) * valorHp();
+      if (cap > u.maxHp) { u.hp += cap - u.maxHp; u.maxHp = cap; }
+      u.calm += dt;
+      if (u.calm >= WALL_CALM && u.hp < u.maxHp) {
+        u.hp = Math.min(u.maxHp, u.hp + u.maxHp * WALL_REGROW * dt);
+        if (Math.random() < dt * 3) puff(u.x + (Math.random() - .5) * 20, u.y - 20, '#a8d47a', 60);
+      }
+    } else if (def.kind === 'ki') {
       const tier = KI_LVL[u.lvl - 1];
       // the fused Harvest Spirit runs the same table, a third faster
       const period = tier.period / ((1 + u.buff) * swiftOf(u.rank)) * (def.aura ? .66 : 1);
@@ -2752,7 +2782,7 @@ function update(dt) {
       z.anim += dt * 4;
       if (z.atk >= z.d.rate) {
         z.atk = 0;
-        biting.hp -= z.dmg; biting.flash = .12;
+        biting.hp -= z.dmg; biting.flash = .12; biting.calm = 0;
         for (let k = 0; k < 4; k++) puff(biting.x + 14, biting.y - 34, '#cdc2ae');
         if (biting.def.thorns) {                       // Thorn Wall bites back
           damageZombie(z, biting.def.thorns * LVL[biting.lvl - 1].m * (masteredOf(biting.rank) ? 1.6 : 1), 'quiet');
