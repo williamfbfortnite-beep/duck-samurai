@@ -578,6 +578,37 @@ still never covers a tile you can place on. And the frames added about 176px of
 chrome to the HUD row; at wave 100 of 100 with a seven-figure bank it still has
 192px of slack.
 
+### Settings, and corners that know where the list ends
+
+Audio, battle speed, campaign progress and the destructive actions live on one
+**設定 SETTINGS** screen, reachable from the title and from the pause screen.
+Which one you came from is remembered, so BACK returns you to the run you were
+in the middle of rather than dropping you at the title.
+
+Two things moved there. **START OVER** was in the barracks, next to BACK, which
+is a strange place to keep the one irreversible button in the game — it now
+sits under a *Progress* heading with the two-press arming it always had. And
+**SOUND CHECK** is no longer a top-level menu item: it is the "hearing nothing?"
+row of the audio block, which is the only moment anyone wants it.
+
+Sound and the soundtrack are now separate switches rather than one mute, with a
+volume for each. Speed has one source of truth: the in-run 1×/2× button and the
+settings row write the same saved value, so the speed you picked is the speed
+you get next run — which meant also pushing the saved value into the HUD label
+at boot, or a reload came back running at 2× with a button that said 1×.
+
+The corner filigree stopped being a fixed frame. Top and bottom are separate
+now, and each shows only when the open screen is actually against that edge, so
+on a long list they read as the ends of the content rather than as four
+ornaments stuck over the middle of it; a screen short enough not to scroll is
+against both edges at once and still shows all four.
+
+That needed measuring twice. Every `open*()` calls `show()` and *then* renders
+its list, so measuring only inside `show()` sees an empty box with no slack in
+it and concludes the screen is already at its end — which is how all four
+ornaments appeared on a barracks list nobody had scrolled yet. A second
+measurement on the next animation frame sees the filled screen.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

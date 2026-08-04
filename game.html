@@ -82,7 +82,7 @@
        without a seam.
      - `background-clip: padding-box`, so a square background never fills in a
        frame's rounded corner where the art is transparent. */
-  .btn, .pill, .card, .crate, .ucard, .track, .recipe, .pull, #tip, #soundBox {
+  .btn, .pill, .card, .crate, .ucard, .track, .recipe, .pull, #tip, #soundBox, .setbox {
     border-style: solid; border-color: transparent;
     border-image-repeat: stretch; image-rendering: pixelated;
     background-clip: padding-box;
@@ -185,8 +185,8 @@
   }
   .screen.on { display: flex; }
   /* tall, scrolling screens must start at the top or flex centring clips them */
-  #scBarracks, #scUpgrades { justify-content: flex-start; }
-  #scBarracks, #scUpgrades, #scCodex, #scSound { padding-bottom: calc(var(--u) * 104); }
+  #scBarracks, #scUpgrades, #scSettings { justify-content: flex-start; }
+  #scBarracks, #scUpgrades, #scCodex, #scSound, #scSettings { padding-bottom: calc(var(--u) * 104); }
   /* The title screen is a standoff: the hero holds the left of the field, so
      the plate sits right of centre and lets the scene breathe behind it. */
   #scMenu {
@@ -250,17 +250,58 @@
   /* Corner filigree on whichever screen is open. It hangs off #screens rather
      than off .screen because the tall screens scroll, and a frame pinned to a
      scrolling box puts its bottom corners somewhere past the fold. z-index 3
-     lifts it over the screens' own backgrounds and keeps it under #reveal. */
-  #screens:has(.screen.on)::before {
-    content: ''; position: absolute; inset: calc(var(--u) * 7);
+     lifts it over the screens' own backgrounds and keeps it under #reveal.
+
+     Top and bottom are separate, and each shows only when the open screen is
+     actually against that edge — so on a long list they read as the ends of the
+     content rather than as four ornaments stuck over the middle of it. A screen
+     short enough not to scroll is against both edges at once and shows all
+     four. */
+  #screens::before, #screens::after {
+    content: ''; position: absolute;
+    left: calc(var(--u) * 7); right: calc(var(--u) * 7); height: calc(var(--u) * 91);
     pointer-events: none; z-index: 3;
-    background-image: url('assets/ui/corner-tl.png'), url('assets/ui/corner-tr.png'),
-                      url('assets/ui/corner-bl.png'), url('assets/ui/corner-br.png');
-    background-position: left top, right top, left bottom, right bottom;
     background-repeat: no-repeat;
     background-size: calc(var(--u) * 91) calc(var(--u) * 91);
     image-rendering: pixelated;
+    opacity: 0; transition: opacity .2s;
   }
+  #screens::before {
+    top: calc(var(--u) * 7);
+    background-image: url('assets/ui/corner-tl.png'), url('assets/ui/corner-tr.png');
+    background-position: left top, right top;
+  }
+  #screens::after {
+    bottom: calc(var(--u) * 7);
+    background-image: url('assets/ui/corner-bl.png'), url('assets/ui/corner-br.png');
+    background-position: left bottom, right bottom;
+  }
+  #screens.atTop:has(.screen.on)::before,
+  #screens.atBot:has(.screen.on)::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    #screens::before, #screens::after { transition: none; }
+  }
+
+  /* settings */
+  .setrow {
+    display: flex; justify-content: space-between; align-items: center; gap: calc(var(--u) * 10);
+    font-size: calc(var(--u) * 13); padding: calc(var(--u) * 3) 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .setrow:last-child { border-bottom: 0; }
+  .setrow > span { opacity: .62; letter-spacing: .06em; text-align: left; }
+  .setrow > b { color: var(--gold); font-size: calc(var(--u) * 14); }
+  .setrow .btn { font-size: calc(var(--u) * 13); flex: none; }
+  .setrow input[type=range] {
+    flex: none; width: calc(var(--u) * 190); height: calc(var(--u) * 16);
+    accent-color: var(--gold); background: transparent; cursor: pointer;
+  }
+  /* On/off state without a second frame. The kit's engaged medium button has a
+     23px slice against this one's 13, so swapping the art would resize the
+     button as you toggled it; colour carries the state instead. */
+  .setrow .btn.on { color: var(--gold); text-shadow: 0 0 calc(var(--u) * 8) rgba(240,201,135,.5); }
+  .setrow .btn:not(.on):not(#setDiag):not(#setSpeed):not(#setRestart):not(#setWipe) { color: #8d7f9c; }
+  #setRestart[disabled] { filter: grayscale(1) brightness(.55); cursor: not-allowed; }
   .row { display: flex; gap: calc(var(--u) * 10); flex-wrap: wrap; justify-content: center; }
   .big {
     font-size: calc(var(--u) * 22); letter-spacing: .1em;
@@ -413,7 +454,7 @@
   .pull .new { color: var(--gold); font-size: calc(var(--u)*13); font-weight: 800; letter-spacing: .2em; }
 
   /* sound check */
-  #soundBox {
+  #soundBox, .setbox {
     width: calc(var(--u) * 500); margin-top: calc(var(--u) * 14);
     background-image: linear-gradient(#241a35, #140d20);
     border-width: calc(var(--u) * 27);
@@ -422,6 +463,7 @@
     border-image-width: calc(var(--u) * 27);
     padding: calc(var(--u) * 4) calc(var(--u) * 8);
   }
+  .setbox { margin-top: calc(var(--u) * 2); }
   .srow {
     display: flex; justify-content: space-between; align-items: baseline;
     font-size: calc(var(--u) * 13); padding: calc(var(--u) * 4) 0;
@@ -561,7 +603,7 @@
           <button class="btn" id="btnUpgrades">強化 &nbsp;UPGRADES</button>
         </div>
         <div class="row" style="margin-top:calc(var(--u)*8)">
-          <button class="btn" id="btnSound">音 &nbsp;SOUND CHECK</button>
+          <button class="btn" id="btnSettings">設定 &nbsp;SETTINGS</button>
         </div>
         <div class="hint">
           The rotting flock is marching west on the <b>nests</b> — five clutches of
@@ -581,7 +623,6 @@
       <div class="grid" id="unitGrid"></div>
       <div class="row" style="margin-top:calc(var(--u)*16)">
         <button class="btn big" id="bBack">◀ BACK</button>
-        <button class="btn" id="bWipe" title="Wipe all points, stars, unlocks and campaign progress">切腹 START OVER</button>
       </div>
     </div>
 
@@ -622,6 +663,34 @@
       <div class="row" style="margin-top:calc(var(--u)*12)"><button class="btn big" id="sndBack">◀ BACK</button></div>
     </div>
 
+    <!-- SETTINGS -->
+    <div class="screen" id="scSettings">
+      <h1 class="title" style="font-size:calc(var(--u)*40)">設定 SETTINGS</h1>
+
+      <h2 class="sect">Audio</h2>
+      <div class="setbox">
+        <div class="setrow"><span>Sound</span><button class="btn" id="setSound">ON</button></div>
+        <div class="setrow"><span>Effects volume</span><input type="range" id="setSfxVol" min="0" max="100" step="5" aria-label="Effects volume"></div>
+        <div class="setrow"><span>Soundtrack</span><button class="btn" id="setMusic">ON</button></div>
+        <div class="setrow"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" aria-label="Music volume"></div>
+        <div class="setrow"><span>Hearing nothing?</span><button class="btn" id="setDiag">音 SOUND CHECK</button></div>
+      </div>
+
+      <h2 class="sect">Game</h2>
+      <div class="setbox">
+        <div class="setrow"><span>Battle speed</span><button class="btn" id="setSpeed">1×</button></div>
+        <div class="setrow"><span>Campaign</span><b id="setProg">—</b></div>
+      </div>
+
+      <h2 class="sect">Progress</h2>
+      <div class="setbox">
+        <div class="setrow"><span>Start this level again from the top</span><button class="btn" id="setRestart">↻ RESTART RUN</button></div>
+        <div class="setrow"><span>Wipe points, stars, unlocks and campaign</span><button class="btn" id="setWipe" title="Wipe all points, stars, unlocks and campaign progress">切腹 START OVER</button></div>
+      </div>
+
+      <div class="row" style="margin-top:calc(var(--u)*16)"><button class="btn big" id="setBack">◀ BACK</button></div>
+    </div>
+
     <!-- FUSION CODEX -->
     <div class="screen" id="scCodex">
       <h1 class="title" style="font-size:calc(var(--u)*40)">巻物 FUSION CODEX</h1>
@@ -649,6 +718,7 @@
       <div class="sub">Paused</div>
       <div class="row" style="margin-top:calc(var(--u)*20)">
         <button class="btn big on" id="pResume">RESUME</button>
+        <button class="btn big" id="pSettings">設定 SETTINGS</button>
         <button class="btn big" id="pQuit">ABANDON RUN</button>
       </div>
     </div>
@@ -1691,6 +1761,7 @@ const fresh = () => ({
   found: {},                                     // fusion id -> times discovered
   scrolls: {},                                   // fusion id -> bought outright, skips the level gate
   mediaRoute: null,                              // null = use the platform default
+  sfxVol: 0.9, musicVol: 0.55, musicOff: false, speed: 1,
   loadout: ['paddy', 'kunai', 'bamboo'],
   up: { coin: 0, ki: 0, ward: 0, luck: 0 }
 });
@@ -1908,7 +1979,7 @@ function ac() {
       // one master bus: everything is mixed through here, so levels are
       // consistent and the output can actually be measured
       master = actx.createGain();
-      master.gain.value = 0.9;
+      master.gain.value = sfxVol();
       meter = actx.createAnalyser();
       meter.fftSize = 1024;
       meterBuf = new Float32Array(meter.fftSize);
@@ -1987,7 +2058,13 @@ const SFX = {
    AudioContext would not. The artifact build swaps the src for a data URI
    so the published page stays self-contained.
    ══════════════════════════════════════════════════════════════════════ */
-const MUSIC_VOL = 0.55;
+/* Volume and the soundtrack switch are settings, so read them from the save
+   rather than freezing them here. Clamped on the way out: a hand-edited save
+   should not be able to hand the audio graph a NaN. */
+const clamp01 = v => (typeof v === 'number' && v === v) ? Math.max(0, Math.min(1, v)) : null;
+const sfxVol = () => { const v = clamp01(S.sfxVol); return v === null ? 0.9 : v; };
+const musicVol = () => { const v = clamp01(S.musicVol); return v === null ? 0.55 : v; };
+const musicWanted = () => !muted && !S.musicOff;
 const MUSIC = { on: false, el: null, failed: false };
 
 function musicEl() {
@@ -2002,9 +2079,9 @@ function musicEl() {
      element exists only to hold the second src through the artifact build —
      playback always happens on this one, whose src is swapped. */
   el.loop = false;
-  el.volume = MUSIC_VOL;
+  el.volume = musicVol();
   el.addEventListener('error', () => { MUSIC.failed = true; MUSIC.on = false; });
-  el.addEventListener('ended', () => { if (!muted) nextTrack(); });
+  el.addEventListener('ended', () => { if (musicWanted()) nextTrack(); });
   MUSIC.el = el;
   return el;
 }
@@ -2028,10 +2105,10 @@ function nextTrack() {
   } catch (e) { MUSIC.on = false; }
 }
 function musicStart() {
-  if (muted) return;
+  if (!musicWanted()) return;
   const el = musicEl();
   if (!el) return;
-  el.volume = MUSIC_VOL;
+  el.volume = musicVol();
   const p = el.play();
   if (p && p.then) p.then(() => { MUSIC.on = true; }).catch(() => { MUSIC.on = false; });
   else MUSIC.on = true;
@@ -2073,7 +2150,10 @@ function musicLive() {
    RUN STATE
    ══════════════════════════════════════════════════════════════════════ */
 let mode = 'menu';       // menu | play | paused | over
-let speed = 1;
+let speed = S.speed === 2 ? 2 : 1;
+// the saved speed has to reach the HUD label too, or a reload comes back
+// running at 2x with a button that says 1x
+document.getElementById('spdBtn').textContent = speed + '\u00d7';
 const R = {
   wave: 0, waveT: 0, waveDur: 0, queue: [], ki: 0, score: 0, kills: 0,
   units: [], zombs: [], shots: [], orbs: [], parts: [], texts: [], fx: [],
@@ -3324,10 +3404,33 @@ addEventListener('keydown', ev => {
 /* ══════════════════════════════════════════════════════════════════════
    SCREENS
    ══════════════════════════════════════════════════════════════════════ */
-const SCREENS = ['scBoot', 'scMenu', 'scBarracks', 'scCodex', 'scSound', 'scUpgrades', 'scPause', 'scOver'];
+const SCREENS = ['scBoot', 'scMenu', 'scBarracks', 'scCodex', 'scSound', 'scSettings', 'scUpgrades', 'scPause', 'scOver'];
 function show(id) {
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('on', s === id));
+  /* Twice: once now, and once after the frame that fills the screen in. Every
+     open*() calls show() before rendering its list, so measuring only here sees
+     an empty box with no slack in it and concludes the screen is already at its
+     end — which showed all four ornaments on a list you had not scrolled yet. */
+  frameEdges();
+  requestAnimationFrame(frameEdges);
 }
+
+/* Which ends of the open screen the corner ornaments decorate. A screen that
+   fits without scrolling is against both edges and gets all four; a long list
+   gets the top pair until you scroll off the top, and the bottom pair once you
+   reach the end. Two pixels of tolerance, because fractional scroll positions
+   on a scaled stage never land exactly on zero. */
+const screensEl = document.getElementById('screens');
+function frameEdges() {
+  const on = document.querySelector('.screen.on');
+  if (!on) { screensEl.classList.remove('atTop', 'atBot'); return; }
+  const slack = on.scrollHeight - on.clientHeight;
+  screensEl.classList.toggle('atTop', on.scrollTop <= 2);
+  screensEl.classList.toggle('atBot', slack <= 2 || on.scrollTop >= slack - 2);
+}
+SCREENS.forEach(id => document.getElementById(id)
+  .addEventListener('scroll', frameEdges, { passive: true }));
+addEventListener('resize', frameEdges);
 function pause() { if (mode !== 'play') return; mode = 'paused'; show('scPause'); document.getElementById('ui').classList.add('hidden'); }
 function resume() { if (mode !== 'paused') return; mode = 'play'; show(null); document.getElementById('ui').classList.remove('hidden'); }
 function toMenu() {
@@ -3343,7 +3446,14 @@ function toMenu() {
     (S.cleared >= MAX_LEVEL ? 'CAMPAIGN COMPLETE — 鴨侍' : 'HOLD THE LINE TO WAVE ' + targetWave(L)) +
     (isEliteLevel(L) ? ' · ELITE' : '');
 }
-function toggleSpeed() { speed = speed === 1 ? 2 : 1; document.getElementById('spdBtn').textContent = speed + '×'; }
+/* One source of truth for speed: the in-run button and the settings row set
+   the same saved value, so the speed you picked is the speed you get next run. */
+function setSpeed(v) {
+  speed = v === 2 ? 2 : 1; S.speed = speed; persist();
+  document.getElementById('spdBtn').textContent = speed + '×';
+  const b = document.getElementById('setSpeed'); if (b) b.textContent = speed + '×';
+}
+function toggleSpeed() { setSpeed(speed === 1 ? 2 : 1); }
 
 const boot = () => { unlockIOS(); ac(); musicStart(); };
 document.getElementById('btnPlay').onclick = safe(() => { boot(); startRun(); });
@@ -3351,8 +3461,7 @@ document.getElementById('btnBarracks').onclick = safe(() => { boot(); openBarrac
 document.getElementById('btnUpgrades').onclick = safe(() => { boot(); openUpgrades(); });
 document.getElementById('btnCodex').onclick = safe(() => { boot(); openCodex(); });
 document.getElementById('cBack').onclick = safe(toMenu);
-document.getElementById('btnSound').onclick = safe(openSound);
-document.getElementById('sndBack').onclick = safe(() => { soundOpen = false; toMenu(); });
+document.getElementById('sndBack').onclick = safe(() => { soundOpen = false; openSettings(); });
 document.getElementById('sndTest').onclick = safe(testTone);
 document.getElementById('sndRouteBtn').onclick = safe(() => {
   unlockIOS(); ac();
@@ -3367,23 +3476,90 @@ document.getElementById('sndMute').onclick = safe(() => {
   muted = !muted;
   if (muted) dirgeStop();
   if (muted) musicStop(); else { ac(); musicStart(); }
-  syncAudioBadge(); refreshSound();
+  syncAudioBadge(); refreshSound(); renderSettings();
 });
 document.getElementById('bBack').onclick = safe(toMenu);
 
-/* Start over. Two presses, because there is no undo — the first arms it, the
+/* ---------- settings ----------
+   Reachable from the menu and from the pause screen, and it remembers which, so
+   BACK returns you to the run you were in the middle of rather than dumping you
+   at the title. RESTART RUN only means anything with a run in progress, so off
+   the menu it is disabled rather than hidden — a control that vanishes is
+   harder to find again than one that is greyed. */
+let settingsFrom = 'scMenu';
+function openSettings(from) {
+  settingsFrom = from || settingsFrom;
+  mode = 'menu'; show('scSettings');
+  document.getElementById('ui').classList.add('hidden');
+  unlockIOS(); ac();
+  renderSettings();
+}
+function settingsBack() {
+  if (settingsFrom === 'scPause') { mode = 'paused'; show('scPause'); return; }
+  toMenu();
+}
+function renderSettings() {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('setSound', muted ? 'OFF' : 'ON');
+  set('setMusic', S.musicOff ? 'OFF' : 'ON');
+  set('setSpeed', speed + '\u00d7');
+  const L = Math.min(MAX_LEVEL, S.level || 1);
+  set('setProg', 'Level ' + L + ' of ' + MAX_LEVEL + '  \u00b7  ' + S.sp.toLocaleString() + ' \u70b9');
+  document.getElementById('setSound').classList.toggle('on', !muted);
+  document.getElementById('setMusic').classList.toggle('on', !S.musicOff && !muted);
+  document.getElementById('setSfxVol').value = Math.round(sfxVol() * 100);
+  document.getElementById('setMusicVol').value = Math.round(musicVol() * 100);
+  const r = document.getElementById('setRestart');
+  r.disabled = settingsFrom !== 'scPause';
+  r.title = r.disabled ? 'No run in progress' : 'Abandon this run and start the level again';
+}
+document.getElementById('btnSettings').onclick = safe(() => { boot(); openSettings('scMenu'); });
+document.getElementById('pSettings').onclick = safe(() => openSettings('scPause'));
+document.getElementById('setBack').onclick = safe(settingsBack);
+document.getElementById('setDiag').onclick = safe(openSound);
+document.getElementById('setSound').onclick = safe(() => {
+  muted = !muted;
+  if (muted) { dirgeStop(); musicStop(); } else { ac(); musicStart(); }
+  syncAudioBadge(); renderSettings();
+});
+document.getElementById('setMusic').onclick = safe(() => {
+  S.musicOff = !S.musicOff; persist();
+  if (S.musicOff) musicStop(); else { ac(); musicStart(); }
+  renderSettings();
+});
+/* Volume applies live on drag but only writes on release — a slider fires input
+   on every pixel of travel, and persist() goes to localStorage. */
+const volRow = (id, apply, save) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => apply(el.value / 100));
+  el.addEventListener('change', () => { save(el.value / 100); persist(); });
+};
+volRow('setSfxVol',
+  v => { if (master) master.gain.value = v; },
+  v => { S.sfxVol = v; if (master) master.gain.value = v; });
+volRow('setMusicVol',
+  v => { if (MUSIC.el) MUSIC.el.volume = v; },
+  v => { S.musicVol = v; if (MUSIC.el) MUSIC.el.volume = v; });
+document.getElementById('setSpeed').onclick = safe(() => toggleSpeed());
+document.getElementById('setRestart').onclick = safe(() => {
+  if (settingsFrom !== 'scPause') return;
+  settingsFrom = 'scMenu';
+  startRun();
+});
+
+/* Start over. Two presses, because there is no undo \u2014 the first arms it, the
    second wipes. Arming lapses after a few seconds so a stray tap can't sit
    there waiting to be confirmed by an unrelated one. */
 let wipeArmed = 0;
-document.getElementById('bWipe').onclick = safe(() => {
-  const b = document.getElementById('bWipe');
+document.getElementById('setWipe').onclick = safe(() => {
+  const b = document.getElementById('setWipe');
   if (!wipeArmed || Date.now() > wipeArmed) {
     wipeArmed = Date.now() + 4000;
-    b.textContent = '本当に? TAP AGAIN TO WIPE';
+    b.textContent = '\u672c\u5f53\u306b? TAP AGAIN TO WIPE';
     b.classList.add('danger');
     setTimeout(() => {
       if (Date.now() > wipeArmed - 50) {
-        wipeArmed = 0; b.textContent = '切腹 START OVER'; b.classList.remove('danger');
+        wipeArmed = 0; b.textContent = '\u5207\u8179 START OVER'; b.classList.remove('danger');
       }
     }, 4100);
     return;
@@ -3391,10 +3567,10 @@ document.getElementById('bWipe').onclick = safe(() => {
   wipeArmed = 0;
   S = fresh();
   persist();
-  b.textContent = '切腹 START OVER';
+  b.textContent = '\u5207\u8179 START OVER';
   b.classList.remove('danger');
-  renderBarracks();
-  toast('PROGRESS WIPED — LEVEL 1', true);
+  renderSettings();
+  toast('PROGRESS WIPED \u2014 LEVEL 1', true);
   SFX.bad();
 });
 document.getElementById('uBack').onclick = safe(toMenu);
@@ -3452,6 +3628,8 @@ function luckOdds(base) {
   return o;
 }
 function renderBarracks() {
+  // unlocking a unit makes this list taller, which moves where its end is
+  requestAnimationFrame(frameEdges);
   document.getElementById('bSp').textContent = S.sp.toLocaleString();
   const cr = document.getElementById('crateRow');
   cr.innerHTML = '';
