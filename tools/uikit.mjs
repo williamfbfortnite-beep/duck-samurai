@@ -42,8 +42,12 @@ const USE = [
   [9,  'rule',        0],  // divider with a diamond boss   — under section titles
   [21, 'tick',        0],  // check badge                   — picked
   [22, 'lock',        0],  // padlock                       — locked / sealed
+  /* The four ornaments sit as a 2x2 block on the sheet — left column top and
+     bottom, right column top and bottom — so the bottom pair reads the same
+     way round as the top pair. Taking them in the wrong order put a
+     bottom-right ornament in the bottom-left slot and vice versa. */
   [17, 'corner-tl',   0], [18, 'corner-tr', 0],
-  [26, 'corner-bl',   0], [25, 'corner-br', 0]
+  [25, 'corner-bl',   0], [26, 'corner-br', 0]
 ];
 
 // ── read ────────────────────────────────────────────────────────────────────
