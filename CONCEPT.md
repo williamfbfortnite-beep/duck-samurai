@@ -514,6 +514,70 @@ against its own inverse. The test that caught this reads the rendered pixels: it
 finds where something actually got drawn and puts the cursor there. The canvas
 size is now set in script from `VW`/`VH`, so the two cannot drift again.
 
+### The interface is generated art, nine-sliced
+
+The menus, buttons, frames and badges are cut from a single generated UI sheet
+and drawn with CSS `border-image`, which is nine-slicing under another name:
+corners drawn once at native size, edges repeated or stretched along their
+length, and the middle left to the element. One 200×60 button skins a 90px
+tooltip and a 680px upgrade track without distorting a corner.
+
+Getting the sheet usable took three passes, and each one was a defect in what
+came back rather than in the idea:
+
+**The transparency was painted on.** The file was 100% opaque — the checkerboard
+was drawn into the image. It keys out cleanly because the pattern is two flat
+neutral greys against art that is either coloured or much darker, but a
+border-seeded flood fill could not reach the checkerboard *enclosed* by the two
+panel frames, and left their interiors painted grey. Keying every large blob of
+checker colour wherever it sits gets all three regions. The edges came out hard
+with no fringe, which is what makes the rest possible.
+
+**It was not limited-palette art.** A 200×60 button held 1,759 distinct colours;
+the largest panel held 4,331. It is painterly work with per-pixel noise that
+only reads as pixel art from a distance — the same defect that made the
+title-screen attempt come back "very detailed, very small pixels". Median cut to
+48 colours a piece is not just compression: collapsing that noise onto a real
+palette is what makes it read as pixel art at all. Mean colour shift is 1–6 out
+of a possible 441, invisible; the set went from 269 KB to 46 KB.
+
+**The slice insets had to be measured, not guessed.** A nine-slice frame's edges
+normally repeat, so the bands fall out of finding runs of identical rows — but
+nothing here repeats byte for byte, because it is dithered. Comparing each line
+to the middle of the piece by *mean* distance fails too: a corner ornament is a
+large difference confined to the ends of a 290px row, and averaging buries it.
+Counting the fraction of pixels that genuinely disagree doesn't care how wide
+the row is, and it put the big panel at a clean uniform 27.
+
+Three rules hold everywhere the frames are used, all three learned by breaking
+them first:
+
+- **`border-width` is what the layout sees; `border-image-width` is how thick
+  the art draws.** They must match. Reserving 23px of border for 13px of art
+  leaves a ring of bare border showing the battlefield straight through the
+  button.
+- **No `fill`.** `fill` paints the source's centre slice too, and `repeat` tiles
+  it — a 296px card showed the 179px middle twice with a seam down it. Each
+  element keeps its own background instead, which also leaves the colour coding
+  somewhere to live.
+- **`background:` resets `background-clip`.** The shorthand quietly undid the
+  `padding-box` clip, and the parchment ground leaked out past the frame's
+  transparent edge. Longhands don't.
+
+Where a colour was doing work, it moved rather than went. The rarity stripe on a
+unit card and the sealed/found state on a codex row were left borders, which
+`border-image` takes all four of; both became a spine just inside the frame. The
+HUD pills' coloured rings became tinted grounds behind the same coloured
+numerals. Crate-reveal cards never needed rescuing — their rarity was always a
+glow, not a border.
+
+Two sizes were dictated by the board rather than by taste. The tray cards grew
+from 76×74 to 92×88 so the frame is paid for out of the card's own footprint,
+which puts their top edge on y 676 — exactly where lane 5 ends, so a fatter tray
+still never covers a tile you can place on. And the frames added about 176px of
+chrome to the HUD row; at wave 100 of 100 with a seven-figure bank it still has
+192px of slack.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

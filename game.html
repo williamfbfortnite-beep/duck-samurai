@@ -46,66 +46,118 @@
   }
   .pill {
     pointer-events: none;
-    background: linear-gradient(#241a35, #150e21);
-    border: calc(var(--u) * 2) solid #4a3a5e;
-    border-radius: calc(var(--u) * 6);
-    padding: calc(var(--u) * 5) calc(var(--u) * 12);
+    background-image: linear-gradient(#241a35, #150e21);
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    padding: calc(var(--u) * 1) calc(var(--u) * 5);
     font-size: calc(var(--u) * 17); font-weight: 700; letter-spacing: .04em;
     display: flex; gap: calc(var(--u) * 7); align-items: baseline; white-space: nowrap;
-    box-shadow: 0 calc(var(--u)*3) 0 rgba(0,0,0,.5);
   }
   .pill .lbl { font-size: calc(var(--u) * 12); opacity: .6; font-weight: 600; letter-spacing: .18em; }
-  .pill.ki   { color: #9be8ff; border-color: #2f5f7a; }
+  .pill.ki   { color: #9be8ff; background-image: linear-gradient(#172a35, #0d1720); }
   .pill.wave { color: var(--gold); }
-  .pill.score{ color: #e8b8ff; border-color: #5a3a6e; }
-  .pill.lvl  { color: #9bf0c0; border-color: #2f6b4e; }
-  .pill.valor{ color: #ffb36a; border-color: #7a4f2a; }
+  .pill.score{ color: #e8b8ff; background-image: linear-gradient(#2a1a35, #170e20); }
+  .pill.lvl  { color: #9bf0c0; background-image: linear-gradient(#172e24, #0d1a14); }
+  .pill.valor{ color: #ffb36a; background-image: linear-gradient(#33220f, #1c1208); }
   .spacer { flex: 1; }
+
+  /* ---------------- painted UI kit ----------------
+     Frames, buttons and badges are nine-sliced out of assets/ui/. Three rules
+     hold everywhere they're used:
+
+     - `border-width` is what the layout sees; `border-image-width` is how thick
+       the art draws. Holding border-width equal across a component's states
+       lets a button carry two frames of very different depth — a 13px resting
+       frame and a 23px engaged one — without changing size when it lights up.
+     - `repeat`, never `stretch`. The sheet came back dithered rather than flat,
+       and stretching a 13px slice across a 300px edge smears that dither into
+       vertical streaks.
+     - no `fill`, ever. `fill` paints the source's centre slice as well, and
+       `repeat` tiles it — a 296px-wide card showed the 179px middle twice with
+       a visible seam down it. The element keeps its own background instead,
+       which also leaves the colour coding somewhere to live. The colours below
+       are sampled from the interiors of the frames themselves so the two meet
+       without a seam.
+     - `background-clip: padding-box`, so a square background never fills in a
+       frame's rounded corner where the art is transparent. */
+  .btn, .pill, .card, .crate, .ucard, .track, .recipe, .pull, #tip, #soundBox {
+    border-style: solid; border-color: transparent;
+    border-image-repeat: stretch; image-rendering: pixelated;
+    background-clip: padding-box;
+  }
 
   .btn {
     pointer-events: auto; cursor: pointer;
-    background: linear-gradient(#3a2a4e, #22162f);
-    border: calc(var(--u) * 2) solid #6b527f; color: #f3e6cc;
-    border-radius: calc(var(--u) * 6); padding: calc(var(--u) * 6) calc(var(--u) * 11);
+    background-color: #221728; color: #f3e6cc;
+    border-width: calc(var(--u) * 13);
+    border-image-source: url('assets/ui/btn.png');
+    border-image-slice: 13;
+    border-image-width: calc(var(--u) * 13);
+    padding: 0 calc(var(--u) * 6);
+    display: inline-flex; align-items: center; justify-content: center;
     font-size: calc(var(--u) * 15); font-weight: 700; font-family: inherit;
-    box-shadow: 0 calc(var(--u)*3) 0 rgba(0,0,0,.5); transition: transform .08s, filter .12s;
+    transition: transform .08s, filter .12s;
   }
-  .btn:hover { filter: brightness(1.25); }
+  .btn:hover { filter: brightness(1.22); }
   .btn:active { transform: translateY(calc(var(--u) * 2)); }
-  .btn.on { background: linear-gradient(#8a6a2a, #5c4418); border-color: var(--gold); color: #fff5df; }
-  /* armed destructive action — it should not look like the rest of the menu */
-  .btn.danger { background: linear-gradient(#7a2320, #45120f); border-color: var(--blood); color: #ffd9d2;
+  /* armed destructive action — it should not look like the rest of the menu.
+     No `fill` here, so the red ground shows through the frame instead of the
+     kit's plum. */
+  .btn.danger { background-image: linear-gradient(#7a2320, #45120f); color: #ffd9d2;
     animation: dangerPulse .7s steps(2, end) infinite; }
   @keyframes dangerPulse { 50% { filter: brightness(1.45); } }
+  /* The three HUD buttons sit in the map's calm 90px header next to the pills,
+     so they wear the pills' slim frame rather than the menu's heavy one. */
+  #top .btn {
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    font-size: calc(var(--u) * 14);
+  }
 
   /* ---------------- card tray ---------------- */
   #tray {
     position: absolute; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--u) * 4); display: flex; gap: calc(var(--u) * 5); pointer-events: auto;
   }
+  /* 92x88 rather than 76x74, but the *inner* box is unchanged — the 12px frame
+     is paid for out of the card's own footprint, not out of the board. The top
+     edge lands on 676, which is where lane 5 ends, so a fatter tray still never
+     covers a tile you can place on. */
   .card {
-    position: relative; width: calc(var(--u) * 76); height: calc(var(--u) * 74);
-    background: linear-gradient(#2b2038, #150e21);
-    border: calc(var(--u) * 2) solid #5b4770; border-radius: calc(var(--u) * 7);
-    cursor: pointer; overflow: hidden; transition: transform .1s, border-color .12s;
-    box-shadow: 0 calc(var(--u)*4) 0 rgba(0,0,0,.55);
+    position: relative; width: calc(var(--u) * 92); height: calc(var(--u) * 88);
+    background-image: linear-gradient(#2b2038, #150e21);
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    cursor: pointer; overflow: hidden; transition: transform .1s, filter .12s;
   }
   .card:hover { transform: translateY(calc(var(--u) * -4)); }
-  .card.sel { border-color: var(--gold); box-shadow: 0 0 calc(var(--u)*14) rgba(240,201,135,.6); transform: translateY(calc(var(--u) * -6)); }
+  /* The frame is the same art when selected — a swap would have to be the same
+     slice depth to keep the card from resizing, and none of the kit's brighter
+     frames are. Lift, glow and brighten instead. */
+  .card.sel { box-shadow: 0 0 calc(var(--u)*14) rgba(240,201,135,.6); transform: translateY(calc(var(--u) * -6)); filter: brightness(1.35) saturate(1.2); }
   .card.poor { filter: grayscale(.75) brightness(.62); }
-  .card canvas { position: absolute; top: calc(var(--u) * 2); left: 50%; transform: translateX(-50%); width: calc(var(--u) * 34); height: calc(var(--u) * 38); image-rendering: pixelated; }
-  .card .kanji { position: absolute; bottom: calc(var(--u) * 16); width: 100%; text-align: center; font-size: calc(var(--u) * 13); color: var(--gold); font-weight: 700; letter-spacing: .06em; }
+  .card canvas { position: absolute; top: calc(var(--u) * 1); left: 50%; transform: translateX(-50%); width: calc(var(--u) * 34); height: calc(var(--u) * 38); image-rendering: pixelated; }
+  .card .kanji { position: absolute; bottom: calc(var(--u) * 15); width: 100%; text-align: center; font-size: calc(var(--u) * 13); color: var(--gold); font-weight: 700; letter-spacing: .06em; }
   .card .cost { position: absolute; bottom: calc(var(--u) * 1); width: 100%; text-align: center; font-size: calc(var(--u) * 12); color: #9be8ff; font-weight: 800; }
-  .card .stars { position: absolute; top: calc(var(--u)*3); left: calc(var(--u)*4); font-size: calc(var(--u) * 10); color: var(--gold); letter-spacing: -.08em; }
+  .card .stars { position: absolute; top: calc(var(--u)*1); left: calc(var(--u)*2); font-size: calc(var(--u) * 10); color: var(--gold); letter-spacing: -.08em; }
   .card .cdmask { position: absolute; inset: 0; background: rgba(8,4,16,.78); transform-origin: 50% 0%; pointer-events: none; }
-  .card .key { position: absolute; top: calc(var(--u)*3); right: calc(var(--u)*5); font-size: calc(var(--u)*11); opacity: .45; font-weight: 700; }
+  .card .key { position: absolute; top: calc(var(--u)*1); right: calc(var(--u)*3); font-size: calc(var(--u)*11); opacity: .45; font-weight: 700; }
 
   #tip {
-    position: absolute; left: 50%; bottom: calc(var(--u) * 86); transform: translateX(-50%);
-    width: calc(var(--u) * 340); pointer-events: none; opacity: 0; transition: opacity .14s;
-    background: linear-gradient(rgba(40,30,58,.97), rgba(18,11,30,.97));
-    border: calc(var(--u) * 2) solid #6b527f; border-radius: calc(var(--u) * 8);
-    padding: calc(var(--u) * 9) calc(var(--u) * 12);
+    position: absolute; left: 50%; bottom: calc(var(--u) * 100); transform: translateX(-50%);
+    width: calc(var(--u) * 360); pointer-events: none; opacity: 0; transition: opacity .14s;
+    background-image: linear-gradient(rgba(40,30,58,.97), rgba(18,11,30,.97));
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    padding: calc(var(--u) * 2) calc(var(--u) * 6);
     box-shadow: 0 calc(var(--u)*6) calc(var(--u)*20) rgba(0,0,0,.7);
   }
   #tip.show { opacity: 1; }
@@ -134,6 +186,7 @@
   .screen.on { display: flex; }
   /* tall, scrolling screens must start at the top or flex centring clips them */
   #scBarracks, #scUpgrades { justify-content: flex-start; }
+  #scBarracks, #scUpgrades, #scCodex, #scSound { padding-bottom: calc(var(--u) * 104); }
   /* The title screen is a standoff: the hero holds the left of the field, so
      the plate sits right of centre and lets the scene breathe behind it. */
   #scMenu {
@@ -183,10 +236,47 @@
   h2.sect {
     font-size: calc(var(--u) * 20); color: var(--gold); letter-spacing: .28em; text-transform: uppercase;
     margin: calc(var(--u) * 14) 0 calc(var(--u) * 8); font-weight: 700;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  /* Drawn at its native 254x37 and never scaled: the divider has a diamond boss
+     dead centre, and stretching it to the heading's width would smear it. */
+  h2.sect::after {
+    content: ''; display: block;
+    width: calc(var(--u) * 254); height: calc(var(--u) * 37);
+    background: url('assets/ui/rule.png') 0 0 / 100% 100% no-repeat;
+    image-rendering: pixelated; margin-top: calc(var(--u) * -6);
+  }
+
+  /* Corner filigree on whichever screen is open. It hangs off #screens rather
+     than off .screen because the tall screens scroll, and a frame pinned to a
+     scrolling box puts its bottom corners somewhere past the fold. z-index 3
+     lifts it over the screens' own backgrounds and keeps it under #reveal. */
+  #screens:has(.screen.on)::before {
+    content: ''; position: absolute; inset: calc(var(--u) * 7);
+    pointer-events: none; z-index: 3;
+    background-image: url('assets/ui/corner-tl.png'), url('assets/ui/corner-tr.png'),
+                      url('assets/ui/corner-bl.png'), url('assets/ui/corner-br.png');
+    background-position: left top, right top, left bottom, right bottom;
+    background-repeat: no-repeat;
+    background-size: calc(var(--u) * 91) calc(var(--u) * 91);
+    image-rendering: pixelated;
   }
   .row { display: flex; gap: calc(var(--u) * 10); flex-wrap: wrap; justify-content: center; }
   .big {
-    font-size: calc(var(--u) * 22); padding: calc(var(--u) * 11) calc(var(--u) * 30); letter-spacing: .1em;
+    font-size: calc(var(--u) * 22); letter-spacing: .1em;
+    border-width: calc(var(--u) * 24);
+    border-image-source: url('assets/ui/btn-big.png');
+    border-image-slice: 24;
+    border-image-width: calc(var(--u) * 24);
+    background-color: #221728;
+    padding: 0 calc(var(--u) * 18);
+  }
+  .big.on {
+    border-image-source: url('assets/ui/btn-big-on.png');
+    border-image-slice: 24;
+    border-image-width: calc(var(--u) * 24);
+    background-color: #f0e1c4;
+    color: #4a2c10; text-shadow: 0 1px 0 rgba(255,255,255,.35);
   }
   .bank {
     display: flex; gap: calc(var(--u)*18); align-items: center; margin-top: calc(var(--u)*8);
@@ -196,9 +286,15 @@
 
   /* barracks */
   .crates { display: flex; gap: calc(var(--u) * 12); }
+  .crate, .track, #soundBox { border-image-repeat: repeat; }
+
   .crate {
-    width: calc(var(--u) * 190); border-radius: calc(var(--u) * 9); padding: calc(var(--u) * 12);
-    background: linear-gradient(#2b2038, #150e21); border: calc(var(--u) * 2) solid #5b4770;
+    width: calc(var(--u) * 220); padding: calc(var(--u) * 4);
+    background-image: linear-gradient(#2b2038, #150e21);
+    border-width: calc(var(--u) * 27);
+    border-image-source: url('assets/ui/panel.png');
+    border-image-slice: 27;
+    border-image-width: calc(var(--u) * 27);
     cursor: pointer; text-align: center; transition: transform .1s, filter .1s;
     pointer-events: auto;
   }
@@ -217,7 +313,7 @@
   .crate.gold { border-color: #d4a94e; } .crate.gold .cname { color: #ffd98a; }
   .crate.scroll { border-color: #9a6fbf; } .crate.scroll .cname { color: #d9b6ff; }
 
-  .grid { display: grid; grid-template-columns: repeat(3, calc(var(--u) * 320)); gap: calc(var(--u) * 9); }
+  .grid { display: grid; grid-template-columns: repeat(3, calc(var(--u) * 356)); gap: calc(var(--u) * 8); }
   .ucard .ubody { min-width: 0; flex: 1; }
   .ucard .udesc { font-size: calc(var(--u) * 11); opacity: .78; line-height: 1.4; margin-top: calc(var(--u) * 3); }
   .uchips { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 3); margin-top: calc(var(--u) * 5); }
@@ -229,37 +325,60 @@
   .chip.cost { color: #9be8ff; border-color: rgba(155,232,255,.35); }
   .chip.star { color: var(--gold); border-color: rgba(240,201,135,.4); }
   .ucard {
-    position: relative; background: linear-gradient(#241a35, #140d20);
-    border: calc(var(--u) * 2) solid #4a3a5e; border-radius: calc(var(--u) * 8);
-    padding: calc(var(--u) * 7); display: flex; gap: calc(var(--u) * 7); align-items: center;
-    cursor: pointer; transition: border-color .12s, filter .12s; overflow: hidden;
+    position: relative; background-image: linear-gradient(#241a35, #140d20);
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 2) calc(var(--u) * 9);
+    display: flex; gap: calc(var(--u) * 7); align-items: center;
+    cursor: pointer; transition: filter .12s;
+  }
+  /* The rarity used to be a coloured left border, which border-image replaces.
+     Moved to a spine just inside the frame so the colour still reads down the
+     grid at a glance. */
+  .ucard::before {
+    content: ''; position: absolute; left: 0; top: calc(var(--u) * 3); bottom: calc(var(--u) * 3);
+    width: calc(var(--u) * 4); background: #8d99a8;
   }
   .ucard:hover { filter: brightness(1.2); }
-  .ucard.locked { filter: grayscale(1) brightness(.4); cursor: not-allowed; }
-  .ucard.picked { border-color: var(--gold); box-shadow: inset 0 0 calc(var(--u)*20) rgba(240,201,135,.16); }
+  /* Not brightness(.4): the padlock has to stay legible through the treatment. */
+  .ucard.locked { filter: grayscale(.9) brightness(.6); cursor: not-allowed; }
+  .ucard.locked::after {
+    content: ''; position: absolute; top: 50%; right: calc(var(--u) * 6); transform: translateY(-50%);
+    width: calc(var(--u) * 23); height: calc(var(--u) * 28);
+    background: url('assets/ui/lock.png') 0 0 / 100% 100% no-repeat; image-rendering: pixelated;
+  }
+  .ucard.picked { box-shadow: inset 0 0 calc(var(--u)*20) rgba(240,201,135,.20); }
   .ucard canvas { width: calc(var(--u) * 42); height: calc(var(--u) * 47); image-rendering: pixelated; flex: none; }
   .ucard .un { font-size: calc(var(--u) * 13); font-weight: 700; line-height: 1.25; padding-right: calc(var(--u) * 16); }
   .ucard .uk { font-size: calc(var(--u) * 11); opacity: .55; white-space: nowrap; }
   .ucard .ust { font-size: calc(var(--u) * 11); color: var(--gold); letter-spacing: -.06em; }
+  /* The kit's check badge, in place of the gold disc. The tick's own glyph is
+     still in the markup and still announced; it is just no longer drawn. */
   .ucard .pick {
-    position: absolute; top: calc(var(--u)*-2); right: calc(var(--u)*-2);
-    width: calc(var(--u)*17); height: calc(var(--u)*17); border-radius: 50%;
-    background: var(--gold); color: #1b1226; font-size: calc(var(--u)*11); font-weight: 900;
-    display: grid; place-items: center; opacity: 0;
+    position: absolute; top: calc(var(--u)*-6); right: calc(var(--u)*-4);
+    width: calc(var(--u)*37); height: calc(var(--u)*32);
+    background: url('assets/ui/tick.png') 0 0 / 100% 100% no-repeat;
+    image-rendering: pixelated; color: transparent; font-size: 0; opacity: 0;
   }
   .ucard.picked .pick { opacity: 1; }
-  .r0 { border-left: calc(var(--u) * 5) solid #8d99a8; }
-  .r1 { border-left: calc(var(--u) * 5) solid #5fb37a; }
-  .r2 { border-left: calc(var(--u) * 5) solid #5b8fd6; }
-  .r3 { border-left: calc(var(--u) * 5) solid #b46fd6; }
-  .r4 { border-left: calc(var(--u) * 5) solid #e8a33d; }
-  .r5 { border-left: calc(var(--u) * 5) solid #ff5f7e; }
+  .r0::before { background: #8d99a8; }
+  .r1::before { background: #5fb37a; }
+  .r2::before { background: #5b8fd6; }
+  .r3::before { background: #b46fd6; }
+  .r4::before { background: #e8a33d; }
+  .r5::before { background: #ff5f7e; }
 
   /* upgrades */
   .track {
-    width: calc(var(--u) * 640); display: flex; align-items: center; gap: calc(var(--u) * 12);
-    background: linear-gradient(#241a35, #140d20); border: calc(var(--u) * 2) solid #4a3a5e;
-    border-radius: calc(var(--u) * 8); padding: calc(var(--u) * 10) calc(var(--u) * 14); margin-bottom: calc(var(--u) * 8);
+    width: calc(var(--u) * 680); display: flex; align-items: center; gap: calc(var(--u) * 12);
+    background-image: linear-gradient(#241a35, #140d20);
+    border-width: calc(var(--u) * 27);
+    border-image-source: url('assets/ui/panel.png');
+    border-image-slice: 27;
+    border-image-width: calc(var(--u) * 27);
+    padding: 0 calc(var(--u) * 4); margin-bottom: calc(var(--u) * 6);
   }
   .track .tinfo { flex: 1; }
   .track .tname { font-size: calc(var(--u) * 17); font-weight: 800; color: var(--gold); letter-spacing: .06em; }
@@ -273,8 +392,12 @@
   #reveal.on { display: grid; }
   #revealCards { display: flex; gap: calc(var(--u) * 14); flex-wrap: wrap; justify-content: center; max-width: 90%; }
   .pull {
-    width: calc(var(--u) * 150); height: calc(var(--u) * 200); border-radius: calc(var(--u) * 10);
-    background: linear-gradient(#2b2038, #150e21); border: calc(var(--u) * 3) solid #5b4770;
+    width: calc(var(--u) * 172); height: calc(var(--u) * 216);
+    background-image: linear-gradient(#2b2038, #150e21);
+    border-width: calc(var(--u) * 21);
+    border-image-source: url('assets/ui/slot.png');
+    border-image-slice: 21;
+    border-image-width: calc(var(--u) * 21);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 4);
     animation: pop .45s cubic-bezier(.2,1.5,.4,1) backwards;
   }
@@ -291,9 +414,13 @@
 
   /* sound check */
   #soundBox {
-    width: calc(var(--u) * 460); margin-top: calc(var(--u) * 14);
-    background: linear-gradient(#241a35, #140d20); border: calc(var(--u) * 2) solid #4a3a5e;
-    border-radius: calc(var(--u) * 10); padding: calc(var(--u) * 16) calc(var(--u) * 20);
+    width: calc(var(--u) * 500); margin-top: calc(var(--u) * 14);
+    background-image: linear-gradient(#241a35, #140d20);
+    border-width: calc(var(--u) * 27);
+    border-image-source: url('assets/ui/panel.png');
+    border-image-slice: 27;
+    border-image-width: calc(var(--u) * 27);
+    padding: calc(var(--u) * 4) calc(var(--u) * 8);
   }
   .srow {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -319,15 +446,25 @@
   .mhint { font-size: calc(var(--u) * 11); opacity: .6; margin-top: calc(var(--u) * 5); }
 
   /* fusion codex */
-  #codexList { display: grid; grid-template-columns: repeat(2, calc(var(--u) * 430)); gap: calc(var(--u) * 10); margin-top: calc(var(--u) * 10); }
+  #codexList { display: grid; grid-template-columns: repeat(2, calc(var(--u) * 468)); gap: calc(var(--u) * 10); margin-top: calc(var(--u) * 10); }
   .recipe {
-    display: flex; align-items: center; gap: calc(var(--u) * 6);
-    background: linear-gradient(#241a35, #140d20); border: calc(var(--u) * 2) solid #4a3a5e;
-    border-left: calc(var(--u) * 5) solid #4a3a5e;
-    border-radius: calc(var(--u) * 8); padding: calc(var(--u) * 8) calc(var(--u) * 10);
+    position: relative; display: flex; align-items: center; gap: calc(var(--u) * 6);
+    background-image: linear-gradient(#241a35, #140d20);
+    border-width: calc(var(--u) * 12);
+    border-image-source: url('assets/ui/slim.png');
+    border-image-slice: 12;
+    border-image-width: calc(var(--u) * 12);
+    padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 2) calc(var(--u) * 8);
   }
-  .recipe.sealed { border-color: #6f5f95; border-left-color: #b46fd6; }
-  .recipe.found { border-color: #8fe8f7; border-left-color: #8fe8f7; box-shadow: inset 0 0 calc(var(--u)*24) rgba(143,232,247,.10); }
+  /* Same move as .ucard — the state colour was a left border, and border-image
+     takes all four sides, so it becomes a spine inside the frame. */
+  .recipe::before {
+    content: ''; position: absolute; left: 0; top: calc(var(--u) * 3); bottom: calc(var(--u) * 3);
+    width: calc(var(--u) * 4); background: #4a3a5e;
+  }
+  .recipe.sealed::before { background: #b46fd6; }
+  .recipe.found::before { background: #8fe8f7; }
+  .recipe.found { box-shadow: inset 0 0 calc(var(--u)*24) rgba(143,232,247,.10); }
   .recipe canvas { width: calc(var(--u) * 38); height: calc(var(--u) * 43); image-rendering: pixelated; flex: none; }
   .recipe .op { font-size: calc(var(--u) * 20); color: #6f5f85; font-weight: 800; flex: none; }
   .recipe.found .op { color: #8fe8f7; }
@@ -341,7 +478,12 @@
     font-size: calc(var(--u) * 9); letter-spacing: .18em; font-weight: 800;
     color: #8fe8f7; opacity: .9;
   }
-  .recipe.locked .tag { color: #7a6b90; }
+  .recipe.locked .tag {
+    color: #7a6b90;
+    padding-left: calc(var(--u) * 15);
+    background: url('assets/ui/lock.png') left center / auto calc(var(--u) * 13) no-repeat;
+    image-rendering: pixelated;
+  }
 
   .stat { display: flex; gap: calc(var(--u) * 30); margin: calc(var(--u) * 10) 0; font-size: calc(var(--u) * 16); }
   .stat div { text-align: center; }

@@ -3,8 +3,15 @@
  * This lives in the repo on purpose. It used to sit in a scratch directory,
  * which was reset twice in one session — and each time it came back missing
  * inlining steps, built without complaint, and produced a page silently
- * missing the prop layer and half the audio. The guard at the bottom now fails
- * the build rather than shipping a page with a dead asset path in it.
+ * missing the prop layer and half the audio.
+ *
+ * It used to inline from a hand-kept table of asset paths, which caught that
+ * class of bug but only for the paths someone remembered to list — and it only
+ * ever looked at the body, so the UI kit's `url('assets/ui/…')` references in
+ * the stylesheet would have sailed straight through it. It now finds every
+ * quoted assets/ path in the whole document instead. Nothing has to be
+ * registered, and the guard at the bottom fails the build rather than shipping
+ * a page with a dead asset path in it.
  *
  * Artifacts are wrapped in <!doctype html><head></head><body> at publish time,
  * so this emits body-level content only: <title>, <style>, markup, <script>.
@@ -24,28 +31,7 @@ for (const [name, v] of [['title', title], ['style', style], ['body', body]])
   if (!v || !v.trim()) throw new Error('empty ' + name);
 if (!body.includes('<script>') || !body.includes('id="cv"')) throw new Error('body missing script or canvas');
 
-const b64 = f => fs.readFileSync(path.join(ROOT, 'assets', f)).toString('base64');
-/* Each asset, and the exact text that references it. A relative path cannot
-   survive publication — the artifact CSP blocks every external host — so any
-   entry that fails to match is a build failure, not a warning. */
-const ASSETS = [
-  ['music.mp3',    'src="assets/music.mp3"',            m => `src="data:audio/mpeg;base64,${m}"`],
-  ['music2.mp3',   'src="assets/music2.mp3"',           m => `src="data:audio/mpeg;base64,${m}"`],
-  ['gameover.mp3', 'src="assets/gameover.mp3"',         m => `src="data:audio/mpeg;base64,${m}"`],
-  ['props.png',    "propImg.src = 'assets/props.png';", m => `propImg.src = 'data:image/png;base64,${m}';`],
-  ['map.png',      "mapImg.src = 'assets/map.png';",    m => `mapImg.src = 'data:image/png;base64,${m}';`]
-];
-
-let inlined = body;
-for (const [file, needle, replace] of ASSETS) {
-  const before = inlined;
-  const data = b64(file);
-  inlined = inlined.replace(needle, replace(data));
-  if (inlined === before) throw new Error(`could not inline ${file}: "${needle}" not found in game.html`);
-  console.log(`  inlined ${file.padEnd(13)} ${(data.length / 1024 / 1024).toFixed(2)} MB of base64`);
-}
-
-const out = `<title>${title}</title>
+let out = `<title>${title}</title>
 
 <style>
 /* The artifact wrapper owns the root elements; the game commits to one dark
@@ -53,14 +39,32 @@ const out = `<title>${title}</title>
 :root, :root[data-theme="light"], :root[data-theme="dark"] { color-scheme: dark; }
 html, body { background: #070410 !important; }
 ${style}</style>
-${inlined}`;
+${body}`;
+
+/* A relative path cannot survive publication — the artifact CSP blocks every
+   external host — so every one of these has to become a data URI. */
+const MIME = { png: 'image/png', mp3: 'audio/mpeg' };
+const found = new Map();
+out = out.replace(/(['"])(assets\/[A-Za-z0-9_/-]+\.(png|mp3))\1/g, (_, q, rel, ext) => {
+  let uri = found.get(rel);
+  if (!uri) {
+    const abs = path.join(ROOT, rel);
+    if (!fs.existsSync(abs)) throw new Error(`game.html references ${rel}, which does not exist`);
+    const b64 = fs.readFileSync(abs).toString('base64');
+    uri = `data:${MIME[ext]};base64,${b64}`;
+    found.set(rel, uri);
+    console.log(`  inlined ${rel.padEnd(24)} ${(b64.length / 1024).toFixed(0).padStart(6)} KB of base64`);
+  }
+  return q + uri + q;
+});
+if (!found.size) throw new Error('no assets inlined at all — the reference pattern has stopped matching');
 
 fs.writeFileSync(OUT, out);
 
 for (const bad of ['<!DOCTYPE', '<html', '<head>', '<body>', '</body>', '</html>'])
   if (out.includes(bad)) throw new Error('leaked wrapper tag: ' + bad);
-for (const [file] of ASSETS)
-  if (out.includes('assets/' + file)) throw new Error(`asset not inlined: assets/${file} still referenced`);
+const leak = out.match(/assets\/[A-Za-z0-9_/-]+\.(?:png|mp3)/);
+if (leak) throw new Error(`asset not inlined: ${leak[0]} still referenced`);
 
-console.log(`  no wrapper tags leaked, every asset inlined`);
+console.log(`  no wrapper tags leaked, ${found.size} assets inlined, none left by path`);
 console.log(`  wrote ${OUT} (${(out.length / 1024 / 1024).toFixed(1)} MB)`);
