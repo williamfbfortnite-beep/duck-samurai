@@ -1183,10 +1183,9 @@ const OBJ = {
     'bbbacabbbaaabbba',
     'dddddddddddddddd'] },
 
-  /* One big egg per lane, standing where the nest used to sit. 14x18 at PXS 4
-     is 56x72 before the 1.1 draw scale — a shade narrower than the old nest and
-     twice its height, which still clears the top of the shallowest lane band
-     (lane 0 runs 158..235, and footY-76 lands at 151). */
+  /* One big egg per lane. 14x18 at PXS 4 is 56x72, drawn at 0.9 for a 50x65
+     footprint — the width that fits the strip of dry land between the pond and
+     the first column in every lane. */
   egg: { p: { k: '#3a2a18', e: '#fff4e0', E: '#e6d6b4', D: '#c9b48c',
               i: '#ffffff', m: '#dcc9a6', s: '#b8924a', S: '#8a6a2e' }, r: [
     '.....kkkk.....',
@@ -1918,15 +1917,19 @@ const LANES = [
 const GY = LANES[0].top;
 const FIELD_BOT = LANES[ROWS - 1].bot;
 
-/* The ward sits out on the bank beside the eggs, and a lane burns when
+/* The ward stands between the egg and the tide, and a lane burns when
    something reaches it — so the trigger is measured from the paper, not from
    the grid. It used to be written as GX - 26, which happened to line up while
    the field started at 124; pulling the columns inside the garden border would
    have put the trigger two hundred pixels east of the talisman doing the
-   burning. It sits well east of its old 82 so that, with the muster moved east
-   below, spawn-to-ward still measures 1064px. Declared here with the rest
-   of the geometry so nothing can use it before it exists. */
-const WARD_X = 180;
+   burning.
+
+   270, not its old 180: at 180 the talismans stood on stepping stones out in
+   the pond, and once the eggs moved onto dry land at 230 the ward was behind
+   the thing it is supposed to be guarding. It now sits on the paving between
+   the egg and the first column, with its paper clear of both. Declared here
+   with the rest of the geometry so nothing can use it before it exists. */
+const WARD_X = 270;
 const WARD_LINE = WARD_X + 16;
 
 /* How far east the tide forms up — this sets how long a zombie spends being
@@ -1942,7 +1945,13 @@ const WARD_LINE = WARD_X + 16;
    of the reference shot-at distance yet simulated at wave 69 against a
    reference of 72 — inside this sim's own +/-5 spread. So the muster sits at a
    plain offset and the campaign is measured rather than predicted. */
-const SPAWN_X = VW + 40;
+/* +130 rather than +40, because moving the ward 90px east shortened the march
+   by exactly that much and spawn-to-ward is the tuned number: 1270 - 286 is the
+   same 984px it was at 1180 - 196, so a wave still takes as long to arrive.
+   The stretch that moved is the one west of the grid, which was never defended
+   anyway — defenders shoot east, so a zombie past the last column is past
+   everything — and it now sits at the east end as approach time instead. */
+const SPAWN_X = VW + 130;
 
 /* Hit boundaries. The bands above describe where the GRASS is, which left the
    stone kerbs between them as dead space — about 15% of the board where a
@@ -3094,8 +3103,11 @@ function render() {
   for (let r = 0; r < ROWS; r++) {
     const y = footY(r);
     g.fillStyle = 'rgba(0,0,0,.28)';
-    g.beginPath(); g.ellipse(36, y + 1, 24, 7, 0, 0, 6.283); g.fill();
-    drawObj(g, 'egg', 36, y + 3, 1.1, 0, null, 'b');
+    /* x 230 at 0.9 scale puts a 50px base on dry land in all five lanes —
+       measured off the map, worst case 2% of the footprint over water, against
+       30-72% where it used to stand out in the pond. */
+    g.beginPath(); g.ellipse(230, y + 1, 21, 6, 0, 0, 6.283); g.fill();
+    drawObj(g, 'egg', 230, y + 3, 0.9, 0, null, 'b');
   }
 
   // ---- wards

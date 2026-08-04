@@ -521,11 +521,24 @@ small eggs. They read as scenery. It is now **one big egg per lane** — 14×18 
 four screen pixels a sprite pixel, so 56×72 before the draw scale, twice the
 nest's height and a shade narrower.
 
-The size is bounded by the shallowest lane. Lane 1's band runs y 158–235 and
-sprites are anchored at their feet, which sit at `bot − 8`; at the 1.1 draw
-scale the egg's crown lands at y 151, just over the band's top edge. That is
-fine where it stands, because the bank is west of x 276 and holds no lane
-content — but it is why the egg is not larger.
+**The size is bounded by dry land, not by the lane.** The first placement put
+the eggs at x 36, which is out in the pond — measured off the map, 30–72% of
+each egg's footprint sat over water. The strip of dry ground on this map runs
+from roughly x 215 to the first column at 285, so the egg is drawn at x 230 at
+0.9 scale: a 50px base, worst case 2% of the footprint wet in any lane.
+
+That forced the ward east too. At x 180 the talismans stood on stepping stones
+out in the pond, and with the eggs on land at 230 the ward was *behind* the
+thing it guards. It now sits at 270, on the paving between the egg and the first
+column, with its paper clear of both.
+
+Moving the ward moved the trigger with it — `WARD_LINE` went from 196 to 286 —
+which shortens the march by 90px, and spawn-to-ward is a tuned number. So the
+muster moved the same 90px: `1270 − 286` is the same 984px `1180 − 196` was, and
+a wave still takes as long to arrive. The stretch that moved is the one west of
+the grid, which was never defended anyway — defenders shoot east, so a zombie
+past the last column is past everything — and it now sits at the east end as
+approach time instead.
 
 The copy moved with the art: the tide marches on *your eggs*, one at the end of
 every lane, and a breach now reads "they reached the eggs".
