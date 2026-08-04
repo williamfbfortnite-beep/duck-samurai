@@ -1,4 +1,10 @@
 # 鴨侍 — SIEGE OF THE ROTTING REEDS
+
+> **Two currencies, and they are not the same thing.** **力 Energy** is the
+> in-run resource: it grows on the board, it is spent placing units, and it is
+> gone when the run ends. **氣 Chi** is the campaign currency: runs pay it out,
+> and it buys crates, scrolls and upgrades between runs. The identifiers predate
+> the names — `R.ki`/`startKi` are Energy, `S.sp`/`levelReward` are Chi.
 ### A lane-defence game about duck samurai, merging, and an undead tide that never stops
 
 ---
@@ -16,7 +22,7 @@ gate. You are the last retainer. You have coin, conscripts, and until dawn.
 | Waves end, level ends, you win | **A 100-level campaign** over one endless-feeling board — each level is a wave target you either hold or don't |
 | A tower is a tower forever | **Merge.** Drop a duplicate on a unit to fuse it — Lv1 → Lv2 → Lv3 |
 | Progress is a fixed level select | **Meta-loop.** Survival pays out points → crates → roster → multipliers |
-| Sun that vanishes if you miss it | **Same rule, kept.** A Ki orb has to be clicked to bank it — left alone it drains away and is gone. Income is something you attend to, not something that accrues |
+| Sun that vanishes if you miss it | **Same rule, kept.** A Energy orb has to be clicked to bank it — left alone it drains away and is gone. Income is something you attend to, not something that accrues |
 
 The fantasy: *your line gets stronger inside a run (merging) and across runs
 (crates + upgrades), so a wave that ended you an hour ago is now Tuesday.*
@@ -28,11 +34,11 @@ The fantasy: *your line gets stronger inside a run (merging) and across runs
 ```
         ┌──────────────────────────────────────────┐
         │  RUN: survive waves → earn Score         │
-        │    · spend Ki → place units              │
+        │    · spend Energy → place units              │
         │    · place a duplicate → MERGE, power up │
         │    · a breach past the wards → run ends  │
         └───────────────┬──────────────────────────┘
-                        │  Score × (1 + Coin Multiplier)
+                        │  Score × (1 + Chi Multiplier)
                         ▼
         ┌──────────────────────────────────────────┐
         │  BARRACKS: spend points                  │
@@ -45,14 +51,14 @@ The fantasy: *your line gets stronger inside a run (merging) and across runs
 
 Two currencies, deliberately not interchangeable:
 
-- **Ki (氣)** — in-run only, wiped at the end. Buys unit placements. Grown by Rice
+- **Ki (力)** — in-run only, wiped at the end. Buys unit placements. Grown by Rice
   Paddies, and **only ever obtained by clicking**. An orb sits for nine seconds,
   blinks for the last three, then drains away with nothing banked. Nothing in the
-  game credits Ki passively: the chain fusion that used to refund straight to the
+  game credits Energy passively: the chain fusion that used to refund straight to the
   balance now sheds an orb like everything else, because one exception is all it
   takes for the clicking to become decorative. The cost of a big economy is now
   the attention it takes to harvest it.
-- **Points (点)** — permanent. Earned by surviving. Buys crates and upgrades.
+- **Points (氣)** — permanent. Earned by surviving. Buys crates and upgrades.
 
 A save can be retired two ways. **切腹 START OVER** in the barracks wipes points,
 stars, unlocks and campaign progress back to a fresh file; it takes two presses
@@ -225,7 +231,7 @@ rolls:
 | 4 | 61.0% | 29.3% | 9.8% |
 | 8 | 43.4% | 41.2% | 15.4% |
 
-At 1,500 点 rising 250 per scroll owned, all 25 cost 112,500 — about one and a
+At 1,500 氣 rising 250 per scroll owned, all 25 cost 112,500 — about one and a
 half campaigns at a maxed multiplier. A completionist goal, not a weekend one.
 
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
@@ -236,7 +242,7 @@ units minus the fusions. They used to be built separately, so the roster listed
 all twelve fusion results as locked cards reading *"find it in a crate"*, a
 promise the game cannot keep: a fusion exists only by fusing two units on the
 board. Fusions belong to the codex, where they are discovered rather than bought.
-They also cost 0 氣 — deliberately, since you pay with the two units consumed —
+They also cost 0 力 — deliberately, since you pay with the two units consumed —
 so one reaching the tray would be an unlimited free tier-2 unit. A save claiming
 to own a fusion is scrubbed on load, and the tray is filtered again at run start.
 
@@ -253,12 +259,12 @@ onto a Lv3 hands you a Lv3.
 | 扇 Twin Fan | + | 雷 Thunder Drum | → | **雷扇 Storm Fan** — chains 4 targets across three lanes |
 | 竹 Bamboo Wall | + | 長刀 Naginata Ronin | → | **鉄壁 Iron Bulwark** — 900 HP that swings back |
 | 弓 Yumi Sniper | + | 爆 Powder Keg | → | **爆矢 Bombardier** — piercing arrows that detonate |
-| 稲 Rice Paddy | + | 狐 Fox Shrine | → | **豊穣 Harvest Spirit** — Ki income *and* an aura |
+| 稲 Rice Paddy | + | 狐 Fox Shrine | → | **豊穣 Harvest Spirit** — Energy income *and* an aura |
 | 氷 Frost Lantern | + | 爆 Powder Keg | → | **氷爆 Frost Mine** — a wide bloom of ice |
 | 苦無 Kunai Duck | + | 稲 Rice Paddy | → | **暁 Dawn Herald** — a shooter that pays its own way |
 | 竹 Bamboo Wall | + | 爆 Powder Keg | → | **茨 Thorn Wall** — hurts whatever chews on it |
 | 扇 Twin Fan | + | 弓 Yumi Sniper | → | **疾風 Wind Herald** — three piercing blades, fastest on the board |
-| 雷 Thunder Drum | + | 狐 Fox Shrine | → | **鎮魂 Grave Bell** — chains, and refunds Ki as it kills |
+| 雷 Thunder Drum | + | 狐 Fox Shrine | → | **鎮魂 Grave Bell** — chains, and refunds Energy as it kills |
 | 苦無 Kunai Duck | + | 長刀 Naginata Ronin | → | **炎僧 Ember Monk** — a burning sweep that keeps burning |
 | **鉄壁 Iron Bulwark** | + | 氷 Frost Lantern | → | **潮守 Tide Warden** — *tier 2*: 1200 HP and an aura of mud |
 
@@ -290,9 +296,9 @@ in the codex for discovered fusions, and on a hover panel over the in-run tray.
 
 ## 5. Roster — the flock
 
-| Unit | 漢字 | Ki | Rarity | Role |
+| Unit | 漢字 | Energy | Rarity | Role |
 | --- | --- | --- | --- | --- |
-| Rice Paddy | 稲 | 50 | Common | Economy — a Ki orb every 8s; merging is sub-linear on purpose |
+| Rice Paddy | 稲 | 50 | Common | Economy — a Energy orb every 8s; merging is sub-linear on purpose |
 | Kunai Duck | 苦無 | 100 | Common | Baseline lane shooter |
 | Bamboo Wall | 竹 | 50 | Common | 400 HP of nothing-personal |
 | Twin Fan | 扇 | 175 | Uncommon | Two blades a volley, fast |
@@ -335,7 +341,7 @@ The old formula paid by score, so a single deep run handed over 30-40,000 points
 once now pays **54,500** total, against roughly 64,000 of upgrades plus crates,
 so the meta is a campaign-length arc rather than an afternoon.
 
-### Coin Multiplier — the requested ladder
+### Chi Multiplier — the requested ladder
 
 Eight tiers, 5% → 40%, each strictly pricier than the last:
 
@@ -351,7 +357,7 @@ Eight tiers, 5% → 40%, each strictly pricier than the last:
 | VIII | +40% | 14,000 |
 
 Total to max: **39,250 points.** Three more escalating tracks sit beside it —
-Ki Reserve (starting Ki), Ward Blessing (a second talisman per lane), and Crate
+Energy Reserve (starting Ki), Ward Blessing (a second talisman per lane), and Crate
 Fortune (rarity odds).
 
 ### Crates
@@ -420,7 +426,7 @@ moves vertically now, because there the bob *is* the step.
 
 **Objects** are a second, free-size layer over the same idea: each has its own
 grid and palette. Twenty of them cover the projectiles (shuriken, war fan, ice
-shard, arrow, bile), the Ki orb, the Ofuda ward, a 3-frame explosion, the three
+shard, arrow, bile), the Energy orb, the Ofuda ward, a 3-frame explosion, the three
 supply crates, the shovel icon, and the props that dress the board — lily pads,
 rocks, duck skulls, reed clumps, stone lanterns, and the shrine gates on the
 horizon. Props are placed from a fixed seed so the field never reshuffles between
@@ -658,10 +664,10 @@ project it should be:
 ```
         ★1     ★2      ★3       ★4       ★5        total
 札       1      2       4        7        12          26
-点     200    500   1,200    2,600    5,500      10,000   (x1 + rarity x0.35)
+氣     200    500   1,200    2,600    5,500      10,000   (x1 + rarity x0.35)
 ```
 
-Rank carries three things. Every star is a flat **+6%** to damage, health and 氣
+Rank carries three things. Every star is a flat **+6%** to damage, health and 力
 — the multiplier that was already there. **★3 unlocks 疾 SWIFT**: everything the
 unit does on a clock runs 18% faster, which is the one bonus that means
 something to every kind, economy included. **★5 unlocks 極 MASTERY**, one perk
@@ -670,7 +676,7 @@ point that field is read:
 
 | kind | ★5 |
 | --- | --- |
-| 氣 economy | orbs worth +25% |
+| 力 economy | orbs worth +25% |
 | shooter | shots pierce |
 | wall | thorns +60% |
 | melee | reach +25% |
@@ -699,24 +705,24 @@ one — having two ways to ask the same question is exactly how the engine ended
 up asking the wrong one.
 
 Measured, and measured against the bug: Rice Paddy + Fox Shrine makes the
-Harvest Spirit, a 氣 unit, so the orb probe reads it directly. From ★0 parents it
-earns **4.48 氣/s**; from ★5 parents, **9.28** — 2.07x, against the 1.92x the
+Harvest Spirit, a 力 unit, so the orb probe reads it directly. From ★0 parents it
+earns **4.48 力/s**; from ★5 parents, **9.28** — 2.07x, against the 1.92x the
 arithmetic predicts. Reverting just the inheritance and running the same test
 gives 4.48 against 4.48, exactly 1.00x, which is what makes the test worth
 having.
 
 **Verified against the simulation, not against the save.** A Rice Paddy is the
-cleanest probe, because both abilities touch the one timer it runs on: 25 氣
+cleanest probe, because both abilities touch the one timer it runs on: 25 力
 every 8s at ★0, against 25 × 1.30 × 1.25 every 8 ÷ 1.18s at ★5. Banking orbs by
-hand for 22 seconds each measured **3.36 氣/s against 5.50**, near enough the
+hand for 22 seconds each measured **3.36 力/s against 5.50**, near enough the
 3.13 and 5.99 the arithmetic predicts — the shortfall is orbs that drained
 before the harness clicked them.
 
 That test lied the first time. The run left the tray card armed, so every
-banking click built another paddy at 50 氣 and the ★0 side measured *negative*
+banking click built another paddy at 50 力 and the ★0 side measured *negative*
 income — and the ratio still came out "passing" because it was negative. The
 harness now proves the cursor is disarmed by clicking bare ground and checking
-氣 did not move, and it throws rather than reporting a number if it wasn't.
+力 did not move, and it throws rather than reporting a number if it wasn't.
 
 **One name collision, caught by the parser.** `master` was already the audio
 master-gain node, so the mastery predicate had to become `mastered` — the same
@@ -736,16 +742,16 @@ have done on *any* difficulty — so dropping to Easy for one hard level never
 takes anything away from you, and neither do the fusion-recipe level gates,
 which read the same best-of figure.
 
-| | enemy HP | enemy damage | opening 氣 | payout |
+| | enemy HP | enemy damage | opening 力 | payout |
 | --- | --- | --- | --- | --- |
 | 弱 Easy | ×0.62 | ×0.75 | **+75** | ×0.70 |
 | 中 Medium | ×1.00 | ×1.00 | — | ×1.00 |
 | 強 Hard | ×1.55 | ×1.25 | — | ×1.80 |
 
-Easy opens with more 氣 rather than only softer enemies, and that is the part
+Easy opens with more 力 rather than only softer enemies, and that is the part
 aimed at the actual complaint. What makes the first minute punishing is that you
 cannot afford a paddy *and* a shooter, so the game silently demands you know to
-build economy first; no amount of thinner zombies fixes that, and 250 氣 does.
+build economy first; no amount of thinner zombies fixes that, and 250 力 does.
 
 The difficulty is frozen into the run at `startRun` rather than read from the
 save each frame, or switching mode from another screen would rescale enemies
@@ -754,7 +760,7 @@ already walking.
 **段 LEVELS** is what DEPLOY now opens. A hundred chips in a ten-by-ten grid:
 gold for cleared, a pulsing parchment chip for the one you are on, dimmed for
 locked, and a red corner on every fifth, which is where the elites are. Beaten
-levels stay open and can be replayed for their 点. It costs a click on the way
+levels stay open and can be replayed for their 氣. It costs a click on the way
 into a run, and buys the two things that were missing — where you are, and how
 hard you would like this to be.
 
@@ -784,8 +790,8 @@ Kills and survival order correctly; the wave number ties, because at level 55 a
 five-shooter line is overwhelmed in wave 5 whatever the multipliers are. That
 measure is too coarse here — the run is bound by what spawns, not by what the
 line can kill — so 1.30× on kills is a floor on the effect rather than its size.
-Payout and opening 氣 separate cleanly and exactly as configured: 5 / 8 / 14 点
-for the same run, and 250 / 175 / 175 氣 to open.
+Payout and opening 力 separate cleanly and exactly as configured: 5 / 8 / 14 氣
+for the same run, and 250 / 175 / 175 力 to open.
 
 A test that can only pass is not a test, and three of the four written for this
 could only pass.
@@ -847,7 +853,7 @@ out of that ringer-switch audio session.
 
 **Shipped in `game.html`** (single file, no dependencies, opens from disk):
 board, merging, fusion + codex, 10 buildable units and 6 fusion results, all 6
-enemies, endless waves, wards, Ki economy, score → points, crates with reveal
+enemies, endless waves, wards, Energy economy, score → points, crates with reveal
 animation, all four upgrade tracks, loadout picker, day/night cycle, tiled lanes,
 music and SFX, localStorage save, pause and 2× speed.
 

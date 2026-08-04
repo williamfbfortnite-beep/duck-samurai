@@ -623,14 +623,15 @@
 
   <div id="ui" class="hidden">
     <div id="top">
-      <div class="pill ki"><span class="lbl">氣</span><span id="kiVal">0</span></div>
+      <div class="pill ki"><span class="lbl">力</span><span id="kiVal">0</span></div>
       <div class="pill wave"><span class="lbl">WAVE</span><span id="waveVal">1</span></div>
       <div class="pill lvl"><span class="lbl">LV</span><span id="lvlVal">1</span></div>
       <div class="pill valor"><span class="lbl">武功</span><span id="valorVal">+0%</span></div>
-      <!-- 点 here means what it means on every other screen: points you spend on
+      <!-- 氣 Chi here means what it means on every other screen: the currency you
+           spend on
            crates. This pill used to show R.score, a survival tally nothing pays
            out on, so the HUD promised hundreds of times what a run actually banked. -->
-      <div class="pill score" id="scorePill" title="Points you would bank if the line broke now"><span class="lbl">点</span><span id="scoreVal">0</span></div>
+      <div class="pill score" id="scorePill" title="Chi you would bank if the line broke now"><span class="lbl">氣</span><span id="scoreVal">0</span></div>
       <div class="spacer"></div>
       <button class="btn" id="spdBtn">1×</button>
       <button class="btn" id="muteBtn">🔊</button>
@@ -665,7 +666,7 @@
         <h1 class="title bigTitle">鴨<span>侍</span></h1>
         <div class="rule"><i></i><span>無 限 の 夜</span><i></i></div>
         <div class="sub">Siege of the Rotting Reeds</div>
-        <div class="bank"><span>点 <b id="mSp">0</b></span><span style="opacity:.75">LEVEL <b id="mLevel">1</b> <span style="opacity:.6;font-size:calc(var(--u)*13)">of 100</span></span></div>
+        <div class="bank"><span>氣 <b id="mSp">0</b></span><span style="opacity:.75">LEVEL <b id="mLevel">1</b> <span style="opacity:.6;font-size:calc(var(--u)*13)">of 100</span></span></div>
         <div class="sub" id="mGoal" style="margin-top:calc(var(--u)*6);letter-spacing:.2em"></div>
       </div>
       <!-- The buttons sit along the bottom edge rather than under the title, so
@@ -690,13 +691,13 @@
     <!-- BARRACKS -->
     <div class="screen" id="scBarracks">
       <h1 class="title" style="font-size:calc(var(--u)*40)">兵舎 BARRACKS</h1>
-      <div class="bank"><span>点 <b id="bSp">0</b></span></div>
+      <div class="bank"><span>氣 <b id="bSp">0</b></span></div>
       <h2 class="sect">Supply Crates</h2>
       <div class="crates" id="crateRow"></div>
       <h2 class="sect">The Flock — pick up to 6 for your loadout</h2>
       <div class="hint" style="margin-top:0;max-width:52em">
         A crate that draws a unit you already have pays its <b>札</b> instead. Spend 札 and
-        points to raise a unit's rank: every star is <b>+6%</b> damage, health and 氣, with
+        <b>Chi</b> to raise a unit's rank: every star is <b>+6%</b> damage, health and Energy, with
         <b>疾 SWIFT</b> at ★3 and <b>極 MASTERY</b> at ★5.
       </div>
       <div class="grid" id="unitGrid"></div>
@@ -774,7 +775,7 @@
       <h2 class="sect">Progress</h2>
       <div class="setbox">
         <div class="setrow"><span>Start this level again from the top</span><button class="btn" id="setRestart">↻ RESTART RUN</button></div>
-        <div class="setrow"><span>Wipe points, stars, unlocks and campaign</span><button class="btn" id="setWipe" title="Wipe all points, stars, unlocks and campaign progress">切腹 START OVER</button></div>
+        <div class="setrow"><span>Wipe Chi, stars, unlocks and campaign</span><button class="btn" id="setWipe" title="Wipe all Chi, stars, unlocks and campaign progress">切腹 START OVER</button></div>
       </div>
 
       <div class="row" style="margin-top:calc(var(--u)*16)"><button class="btn big" id="setBack">◀ BACK</button></div>
@@ -798,7 +799,7 @@
     <!-- UPGRADES -->
     <div class="screen" id="scUpgrades">
       <h1 class="title" style="font-size:calc(var(--u)*40)">強化 UPGRADES</h1>
-      <div class="bank"><span>点 <b id="uSp">0</b></span></div>
+      <div class="bank"><span>氣 <b id="uSp">0</b></span></div>
       <div id="trackList" style="margin-top:calc(var(--u)*14)"></div>
       <div class="row"><button class="btn big" id="uBack">◀ BACK</button></div>
     </div>
@@ -1488,7 +1489,7 @@ const RAR_COL = ['#8d99a8', '#5fb37a', '#5b8fd6', '#b46fd6', '#e8a33d', '#ff5f7e
 
 const UNITS = [
   { id: 'paddy', name: 'Rice Paddy', kanji: '稲', cost: 50, cd: 5, rar: 0, kind: 'ki', hp: 220,
-    blurb: 'Grows a Ki orb every 8s. Click it to bank it — an orb left alone drains away. Merging one saves space but three separate paddies out-earn it.' },
+    blurb: 'Grows an Energy orb every 8s. Click it to bank it — an orb left alone drains away. Merging one saves space but three separate paddies out-earn it.' },
   { id: 'kunai', name: 'Kunai Duck', kanji: '苦無', cost: 100, cd: 5, rar: 0, kind: 'shot', hp: 240,
     dmg: 22, rate: 1.5, proj: 'kunai', blurb: 'Throws down the lane. Reliable, cheap, everywhere.' },
   { id: 'bamboo', name: 'Bamboo Wall', kanji: '竹', cost: 50, cd: 11, rar: 0, kind: 'wall', hp: 450,
@@ -1524,13 +1525,13 @@ const UNITS = [
     blurb: 'Arrows that detonate. Pierces the lane and blasts whatever it passes.' },
   { id: 'harvest', name: 'Harvest Spirit', kanji: '豊穣', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'ki', hp: 340, buff: .2, aura: true,
-    blurb: 'Grows Ki faster than a paddy and hurries the eight tiles around it.' },
+    blurb: 'Grows Energy faster than a paddy and hurries the eight tiles around it.' },
   { id: 'frostmine', name: 'Frost Mine', kanji: '氷爆', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'mine', hp: 240, dmg: 220, radius: 210, freeze: 4,
     blurb: 'Detonates into a wide bloom of ice. Survivors crawl out of it.' },
   { id: 'sunwake', name: 'Dawn Herald', kanji: '暁', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'shot', hp: 280, dmg: 34, rate: .8, proj: 'kunai', count: 2,
-    blurb: 'Throws at dawn speed and pays its own way — a Ki orb every 14s on top.' },
+    blurb: 'Throws at dawn speed and pays its own way — an Energy orb every 14s on top.' },
   { id: 'thornwall', name: 'Thorn Wall', kanji: '茨', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'wall', hp: 820, thorns: 26,
     blurb: 'A wall that bites back — anything chewing on it takes damage every swing.' },
@@ -1539,7 +1540,7 @@ const UNITS = [
     blurb: 'Three piercing blades a volley, faster than anything else on the board.' },
   { id: 'gravebell', name: 'Grave Bell', kanji: '鎮魂', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'chain', hp: 300, dmg: 40, rate: 1.7, chains: 3, drain: .35,
-    blurb: 'Chains a mourning note through the horde and refunds Ki for every kill.' },
+    blurb: 'Chains a mourning note through the horde and refunds Energy for every kill.' },
   { id: 'embermonk', name: 'Ember Monk', kanji: '炎僧', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'melee', hp: 420, dmg: 70, rate: .85, range: 168, burn: 30,
     blurb: 'Sweeps a burning staff — everything it touches keeps burning afterwards.' },
@@ -1552,7 +1553,7 @@ const UNITS = [
      unit would look like design and do nothing. */
   { id: 'ricewall', name: 'Paddy Bulwark', kanji: '稲壁', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'ki', hp: 620, thorns: 26,
-    blurb: 'A farm that refuses to die. Grows Ki behind 620 HP and bites whatever chews on it.' },
+    blurb: 'A farm that refuses to die. Grows Energy behind 620 HP and bites whatever chews on it.' },
   { id: 'windmill', name: 'Windmill Duck', kanji: '風車', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'ki', hp: 300, aura: true, buff: .22,
     blurb: 'Fans the whole block. Its own orbs come a third faster, and its neighbours keep pace.' },
@@ -1570,7 +1571,7 @@ const UNITS = [
     blurb: 'Shoots the length of the field it farms.' },
   { id: 'festival', name: 'Festival Drum', kanji: '祭', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'chain', hp: 320, dmg: 42, rate: 1.6, chains: 3, drain: .4,
-    blurb: 'A harvest festival — the lightning carries, and it pays you back in Ki.' },
+    blurb: 'A harvest festival — the lightning carries, and it pays you back in Energy.' },
   { id: 'thicket', name: 'Thicket Duck', kanji: '苦竹', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'wall', hp: 660, thorns: 34,
     blurb: 'A hedge full of blades. Cheap, and it hurts to eat.' },
@@ -1672,7 +1673,7 @@ function unitRole(d) {
 // short, factual stat chips
 function unitStats(d) {
   const out = [];
-  if (d.kind === 'ki') out.push(`${KI_LVL[0].amount} 氣 / ${KI_LVL[0].period}s`);
+  if (d.kind === 'ki') out.push(`${KI_LVL[0].amount} 力 / ${KI_LVL[0].period}s`);
   if (d.dmg) out.push(`${d.dmg} dmg` + (d.count > 1 ? ` ×${d.count}` : ''));
   if (d.rate) out.push(`every ${d.rate}s`);
   if (d.hp) out.push(`${d.hp} hp`);
@@ -1684,7 +1685,7 @@ function unitStats(d) {
   if (d.thorns) out.push(`${d.thorns} thorns`);
   if (d.slowAura) out.push(`${Math.round(d.slowAura * 100)}% aura slow`);
   if (d.chains) out.push(`${d.chains} chains`);
-  if (d.drain) out.push('sheds 氣 orbs');
+  if (d.drain) out.push('sheds Energy orbs');
   if (d.radius) out.push(`${Math.round(d.radius / CW * 10) / 10} tile blast`);
   if (d.range) out.push(`${Math.round(d.range / CW * 10) / 10} tile reach`);
   if (d.buff) out.push(`+${Math.round(d.buff * 100)}% nearby rate`);
@@ -1816,12 +1817,12 @@ const MAX_LEVEL = 100;
    punishing before you have worked out that economy comes first, and Hard
    exists because Easy pays less. Coin is the whole reason to climb.
 
-   Easy also opens with more 氣 rather than only softer enemies: the thing that
+   Easy also opens with more 力 rather than only softer enemies: the thing that
    makes the first minute hard is that you cannot afford a paddy and a shooter,
    and no amount of thinner zombies fixes that. */
 const DIFFS = [
   { id: 'easy', name: 'EASY',   kanji: '弱', hp: 0.62, dmg: 0.75, coin: 0.70, ki: 75, at: 0,  col: '#7fe0a0',
-    blurb: 'Softer waves, and enough 氣 to open with a paddy and a shooter.' },
+    blurb: 'Softer waves, and enough 力 to open with a paddy and a shooter.' },
   { id: 'med',  name: 'MEDIUM', kanji: '中', hp: 1.00, dmg: 1.00, coin: 1.00, ki: 0,  at: 10, col: '#9be8ff',
     blurb: 'The campaign as it was tuned. Standard pay.' },
   { id: 'hard', name: 'HARD',   kanji: '強', hp: 1.55, dmg: 1.25, coin: 1.80, ki: 0,  at: 20, col: '#ff8a7a',
@@ -1858,7 +1859,17 @@ const valorHp = () => 1 + (R.wave > 0 ? R.wave - 1 : 0) * VALOR_HP;
 // Economy units scale sub-linearly on merge, on purpose. Three separate Lv1
 // paddies out-produce one Lv3 (3.0x vs 2.1x) — merging buys you board space,
 // not free income. Combined amount+rate scaling used to compound to ~5.5x,
-// which snowballed into infinite Ki.
+// which snowballed into infinite Energy.
+/* ── The two currencies ────────────────────────────────────────────────────
+   力 ENERGY is the in-run resource: it grows on the board, it is spent placing
+   units, and it is gone when the run ends.
+   氣 CHI is the campaign currency: runs pay it out, and it buys crates,
+   scrolls and upgrades between runs.
+
+   The identifiers predate the names — `R.ki` / `startKi` / `KI_LVL` are Energy,
+   and `S.sp` / `coinMul` / `levelReward` are Chi. Renaming them through 200KB of
+   engine is churn for no behaviour, so the mapping is written down here
+   instead. */
 const KI_LVL = [{ amount: 25, period: 8 }, { amount: 38, period: 8 }, { amount: 52, period: 8 }];
 
 const CRATES = [
@@ -1868,10 +1879,10 @@ const CRATES = [
 ];
 
 const TRACKS = [
-  { id: 'coin', name: 'Coin Multiplier', costs: [300, 750, 1500, 2600, 4200, 6400, 9500, 14000],
-    desc: l => `Points earned from a run +${l * 5}%` + (l < 8 ? ` → +${(l + 1) * 5}%` : ' — MAX') },
-  { id: 'ki', name: 'Ki Reserve', costs: [200, 450, 900, 1600, 2700, 4200],
-    desc: l => `Start each run with ${175 + l * 25} Ki` + (l < 6 ? ` → ${175 + (l + 1) * 25}` : ' — MAX') },
+  { id: 'coin', name: 'Chi Multiplier', costs: [300, 750, 1500, 2600, 4200, 6400, 9500, 14000],
+    desc: l => `Chi earned from a run +${l * 5}%` + (l < 8 ? ` → +${(l + 1) * 5}%` : ' — MAX') },
+  { id: 'ki', name: 'Energy Reserve', costs: [200, 450, 900, 1600, 2700, 4200],
+    desc: l => `Start each run with ${175 + l * 25} Energy` + (l < 6 ? ` → ${175 + (l + 1) * 25}` : ' — MAX') },
   { id: 'ward', name: 'Ward Blessing', costs: [1200, 4000],
     desc: l => `${1 + l} talisman${l ? 's' : ''} per lane before a breach ends you` + (l < 2 ? ` → ${2 + l}` : ' — MAX') },
   { id: 'luck', name: 'Crate Fortune', costs: [500, 1300, 2800, 5500],
@@ -1907,7 +1918,7 @@ try {
 } catch (e) { /* private mode / file:// — play unsaved */ }
 /* Scrub anything a fusion should never be recorded in. Fusions are discovered
    on the board, not owned and not carried into a run; a save that lists one
-   would put a 0-氣 tier-2 unit in the tray forever. Discoveries live in S.found,
+   would put a 0-力 tier-2 unit in the tray forever. Discoveries live in S.found,
    which is untouched. */
 let scrubbed = false;
 for (const id of Object.keys(S.owned)) if (!U[id] || U[id].fused) { delete S.owned[id]; scrubbed = true; }
@@ -1946,7 +1957,7 @@ const wardCount = () => 1 + S.up.ward;
 /* ── Ranks, cards and the two abilities ────────────────────────────────────
    A crate that hands you a unit you already have gives its 札 — the card, not
    the unit. Cards buy rank, and rank is what carries the numbers: a flat +6%
-   to damage, health and 氣 per star, plus an ability at ★3 and another at ★5.
+   to damage, health and 力 per star, plus an ability at ★3 and another at ★5.
 
    Both costs climb, and the coin side climbs again with rarity, so raising a
    Common you keep pulling is cheap and finishing an Epic is the long project it
@@ -1973,7 +1984,7 @@ const starMulOf = rank => 1 + rank * 0.06;
 const swiftOf = rank => rank >= SWIFT_AT ? 1.18 : 1;
 const masteredOf = rank => rank >= MASTER_AT;
 /* 疾 Swift (★3) — everything the unit does on a clock runs this much faster,
-   which is the one bonus that means something to every kind including 氣.
+   which is the one bonus that means something to every kind including 力.
    There is deliberately no starMul(id)/swift(id) pair beside these: having two
    ways to ask the same question is exactly how the engine ended up asking by
    id and handing fusions a flat ★0. */
@@ -2373,7 +2384,7 @@ let loadout = [];
 function startRun(level) {
   dirgeStop();          // a new run silences whatever the last one ended on
   if (!muted && !musicLive()) musicStart();
-  // never a fusion in the tray, whatever a save claims. They cost 0 氣, so one
+  // never a fusion in the tray, whatever a save claims. They cost 0 力, so one
   // that slipped into the loadout would be an unlimited free tier-2 unit
   loadout = S.loadout.filter(id => owns(id) && U[id] && !U[id].fused).slice(0, 6);
   if (!loadout.length) loadout = ['paddy', 'kunai', 'bamboo'].filter(owns);
@@ -2666,7 +2677,7 @@ function update(dt) {
           R.fx.push({ t: 'bolt', x1: px, y1: py, x2: z.x, y2: zy, life: .16, max: .16 });
           damageZombie(z, unitStat(u, 'dmg'), 'quiet');
           // drop it as an orb rather than crediting it: the same rule has to
-          // hold for every source of Ki, or this one becomes the passive one
+          // hold for every source of Energy, or this one becomes the passive one
           if (def.drain) R.orbs.push({ x: z.x, y: zy - 20, ty: footY(z.lane) - 6,
             amount: Math.max(1, Math.round(def.drain * 10 * LVL[u.lvl - 1].m)), life: 9, vy: -70 });
           px = z.x; py = zy;
@@ -2783,13 +2794,13 @@ function update(dt) {
     if (o.sky) { o.y += 70 * dt; if (o.y > o.ty) o.y = o.ty; }
     else if (o.vy !== undefined) { o.vy += 260 * dt; o.y += o.vy * dt; if (o.y > o.ty) { o.y = o.ty; o.vy = 0; } }
     o.life -= dt;
-    /* Ki is earned by hand. An orb left alone used to be banked for free when
+    /* Energy is earned by hand. An orb left alone used to be banked for free when
        it timed out, which made every paddy a passive drip and the clicking
        decorative. Now it drains away and is gone: watching the board and
        picking your moment to bank is the cost of the economy. */
     if (o.life <= 0) {
       for (let k = 0; k < 5; k++) puff(o.x, o.y - 4, '#4a6b7a', 60);
-      text(o.x, o.y - 12, '氣 lost', 'rgba(140,180,200,.75)', .7);
+      text(o.x, o.y - 12, 'Energy lost', 'rgba(140,180,200,.75)', .7);
       R.orbs.splice(i, 1);
       continue;
     }
@@ -2822,11 +2833,19 @@ function collectOrb(i) {
   SFX.ki();
 }
 
-/* Payout is per level cleared, not per second survived. The old formula paid
-   by score, so a deep run handed over 30-40k — most of the campaign's whole
-   economy in one sitting. A finished level now pays 40 + 10×level; a failed
-   one pays a fraction of that, scaled by how far you got. */
-const levelReward = L => 40 + L * 10;
+/* Payout is per level cleared, not per second survived. The old formula paid by
+   score, so a deep run handed over 30-40k — most of the campaign's whole economy
+   in one sitting.
+
+   46 + 7×level averages 400 氣 across the hundred levels, which is the figure
+   this was asked to hit. It is a flatter line than the 40 + 10×level it
+   replaces: level 1 pays slightly more (53 against 50) and level 100 rather
+   less (746 against 1,040), so the early game is less of a wall and the late
+   game less of a windfall. One campaign pass is worth about 40,000 氣 rather
+   than 54,500 — cleared levels stay open and can be replayed for their 氣,
+   which is where the difference comes back. A failed run pays a fraction,
+   scaled by how far it got. */
+const levelReward = L => 46 + L * 7;
 
 function payout(won) {
   const base = levelReward(R.level);
@@ -2853,7 +2872,7 @@ function levelComplete() {
   document.getElementById('oKills').textContent = R.kills;
   document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
   document.getElementById('oPayout').innerHTML =
-    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 点</b><br>` +
+    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 氣</b><br>` +
     `<span style="opacity:.65">level reward ${p.base} × ${(coinMul() * R.diff.coin).toFixed(2)} multiplier · ${R.diff.name}</span>` +
     (P.level > R.level ? `<br><span style="color:#8fe8f7">LEVEL ${P.level} UNLOCKED — target wave ${targetWave(P.level)}</span>` : '') +
     unlockedAtLine(R.level);
@@ -2877,9 +2896,9 @@ function gameOver() {
   document.getElementById('oKills').textContent = R.kills;
   document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
   document.getElementById('oPayout').innerHTML =
-    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 点</b><br>` +
+    `<b style="color:var(--gold);font-size:calc(var(--u)*30)">+${p.earned.toLocaleString()} 氣</b><br>` +
     `<span style="opacity:.65">reached wave ${R.wave} of ${R.target} — partial reward</span>` +
-    (S.up.coin < 8 ? `<br><span style="opacity:.5;font-size:calc(var(--u)*13)">Coin Multiplier tier ${S.up.coin}/8 — upgrade it to keep more of what you earn</span>` : '');
+    (S.up.coin < 8 ? `<br><span style="opacity:.5;font-size:calc(var(--u)*13)">Chi Multiplier tier ${S.up.coin}/8 — upgrade it to keep more of what you earn</span>` : '');
   document.getElementById('ui').classList.add('hidden');
   show('scOver');
   dirgePlay();          // stops the soundtrack and plays the death cue over it
@@ -3498,7 +3517,7 @@ function syncHud() {
      small bonus instead of a 650x disappointment. */
   const proj = payout(false);
   scoreVal.textContent = proj.earned.toLocaleString();
-  scorePill.title = `Bank now: ${proj.earned} 点  ·  Clear the level: ${payout(true).earned} 点`;
+  scorePill.title = `Bank now: ${proj.earned} Chi  ·  Clear the level: ${payout(true).earned} Chi`;
   for (const c of cardEls) {
     if (c.id === '__shovel') { c.el.classList.toggle('sel', R.shovel); continue; }
     const d = U[c.id];
@@ -3517,7 +3536,7 @@ function showTip(d) {
     `<div class="tr">${unitRole(d)}</div>` +
     `<div class="td">${d.blurb}</div>` +
     `<div class="uchips">` +
-      `<span class="chip cost">${d.cost} 氣</span>` +
+      `<span class="chip cost">${d.cost} 力</span>` +
       unitStats(d).map(t => `<span class="chip">${t}</span>`).join('') +
     `</div>`;
   tipEl.classList.add('show');
@@ -3552,7 +3571,7 @@ cv.addEventListener('mousemove', ev => {
    CSS pixels on a phone, which is half a fingertip. Take whichever is larger:
    the old radius, or a 52px touch target expressed in board units — a shade
    more than the 44px guideline, because the penalty for missing is losing the
-   Ki entirely. */
+   Energy entirely. */
 function grabR2() {
   const w = cv.getBoundingClientRect().width;
   const r = Math.max(34, w > 0 ? 26 * VW / w : 34);
@@ -3588,7 +3607,7 @@ cv.addEventListener('pointerdown', ev => {
   if (!R.sel) return;
   const def = U[R.sel];
   if (R.cds[R.sel] > 0) { toast('NOT READY', true); SFX.bad(); return; }
-  if (R.ki < def.cost) { toast('NOT ENOUGH 氣', true); SFX.bad(); return; }
+  if (R.ki < def.cost) { toast('NOT ENOUGH ENERGY', true); SFX.bad(); return; }
   if (ex) {
     if (ex.id !== R.sel) {
       const rec = fusionOf(ex.id, R.sel);
@@ -3605,7 +3624,7 @@ cv.addEventListener('pointerdown', ev => {
   }
   R.ki -= def.cost;
   R.cds[R.sel] = def.cd;
-  if (placeUnit(R.sel, r, c) === false) {        // refused — hand the Ki back
+  if (placeUnit(R.sel, r, c) === false) {        // refused — hand the Energy back
     R.ki += def.cost;
     R.cds[R.sel] = 0;
   }
@@ -3734,7 +3753,7 @@ function renderLevels() {
   const d = curDiff(), P = prog();
   const note = document.getElementById('diffNote');
   note.innerHTML = diffOpen(d)
-    ? `${d.blurb}  <span style="color:${d.col}">×${d.coin.toFixed(2)} 点</span>`
+    ? `${d.blurb}  <span style="color:${d.col}">×${d.coin.toFixed(2)} 氣</span>`
     : `Locked — clear level ${d.at} on any difficulty.`;
 
   const grid = document.getElementById('levelGrid');
@@ -3746,14 +3765,14 @@ function renderLevels() {
       (isEliteLevel(n) ? ' elite' : '');
     el.textContent = n;
     el.title = locked ? 'Locked' : `Level ${n} · hold to wave ${targetWave(n)}` +
-      (isEliteLevel(n) ? ' · elite wave' : '') + ` · ${levelReward(n)} 点 base`;
+      (isEliteLevel(n) ? ' · elite wave' : '') + ` · ${levelReward(n)} 氣 base`;
     if (!locked) el.onclick = safe(() => { boot(); startRun(n); });
     grid.appendChild(el);
   }
   document.getElementById('levelHint').innerHTML =
     `Each difficulty runs its own hundred levels and its own progress. ` +
     `A <b style="color:var(--blood)">red corner</b> marks an elite wave. ` +
-    `Beaten levels stay open — replay any of them for their 点.`;
+    `Beaten levels stay open — replay any of them for their Chi.`;
 }
 document.getElementById('lvBack').onclick = safe(toMenu);
 
@@ -3781,7 +3800,7 @@ function renderSettings() {
   set('setMusic', S.musicOff ? 'OFF' : 'ON');
   set('setSpeed', speed + '\u00d7');
   set('setProg', curDiff().name + '  \u00b7  level ' + curLevel() + ' of ' + MAX_LEVEL +
-    '  \u00b7  ' + S.sp.toLocaleString() + ' \u70b9');
+    '  \u00b7  ' + S.sp.toLocaleString() + ' \u6c23');
   document.getElementById('setSound').classList.toggle('on', !muted);
   document.getElementById('setMusic').classList.toggle('on', !S.musicOff && !muted);
   document.getElementById('setSfxVol').value = Math.round(sfxVol() * 100);
@@ -3921,7 +3940,7 @@ function rankRow(d) {
   return `<div class="urank">` +
     `<span class="pips">${pips}</span>` +
     `<span class="chip${t >= c.tok ? ' star' : ''}">札 ${t}/${c.tok}</span>` +
-    `<span class="chip cost${S.sp >= c.coin ? '' : ' short'}">${c.coin.toLocaleString()} 点</span>` +
+    `<span class="chip cost${S.sp >= c.coin ? '' : ' short'}">${c.coin.toLocaleString()} 氣</span>` +
     `<button class="btn up${ready ? '' : ' poor'}" title="Raise to ★${next}${earns}">強化</button>` +
     `</div>`;
 }
@@ -3956,7 +3975,7 @@ function renderBarracks() {
     el.innerHTML = `<canvas class="cimg"></canvas><div class="cname">${c.name}</div>` +
       `<div class="cdesc">${c.pulls} card${c.pulls > 1 ? 's' : ''}<br>${o[0]}/${o[1]}/${o[2]}/${o[3]}` +
       (c.floor ? '<br>1 Rare+ guaranteed' : '') + `</div>` +
-      `<div class="cprice">${c.cost.toLocaleString()} 点</div>`;
+      `<div class="cprice">${c.cost.toLocaleString()} 氣</div>`;
     objThumb(c.spr, el.querySelector('canvas'));
     el.onclick = () => openCrate(c);
     cr.appendChild(el);
@@ -3965,14 +3984,14 @@ function renderBarracks() {
   /* 巻物 — buy a recipe outright. Fusions otherwise open only by reaching their
      campaign level, which means a player who wants a particular pairing has no
      way to chase it. This is that way, priced so it is never the cheap route:
-     it climbs 900 点 per scroll already owned. */
+     it climbs 900 氣 per scroll already owned. */
   const locked = scrollPool();
   const sc = document.createElement('div');
   const scost = scrollCost();
   sc.className = 'crate scroll' + (S.sp < scost || !locked.length ? ' poor' : '');
   sc.innerHTML = `<canvas class="cimg"></canvas><div class="cname">巻物 SCROLL</div>` +
     `<div class="cdesc">${locked.length ? 'Opens one sealed recipe<br>' + locked.length + ' still sealed' : 'Every recipe is open'}</div>` +
-    `<div class="cprice">${locked.length ? scost.toLocaleString() + ' 点' : '—'}</div>`;
+    `<div class="cprice">${locked.length ? scost.toLocaleString() + ' 氣' : '—'}</div>`;
   objThumb('ofuda', sc.querySelector('canvas'));
   sc.onclick = () => buyScroll();
   cr.appendChild(sc);
@@ -3995,7 +4014,7 @@ function renderBarracks() {
       `<div class="uk">${have ? d.kanji + ' · ' + RARITY[d.rar] + ' · ' + unitRole(d) : 'Locked — find it in a crate'}</div>` +
       (have ? `<div class="udesc">${d.blurb}</div>` +
               `<div class="uchips">` +
-                `<span class="chip cost">${d.cost} 氣</span>` +
+                `<span class="chip cost">${d.cost} 力</span>` +
                 unitStats(d).map(t => `<span class="chip">${t}</span>`).join('') +
                 (stars(d.id) ? `<span class="chip star">+${stars(d.id) * 6}%</span>` : '') +
                 (stars(d.id) >= SWIFT_AT ? `<span class="chip star" title="Everything on a clock runs 18% faster">疾 SWIFT</span>` : '') +
@@ -4064,7 +4083,7 @@ function openCrate(c) {
       `<div class="pt" style="color:${RAR_COL[p.rar]}">${RARITY[p.rar]}</div>` +
       `<div class="pn">${p.d.name}</div>` +
       `<div class="new">${p.kind === 'new' ? 'NEW!'
-        : p.kind === 'tok' ? '+' + p.at + ' 札' : '+' + p.at + ' 点'}</div>`;
+        : p.kind === 'tok' ? '+' + p.at + ' 札' : '+' + p.at + ' 氣'}</div>`;
     thumb(p.d.id, el.querySelector('canvas'));
     revealCards.appendChild(el);
   });
@@ -4077,9 +4096,9 @@ function openCrate(c) {
   const ledger = document.createElement('div');
   ledger.style.cssText = 'position:absolute;bottom:calc(var(--u)*68);width:100%;text-align:center;font-size:calc(var(--u)*16)';
   ledger.innerHTML =
-    `<span style="color:#ff9a8a">−${c.cost.toLocaleString()} 点</span>` +
-    (refunded > 0 ? `<span style="color:#9be8ff">  +${refunded.toLocaleString()} 点 dust</span>` : '') +
-    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 点</span>`;
+    `<span style="color:#ff9a8a">−${c.cost.toLocaleString()} 氣</span>` +
+    (refunded > 0 ? `<span style="color:#9be8ff">  +${refunded.toLocaleString()} 氣 dust</span>` : '') +
+    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 氣</span>`;
   revealCards.appendChild(ledger);
   const tip = document.createElement('div');
   tip.style.cssText = 'position:absolute;bottom:calc(var(--u)*40);width:100%;text-align:center;opacity:.5;font-size:calc(var(--u)*14);letter-spacing:.25em';
@@ -4114,8 +4133,8 @@ function buyScroll() {
   revealCards.appendChild(el);
   const ledger = document.createElement('div');
   ledger.style.cssText = 'position:absolute;bottom:calc(var(--u)*68);width:100%;text-align:center;font-size:calc(var(--u)*16)';
-  ledger.innerHTML = `<span style="color:#ff9a8a">−${cost.toLocaleString()} 点</span>` +
-    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 点</span>`;
+  ledger.innerHTML = `<span style="color:#ff9a8a">−${cost.toLocaleString()} 氣</span>` +
+    `<span style="opacity:.55">  ·  balance ${S.sp.toLocaleString()} 氣</span>`;
   revealCards.appendChild(ledger);
   const tip = document.createElement('div');
   tip.style.cssText = 'position:absolute;bottom:calc(var(--u)*40);width:100%;text-align:center;opacity:.5;font-size:calc(var(--u)*14);letter-spacing:.25em';
@@ -4249,7 +4268,7 @@ function renderUpgrades() {
     b.className = 'btn';
     if (cost === null) { b.textContent = 'MAXED'; b.disabled = true; b.style.opacity = .45; }
     else {
-      b.textContent = cost.toLocaleString() + ' 点';
+      b.textContent = cost.toLocaleString() + ' 氣';
       if (S.sp < cost) b.style.opacity = .45;
       b.onclick = () => {
         if (S.sp < t.costs[S.up[t.id]]) { toastNo(); return; }
