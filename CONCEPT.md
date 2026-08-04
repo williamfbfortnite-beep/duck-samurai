@@ -514,6 +514,22 @@ against its own inverse. The test that caught this reads the rendered pixels: it
 finds where something actually got drawn and puts the cursor there. The canvas
 size is now set in script from `VW`/`VH`, so the two cannot drift again.
 
+### What you are defending is one big egg per lane
+
+The west bank used to hold five straw nests, each a 14×8 sprite of a clutch of
+small eggs. They read as scenery. It is now **one big egg per lane** — 14×18 at
+four screen pixels a sprite pixel, so 56×72 before the draw scale, twice the
+nest's height and a shade narrower.
+
+The size is bounded by the shallowest lane. Lane 1's band runs y 158–235 and
+sprites are anchored at their feet, which sit at `bot − 8`; at the 1.1 draw
+scale the egg's crown lands at y 151, just over the band's top edge. That is
+fine where it stands, because the bank is west of x 276 and holds no lane
+content — but it is why the egg is not larger.
+
+The copy moved with the art: the tide marches on *your eggs*, one at the end of
+every lane, and a breach now reads "they reached the eggs".
+
 ### The interface is generated art, nine-sliced
 
 The menus, buttons, frames and badges are cut from a single generated UI sheet

@@ -637,8 +637,8 @@
           <button class="btn" id="btnSettings">設定 &nbsp;SETTINGS</button>
         </div>
         <div class="hint">
-          The rotting flock is marching west on the <b>nests</b> — five clutches of
-          eggs at the far end of the garden, one behind each lane.
+          The rotting flock is marching west on your <b>eggs</b> — one at the far end
+          of every lane, five in all.
           Drop a unit on its twin to <b>MERGE</b> it; drop a <i>different</i> one to <b>FUSE</b>.
         </div>
       </div>
@@ -1183,15 +1183,30 @@ const OBJ = {
     'bbbacabbbaaabbba',
     'dddddddddddddddd'] },
 
-  nest: { p: { k: '#3a2a18', s: '#b8924a', S: '#8a6a2e', e: '#fff4e0', E: '#e6d6b4' }, r: [
-    '....kkkkkk....',
-    '..kksSSSSskk..',
-    '.ksseeEEeessk.',
-    'ksSeeeEEeeeSsk',
-    'ksSSeeeeeeSSsk',
-    '.kssSSSSSSssk.',
-    '..kkssssssskk.',
-    '....kkkkkk....'] },
+  /* One big egg per lane, standing where the nest used to sit. 14x18 at PXS 4
+     is 56x72 before the 1.1 draw scale — a shade narrower than the old nest and
+     twice its height, which still clears the top of the shallowest lane band
+     (lane 0 runs 158..235, and footY-76 lands at 151). */
+  egg: { p: { k: '#3a2a18', e: '#fff4e0', E: '#e6d6b4', D: '#c9b48c',
+              i: '#ffffff', m: '#dcc9a6', s: '#b8924a', S: '#8a6a2e' }, r: [
+    '.....kkkk.....',
+    '...kkeeeekk...',
+    '..kkeeeeeekk..',
+    '..keeeeeeeEk..',
+    '.kkeeieeeeEEk.',
+    '.keeeieeeeeEk.',
+    '.keeeeeeeeEEk.',
+    'kkeeeeeeeeEDkk',
+    'keeeeeeeeeEDDk',
+    'keeeemeeeeEDDk',
+    'keeeeeeeeeEDDk',
+    'keeeeeeemeEDDk',
+    'kkeeeeeeeeEDkk',
+    '.keeeeeeeeEDk.',
+    '.kkeeeeeeeEkk.',
+    '..kkeeeeeekk..',
+    '..ksSSSSSSsk..',
+    '...kssssssk...'] },
 
   torii: { p: { r: '#7a2436', R: '#511726' }, r: [
     '.rrrrrrrrrrrrrrrrrrrrrr.',
@@ -1903,7 +1918,7 @@ const LANES = [
 const GY = LANES[0].top;
 const FIELD_BOT = LANES[ROWS - 1].bot;
 
-/* The ward sits out on the bank beside the nests, and a lane burns when
+/* The ward sits out on the bank beside the eggs, and a lane burns when
    something reaches it — so the trigger is measured from the paper, not from
    the grid. It used to be written as GX - 26, which happened to line up while
    the field started at 124; pulling the columns inside the garden border would
@@ -2741,7 +2756,7 @@ function gameOver() {
   persist();
   document.getElementById('oTitle').textContent = '崩御';
   document.getElementById('oTitle').style.color = '#ff8a7a';
-  document.getElementById('oSub').textContent = 'They reached the nests — level ' + R.level + ' failed';
+  document.getElementById('oSub').textContent = 'They reached the eggs — level ' + R.level + ' failed';
   document.getElementById('oWave').textContent = R.wave + ' / ' + R.target;
   document.getElementById('oKills').textContent = R.kills;
   document.getElementById('oScore').textContent = Math.floor(R.score).toLocaleString();
@@ -3074,13 +3089,13 @@ function render() {
       x: colX(c), y: hitTop(r) + 20, col: '#9a86b8' };
   }
 
-  // ---- what the tide is actually marching on: the flock's nests, one per
-  // lane, sitting behind the wards at the western end
+  // ---- what the tide is actually marching on: one big egg per lane, sitting
+  // behind the wards at the western end
   for (let r = 0; r < ROWS; r++) {
     const y = footY(r);
     g.fillStyle = 'rgba(0,0,0,.28)';
-    g.beginPath(); g.ellipse(34, y + 1, 22, 6, 0, 0, 6.283); g.fill();
-    drawObj(g, 'nest', 34, y + 3, 1.1, 0, null, 'b');
+    g.beginPath(); g.ellipse(36, y + 1, 24, 7, 0, 0, 6.283); g.fill();
+    drawObj(g, 'egg', 36, y + 3, 1.1, 0, null, 'b');
   }
 
   // ---- wards
