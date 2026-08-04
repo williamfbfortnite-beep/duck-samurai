@@ -722,6 +722,55 @@ harness now proves the cursor is disarmed by clicking bare ground and checking
 master-gain node, so the mastery predicate had to become `mastered` — the same
 trap `TRACKS` sprang earlier in the project.
 
+### Three difficulties, and a level section
+
+The campaign was one hundred levels with no way to see them and no way to make
+them easier, and the honest player feedback was that it is very hard and that
+you cannot really win without economy units. Both halves of that are now
+addressed.
+
+**Three campaigns of a hundred levels**, each with its own progress. The numbers
+the game shipped with are Medium. Easy is unlocked from the start; Medium opens
+once you have cleared level 10 and Hard at level 20, measured on the best you
+have done on *any* difficulty — so dropping to Easy for one hard level never
+takes anything away from you, and neither do the fusion-recipe level gates,
+which read the same best-of figure.
+
+| | enemy HP | enemy damage | opening 氣 | payout |
+| --- | --- | --- | --- | --- |
+| 弱 Easy | ×0.62 | ×0.75 | **+75** | ×0.70 |
+| 中 Medium | ×1.00 | ×1.00 | — | ×1.00 |
+| 強 Hard | ×1.55 | ×1.25 | — | ×1.80 |
+
+Easy opens with more 氣 rather than only softer enemies, and that is the part
+aimed at the actual complaint. What makes the first minute punishing is that you
+cannot afford a paddy *and* a shooter, so the game silently demands you know to
+build economy first; no amount of thinner zombies fixes that, and 250 氣 does.
+
+The difficulty is frozen into the run at `startRun` rather than read from the
+save each frame, or switching mode from another screen would rescale enemies
+already walking.
+
+**段 LEVELS** is what DEPLOY now opens. A hundred chips in a ten-by-ten grid:
+gold for cleared, a pulsing parchment chip for the one you are on, dimmed for
+locked, and a red corner on every fifth, which is where the elites are. Beaten
+levels stay open and can be replayed for their 点. It costs a click on the way
+into a run, and buys the two things that were missing — where you are, and how
+hard you would like this to be.
+
+**Two dead probes before a live one.** Measuring difficulty took three attempts,
+and the first two passed while measuring nothing:
+
+- *Kills over a fixed clock* counts what spawned as much as what died. One 42s
+  sample put Medium above both its neighbours, which is not an ordering.
+- *Time to reach wave 4* came back 43.3s on all three, to a tenth of a second —
+  because waves run on a timer rather than on being cleared. It was reading the
+  wave clock, and the comparison still reported a pass at 1.00×.
+
+What difficulty actually moves is how long a given line holds, so the live probe
+runs the same under-strength defence on the same level until it loses, and reads
+the wave it died on. A test that can only pass is not a test.
+
 ## 9. Audio
 
 The soundtrack is **two original recordings by the player**, and they alternate:

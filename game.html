@@ -304,7 +304,7 @@
     display: grid; grid-template-columns: repeat(10, calc(var(--u) * 58));
     gap: calc(var(--u) * 6); margin-top: calc(var(--u) * 12);
   }
-  .lvl {
+  .lvchip {
     position: relative; height: calc(var(--u) * 52);
     display: grid; place-items: center;
     font-size: calc(var(--u) * 17); font-weight: 800; font-family: inherit;
@@ -318,10 +318,10 @@
     border-image-repeat: stretch; image-rendering: pixelated;
     transition: filter .1s, transform .1s;
   }
-  .lvl:hover { filter: brightness(1.3); transform: translateY(calc(var(--u) * -2)); }
-  .lvl.done { color: var(--gold); }
+  .lvchip:hover { filter: brightness(1.3); transform: translateY(calc(var(--u) * -2)); }
+  .lvchip.done { color: var(--gold); }
   /* the one you are on, and the only chip that moves */
-  .lvl.now {
+  .lvchip.now {
     color: #4a2c10;
     border-image-source: url('assets/ui/btn-big-on.png');
     border-image-slice: 24; border-image-width: calc(var(--u) * 12);
@@ -330,17 +330,17 @@
     animation: lvlPulse 1.8s ease-in-out infinite;
   }
   @keyframes lvlPulse { 50% { filter: brightness(1.18); } }
-  .lvl.locked { color: #6a5c7a; cursor: not-allowed; filter: grayscale(.8) brightness(.62); }
+  .lvchip.locked { color: #6a5c7a; cursor: not-allowed; filter: grayscale(.8) brightness(.62); }
   /* every fifth level fields an elite — worth knowing before you commit */
-  .lvl.elite::after {
+  .lvchip.elite::after {
     content: ''; position: absolute; top: calc(var(--u) * -3); right: calc(var(--u) * -3);
     width: calc(var(--u) * 8); height: calc(var(--u) * 8); background: var(--blood);
     box-shadow: 0 0 calc(var(--u) * 6) rgba(192,57,43,.9);
   }
-  .lvl.now.elite::after { background: #7a2320; }
+  .lvchip.now.elite::after { background: #7a2320; }
   #diffTabs .btn.sel { color: var(--gold); text-shadow: 0 0 calc(var(--u) * 8) rgba(240,201,135,.5); }
   #diffTabs .btn.shut { filter: grayscale(.9) brightness(.6); cursor: not-allowed; }
-  @media (prefers-reduced-motion: reduce) { .lvl.now { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .lvchip.now { animation: none; } }
 
   /* settings */
   .setrow {
@@ -1900,10 +1900,10 @@ const fresh = () => ({
   loadout: ['paddy', 'kunai', 'bamboo'],
   up: { coin: 0, ki: 0, ward: 0, luck: 0 }
 });
-let S = fresh();
+let S = fresh(), onDisk = null;
 try {
   const raw = localStorage.getItem(KEY);
-  if (raw) S = Object.assign(fresh(), JSON.parse(raw));
+  if (raw) { onDisk = JSON.parse(raw); S = Object.assign(fresh(), onDisk); }
 } catch (e) { /* private mode / file:// — play unsaved */ }
 /* Scrub anything a fusion should never be recorded in. Fusions are discovered
    on the board, not owned and not carried into a run; a save that lists one
@@ -1914,13 +1914,15 @@ for (const id of Object.keys(S.owned)) if (!U[id] || U[id].fused) { delete S.own
 if (!S.tok || typeof S.tok !== 'object') { S.tok = {}; scrubbed = true; }
 /* A save from before difficulties existed holds one campaign, and the numbers
    it was played on are what Medium now is — so it migrates there rather than
-   being dropped back onto Easy and losing its place. */
-if (!S.prog || typeof S.prog !== 'object') {
-  S.prog = { easy: { level: 1, cleared: 0 }, med: { level: 1, cleared: 0 }, hard: { level: 1, cleared: 0 } };
-  if ((S.level || 1) > 1 || (S.cleared || 0) > 0) {
-    S.prog.med = { level: S.level || 1, cleared: S.cleared || 0 };
-    S.diff = 'med';
-  }
+   being dropped back onto Easy and losing its place.
+
+   Asked of the parsed file, not of S: Object.assign(fresh(), raw) fills prog in
+   from the defaults, so "does S have prog" is always yes and would never detect
+   a legacy save — it would just quietly reset a level-34 player to Easy 1. */
+if (onDisk && !onDisk.prog && ((onDisk.level || 1) > 1 || (onDisk.cleared || 0) > 0)) {
+  S.prog = { easy: { level: 1, cleared: 0 }, hard: { level: 1, cleared: 0 },
+             med: { level: onDisk.level || 1, cleared: onDisk.cleared || 0 } };
+  S.diff = 'med';
   scrubbed = true;
 }
 for (const d of DIFFS) {
@@ -3740,7 +3742,7 @@ function renderLevels() {
   for (let n = 1; n <= MAX_LEVEL; n++) {
     const done = n <= (P.cleared || 0), now = n === curLevel(), locked = n > (P.level || 1);
     const el = document.createElement('button');
-    el.className = 'lvl' + (done ? ' done' : '') + (now ? ' now' : '') + (locked ? ' locked' : '') +
+    el.className = 'lvchip' + (done ? ' done' : '') + (now ? ' now' : '') + (locked ? ' locked' : '') +
       (isEliteLevel(n) ? ' elite' : '');
     el.textContent = n;
     el.title = locked ? 'Locked' : `Level ${n} · hold to wave ${targetWave(n)}` +
