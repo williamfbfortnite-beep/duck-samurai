@@ -252,6 +252,8 @@
   .r1 { border-left: calc(var(--u) * 5) solid #5fb37a; }
   .r2 { border-left: calc(var(--u) * 5) solid #5b8fd6; }
   .r3 { border-left: calc(var(--u) * 5) solid #b46fd6; }
+  .r4 { border-left: calc(var(--u) * 5) solid #e8a33d; }
+  .r5 { border-left: calc(var(--u) * 5) solid #ff5f7e; }
 
   /* upgrades */
   .track {
@@ -282,7 +284,9 @@
   .pull .pt { font-size: calc(var(--u) * 12); letter-spacing: .12em; text-transform: uppercase; font-weight: 800; }
   .pull.n0 { border-color: #8d99a8; } .pull.n1 { border-color: #5fb37a; }
   .pull.n2 { border-color: #5b8fd6; box-shadow: 0 0 calc(var(--u)*22) rgba(91,143,214,.45); }
-  .pull.n3 { border-color: #d78fff; box-shadow: 0 0 calc(var(--u)*30) rgba(180,111,214,.6); }
+  .pull.n3 { border-color: #b46fd6; box-shadow: 0 0 calc(var(--u)*30) rgba(180,111,214,.6); }
+  .pull.n4 { border-color: #e8a33d; box-shadow: 0 0 calc(var(--u)*34) rgba(232,163,61,.65); }
+  .pull.n5 { border-color: #ff5f7e; box-shadow: 0 0 calc(var(--u)*40) rgba(255,95,126,.7); }
   .pull .new { color: var(--gold); font-size: calc(var(--u)*13); font-weight: 800; letter-spacing: .2em; }
 
   /* sound check */
@@ -1158,7 +1162,12 @@ function thumb(id, el, scale) {
 /* ══════════════════════════════════════════════════════════════════════
    CONTENT
    ══════════════════════════════════════════════════════════════════════ */
-const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic'];
+/* One ladder for everything. It used to stop at Epic, which was fine while only
+   crate units had a rarity — then fusions arrived with their own four names
+   ending in Mythic, so index 3 meant Epic in one place and Mythic in another,
+   and Legendary existed nowhere. Six tiers now, shared by units and fusions. */
+const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic'];
+const RAR_COL = ['#8d99a8', '#5fb37a', '#5b8fd6', '#b46fd6', '#e8a33d', '#ff5f7e'];
 
 const UNITS = [
   { id: 'paddy', name: 'Rice Paddy', kanji: '稲', cost: 50, cd: 5, rar: 0, kind: 'ki', hp: 220,
@@ -1184,116 +1193,116 @@ const UNITS = [
 
   /* ── fusion results ── never in a crate, never in the tray: the only way to
      field one is to fuse the two units named in the codex. ── */
-  { id: 'frostblade', name: 'Frostblade Duck', kanji: '氷刃', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'frostblade', name: 'Frostblade Duck', kanji: '氷刃', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'shot', hp: 300, dmg: 30, rate: .95, proj: 'ice', slow: .5, slowT: 2.5, count: 2,
     blurb: 'Twin frozen blades, thrown fast. Everything it touches walks at half speed.' },
   { id: 'stormfan', name: 'Storm Fan', kanji: '雷扇', cost: 0, cd: 0, rar: 4, fused: true,
     kind: 'chain', hp: 300, dmg: 58, rate: 1.5, chains: 4,
     blurb: 'A fan that beats thunder. Four targets a strike, three lanes wide.' },
-  { id: 'bulwark', name: 'Iron Bulwark', kanji: '鉄壁', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'bulwark', name: 'Iron Bulwark', kanji: '鉄壁', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'melee', hp: 900, dmg: 48, rate: 1.0, range: 130,
     blurb: 'A wall that swings back. Parks in the front row and refuses to move.' },
-  { id: 'bombardier', name: 'Bombardier', kanji: '爆矢', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'bombardier', name: 'Bombardier', kanji: '爆矢', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'shot', hp: 260, dmg: 55, rate: 2.1, proj: 'arrow', pierce: true, splash: 120, splashDmg: .6,
     blurb: 'Arrows that detonate. Pierces the lane and blasts whatever it passes.' },
-  { id: 'harvest', name: 'Harvest Spirit', kanji: '豊穣', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'harvest', name: 'Harvest Spirit', kanji: '豊穣', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'ki', hp: 340, buff: .2, aura: true,
     blurb: 'Grows Ki faster than a paddy and hurries the eight tiles around it.' },
-  { id: 'frostmine', name: 'Frost Mine', kanji: '氷爆', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'frostmine', name: 'Frost Mine', kanji: '氷爆', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'mine', hp: 240, dmg: 220, radius: 210, freeze: 4,
     blurb: 'Detonates into a wide bloom of ice. Survivors crawl out of it.' },
-  { id: 'sunwake', name: 'Dawn Herald', kanji: '暁', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'sunwake', name: 'Dawn Herald', kanji: '暁', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'shot', hp: 280, dmg: 34, rate: .8, proj: 'kunai', count: 2,
     blurb: 'Throws at dawn speed and pays its own way — a Ki orb every 14s on top.' },
-  { id: 'thornwall', name: 'Thorn Wall', kanji: '茨', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'thornwall', name: 'Thorn Wall', kanji: '茨', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'wall', hp: 820, thorns: 26,
     blurb: 'A wall that bites back — anything chewing on it takes damage every swing.' },
-  { id: 'windherald', name: 'Wind Herald', kanji: '疾風', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'windherald', name: 'Wind Herald', kanji: '疾風', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'shot', hp: 250, dmg: 26, rate: .55, proj: 'fan', count: 3, pierce: true,
     blurb: 'Three piercing blades a volley, faster than anything else on the board.' },
-  { id: 'gravebell', name: 'Grave Bell', kanji: '鎮魂', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'gravebell', name: 'Grave Bell', kanji: '鎮魂', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'chain', hp: 300, dmg: 40, rate: 1.7, chains: 3, drain: .35,
     blurb: 'Chains a mourning note through the horde and refunds Ki for every kill.' },
-  { id: 'embermonk', name: 'Ember Monk', kanji: '炎僧', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'embermonk', name: 'Ember Monk', kanji: '炎僧', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'melee', hp: 420, dmg: 70, rate: .85, range: 168, burn: 30,
     blurb: 'Sweeps a burning staff — everything it touches keeps burning afterwards.' },
-  { id: 'tidewarden', name: 'Tide Warden', kanji: '潮守', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'tidewarden', name: 'Tide Warden', kanji: '潮守', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'melee', hp: 1200, dmg: 62, rate: 1.0, range: 150, slowAura: .35,
     blurb: 'The last line. Enormous, hits hard, and everything near it wades as if through mud.' },
   /* Stats use only fields the engine reads, in the branch that reads them:
      slowAura and burn fire inside melee, drain inside chain, freeze inside
      mine; aura/buff and thorns apply to any kind. A slow written onto a 'ki'
      unit would look like design and do nothing. */
-  { id: 'ricewall', name: 'Paddy Bulwark', kanji: '稲壁', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'ricewall', name: 'Paddy Bulwark', kanji: '稲壁', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'ki', hp: 620, thorns: 26,
     blurb: 'A farm that refuses to die. Grows Ki behind 620 HP and bites whatever chews on it.' },
-  { id: 'windmill', name: 'Windmill Duck', kanji: '風車', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'windmill', name: 'Windmill Duck', kanji: '風車', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'ki', hp: 300, aura: true, buff: .22,
     blurb: 'Fans the whole block. Its own orbs come a third faster, and its neighbours keep pace.' },
-  { id: 'icepaddy', name: 'Frozen Paddy', kanji: '氷田', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'icepaddy', name: 'Frozen Paddy', kanji: '氷田', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'ki', hp: 360, thorns: 30, aura: true, buff: .12,
     blurb: 'A flooded field gone to ice. Cold to stand on, colder to bite.' },
-  { id: 'fertile', name: 'Fertile Keg', kanji: '肥爆', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'fertile', name: 'Fertile Keg', kanji: '肥爆', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'mine', hp: 260, dmg: 210, radius: 190, freeze: 2.5,
     blurb: 'Buried in the paddy. Whatever sets it off gets buried too.' },
-  { id: 'harvester', name: 'Harvest Blade', kanji: '刈手', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'harvester', name: 'Harvest Blade', kanji: '刈手', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'melee', hp: 480, dmg: 44, rate: 1.1, range: 120, burn: 16,
     blurb: 'Reaps both crops. What it cuts keeps burning.' },
-  { id: 'longfield', name: 'Longfield Archer', kanji: '遠田', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'longfield', name: 'Longfield Archer', kanji: '遠田', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'shot', hp: 280, dmg: 36, rate: 1.9, proj: 'arrow', pierce: true,
     blurb: 'Shoots the length of the field it farms.' },
-  { id: 'festival', name: 'Festival Drum', kanji: '祭', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'festival', name: 'Festival Drum', kanji: '祭', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'chain', hp: 320, dmg: 42, rate: 1.6, chains: 3, drain: .4,
     blurb: 'A harvest festival — the lightning carries, and it pays you back in Ki.' },
-  { id: 'thicket', name: 'Thicket Duck', kanji: '苦竹', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'thicket', name: 'Thicket Duck', kanji: '苦竹', cost: 0, cd: 0, rar: 0, fused: true,
     kind: 'wall', hp: 660, thorns: 34,
     blurb: 'A hedge full of blades. Cheap, and it hurts to eat.' },
-  { id: 'flurry', name: 'Blade Flurry', kanji: '乱刃', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'flurry', name: 'Blade Flurry', kanji: '乱刃', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'shot', hp: 260, dmg: 21, rate: .68, proj: 'kunai', count: 3,
     blurb: 'Three blades a throw, faster than either parent.' },
-  { id: 'clusterduck', name: 'Cluster Duck', kanji: '散爆', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'clusterduck', name: 'Cluster Duck', kanji: '散爆', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'shot', hp: 250, dmg: 32, rate: 1.45, proj: 'kunai', splash: 115, splashDmg: .55,
     blurb: 'Blades that burst. For anything that arrives in a crowd.' },
-  { id: 'ironsight', name: 'Ironsight', kanji: '鉄眼', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'ironsight', name: 'Ironsight', kanji: '鉄眼', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'shot', hp: 250, dmg: 48, rate: 1.55, proj: 'arrow', pierce: true,
     blurb: 'Pierces the whole lane and reloads like a thrown blade.' },
-  { id: 'stormblade', name: 'Storm Blade', kanji: '雷刃', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'stormblade', name: 'Storm Blade', kanji: '雷刃', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'chain', hp: 290, dmg: 48, rate: 1.45, chains: 3,
     blurb: 'Blades that jump between targets on a thread of lightning.' },
-  { id: 'foxblade', name: 'Foxblade Shrine', kanji: '狐刃', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'foxblade', name: 'Foxblade Shrine', kanji: '狐刃', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'shot', hp: 300, dmg: 29, rate: 1.05, proj: 'kunai', aura: true, buff: .2,
     blurb: 'Throws, and hurries every neighbour while it does.' },
-  { id: 'windbreak', name: 'Windbreak', kanji: '風垣', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'windbreak', name: 'Windbreak', kanji: '風垣', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'shot', hp: 560, dmg: 17, rate: .95, proj: 'fan', count: 2,
     blurb: 'A hedge that cuts. Two blades a volley from behind cover.' },
-  { id: 'icewall', name: 'Ice Wall', kanji: '氷垣', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'icewall', name: 'Ice Wall', kanji: '氷垣', cost: 0, cd: 0, rar: 1, fused: true,
     kind: 'wall', hp: 820, thorns: 40,
     blurb: 'A wall of green ice. Biting it costs more than going round.' },
-  { id: 'palisade', name: 'Arrow Palisade', kanji: '矢垣', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'palisade', name: 'Arrow Palisade', kanji: '矢垣', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'shot', hp: 620, dmg: 34, rate: 2.0, proj: 'arrow', pierce: true,
     blurb: 'Shoots the lane through its own loopholes.' },
-  { id: 'warfence', name: 'War Fence', kanji: '雷垣', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'warfence', name: 'War Fence', kanji: '雷垣', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'chain', hp: 560, dmg: 38, rate: 1.75, chains: 2, thorns: 24,
     blurb: 'The fence hums, then the lane lights up.' },
-  { id: 'sacredgrove', name: 'Sacred Grove', kanji: '聖林', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'sacredgrove', name: 'Sacred Grove', kanji: '聖林', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'wall', hp: 780, thorns: 28, aura: true, buff: .24,
     blurb: 'A holy thicket. Nothing gets through, and everything near it works faster.' },
-  { id: 'snowfan', name: 'Snow Fan', kanji: '雪扇', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'snowfan', name: 'Snow Fan', kanji: '雪扇', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'shot', hp: 280, dmg: 18, rate: .78, proj: 'ice', count: 2, slow: .45, slowT: 2.6,
     blurb: 'Two blades of cold air a beat. The lane crawls.' },
-  { id: 'shrapnel', name: 'Shrapnel Fan', kanji: '散扇', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'shrapnel', name: 'Shrapnel Fan', kanji: '散扇', cost: 0, cd: 0, rar: 2, fused: true,
     kind: 'shot', hp: 260, dmg: 25, rate: .88, proj: 'fan', count: 2, splash: 105, splashDmg: .5,
     blurb: 'Every blade ends in a small bang.' },
-  { id: 'windblade', name: 'Windblade Ronin', kanji: '風刃', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'windblade', name: 'Windblade Ronin', kanji: '風刃', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'melee', hp: 420, dmg: 52, rate: .85, range: 150,
     blurb: 'Reach of a polearm, speed of a fan.' },
   { id: 'prayerfan', name: 'Prayer Fan', kanji: '祈扇', cost: 0, cd: 0, rar: 4, fused: true,
     kind: 'shot', hp: 290, dmg: 17, rate: .74, proj: 'fan', count: 2, aura: true, buff: .22,
     blurb: 'Fans the prayer outward. The whole block moves quicker.' },
-  { id: 'glacier', name: 'Glacier Ronin', kanji: '氷刀', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'glacier', name: 'Glacier Ronin', kanji: '氷刀', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'melee', hp: 460, dmg: 46, rate: 1.0, range: 130, slowAura: .32,
     blurb: 'Swings cold. Anything that closes with it is already slowing.' },
-  { id: 'icicle', name: 'Icicle Sniper', kanji: '氷矢', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'icicle', name: 'Icicle Sniper', kanji: '氷矢', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'shot', hp: 240, dmg: 44, rate: 1.65, proj: 'ice', pierce: true, slow: .4, slowT: 2.2,
     blurb: 'One icicle down the whole lane, and everything it passes stiffens.' },
   { id: 'hailstorm', name: 'Hailstorm Drum', kanji: '雹', cost: 0, cd: 0, rar: 4, fused: true,
@@ -1302,7 +1311,7 @@ const UNITS = [
   { id: 'winterfox', name: 'Winter Fox', kanji: '氷狐', cost: 0, cd: 0, rar: 4, fused: true,
     kind: 'shot', hp: 310, dmg: 16, rate: 1.15, proj: 'ice', slow: .45, slowT: 2.5, aura: true, buff: .2,
     blurb: 'Cold in front, blessing behind.' },
-  { id: 'sapper', name: 'Sapper Ronin', kanji: '爆刀', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'sapper', name: 'Sapper Ronin', kanji: '爆刀', cost: 0, cd: 0, rar: 3, fused: true,
     kind: 'melee', hp: 440, dmg: 50, rate: 1.05, range: 125, burn: 20,
     blurb: 'Swings, and what it hits keeps cooking.' },
   { id: 'thunderkeg', name: 'Thunder Keg', kanji: '雷爆', cost: 0, cd: 0, rar: 4, fused: true,
@@ -1314,16 +1323,16 @@ const UNITS = [
   { id: 'sentinel', name: 'Sentinel', kanji: '守弓', cost: 0, cd: 0, rar: 4, fused: true,
     kind: 'melee', hp: 470, dmg: 47, rate: .95, range: 165,
     blurb: 'Holds the line at the length of a bow.' },
-  { id: 'warlord', name: 'Warlord Ronin', kanji: '戦雷', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'warlord', name: 'Warlord Ronin', kanji: '戦雷', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'chain', hp: 480, dmg: 56, rate: 1.0, chains: 2, thorns: 30,
     blurb: 'Every strike throws a spark into the next one along.' },
-  { id: 'templeguard', name: 'Temple Guard', kanji: '社守', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'templeguard', name: 'Temple Guard', kanji: '社守', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'melee', hp: 520, dmg: 44, rate: 1.05, range: 130, aura: true, buff: .24,
     blurb: 'Stands in front of the shrine and makes everyone behind it faster.' },
-  { id: 'stormbow', name: 'Storm Bow', kanji: '雷弓', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'stormbow', name: 'Storm Bow', kanji: '雷弓', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'chain', hp: 260, dmg: 50, rate: 1.6, chains: 3, drain: .3,
     blurb: 'Draws lightning down the lane and banks what it kills.' },
-  { id: 'oraclebow', name: 'Oracle Bow', kanji: '神弓', cost: 0, cd: 0, rar: 4, fused: true,
+  { id: 'oraclebow', name: 'Oracle Bow', kanji: '神弓', cost: 0, cd: 0, rar: 5, fused: true,
     kind: 'shot', hp: 280, dmg: 42, rate: 1.55, proj: 'arrow', pierce: true, aura: true, buff: .22,
     blurb: 'Shoots the length of the lane and blesses the tiles around it.' }
 ];
@@ -1367,58 +1376,57 @@ function unitStats(d) {
 
 /* ── fusion recipes ── order-independent: A + B and B + A both work ── */
 const FUSIONS = [
-  /* tier = the two parents' rarities added up, so fusing rare units gives a
-     rare result. Recipes at sum 2 or below open by reaching their campaign
-     level; the rest are scrollOnly and never open by playing, so a scroll
-     always sells something the ladder would not have given you. */
-  // --- earned by playing
+  /* tier = the parents' rarities added up, capped at Mythic. Up to Rare is
+     earned on the campaign ladder; Epic and above are scroll-only, so the
+     two ways of getting a fusion never overlap. */
+  // --- earned by playing: Common through Rare
   { a: 'kunai', b: 'paddy', out: 'sunwake', tier: 0, unlock: 2 },
   { a: 'paddy', b: 'bamboo', out: 'ricewall', tier: 0, unlock: 7 },
   { a: 'kunai', b: 'bamboo', out: 'thicket', tier: 0, unlock: 12 },
-  { a: 'kunai', b: 'frost', out: 'frostblade', tier: 0, unlock: 17 },
-  { a: 'bamboo', b: 'bomb', out: 'thornwall', tier: 0, unlock: 21 },
-  { a: 'paddy', b: 'fan', out: 'windmill', tier: 0, unlock: 26 },
-  { a: 'paddy', b: 'frost', out: 'icepaddy', tier: 0, unlock: 31 },
-  { a: 'paddy', b: 'bomb', out: 'fertile', tier: 0, unlock: 36 },
-  { a: 'kunai', b: 'fan', out: 'flurry', tier: 0, unlock: 41 },
-  { a: 'kunai', b: 'bomb', out: 'clusterduck', tier: 0, unlock: 46 },
-  { a: 'bamboo', b: 'fan', out: 'windbreak', tier: 0, unlock: 51 },
-  { a: 'bamboo', b: 'frost', out: 'icewall', tier: 0, unlock: 55 },
-  { a: 'bamboo', b: 'naginata', out: 'bulwark', tier: 1, unlock: 60 },
-  { a: 'frost', b: 'bomb', out: 'frostmine', tier: 1, unlock: 65 },
-  { a: 'kunai', b: 'naginata', out: 'embermonk', tier: 1, unlock: 70 },
-  { a: 'paddy', b: 'naginata', out: 'harvester', tier: 1, unlock: 75 },
-  { a: 'paddy', b: 'yumi', out: 'longfield', tier: 1, unlock: 80 },
-  { a: 'kunai', b: 'yumi', out: 'ironsight', tier: 1, unlock: 84 },
-  { a: 'bamboo', b: 'yumi', out: 'palisade', tier: 1, unlock: 89 },
-  { a: 'fan', b: 'frost', out: 'snowfan', tier: 1, unlock: 94 },
-  { a: 'fan', b: 'bomb', out: 'shrapnel', tier: 1, unlock: 99 },
-  // --- scroll-only, weighted by tier when a scroll is opened
-  { a: 'fan', b: 'yumi', out: 'windherald', tier: 1, scrollOnly: true },
-  { a: 'yumi', b: 'bomb', out: 'bombardier', tier: 1, scrollOnly: true },
-  { a: 'paddy', b: 'shrine', out: 'harvest', tier: 1, scrollOnly: true },
-  { a: 'fan', b: 'drum', out: 'stormfan', tier: 2, scrollOnly: true },
-  { a: 'drum', b: 'shrine', out: 'gravebell', tier: 3, scrollOnly: true },
-  { a: 'bulwark', b: 'frost', out: 'tidewarden', tier: 3, scrollOnly: true, t2: true },
-  { a: 'paddy', b: 'drum', out: 'festival', tier: 1, scrollOnly: true },
-  { a: 'kunai', b: 'drum', out: 'stormblade', tier: 1, scrollOnly: true },
-  { a: 'kunai', b: 'shrine', out: 'foxblade', tier: 1, scrollOnly: true },
-  { a: 'bamboo', b: 'drum', out: 'warfence', tier: 1, scrollOnly: true },
-  { a: 'bamboo', b: 'shrine', out: 'sacredgrove', tier: 1, scrollOnly: true },
-  { a: 'fan', b: 'naginata', out: 'windblade', tier: 1, scrollOnly: true },
-  { a: 'fan', b: 'shrine', out: 'prayerfan', tier: 2, scrollOnly: true },
-  { a: 'frost', b: 'naginata', out: 'glacier', tier: 1, scrollOnly: true },
-  { a: 'frost', b: 'yumi', out: 'icicle', tier: 1, scrollOnly: true },
-  { a: 'frost', b: 'drum', out: 'hailstorm', tier: 2, scrollOnly: true },
-  { a: 'frost', b: 'shrine', out: 'winterfox', tier: 2, scrollOnly: true },
-  { a: 'bomb', b: 'naginata', out: 'sapper', tier: 1, scrollOnly: true },
-  { a: 'bomb', b: 'drum', out: 'thunderkeg', tier: 2, scrollOnly: true },
-  { a: 'bomb', b: 'shrine', out: 'foxfire', tier: 2, scrollOnly: true },
-  { a: 'naginata', b: 'yumi', out: 'sentinel', tier: 2, scrollOnly: true },
-  { a: 'naginata', b: 'drum', out: 'warlord', tier: 2, scrollOnly: true },
-  { a: 'naginata', b: 'shrine', out: 'templeguard', tier: 2, scrollOnly: true },
-  { a: 'yumi', b: 'drum', out: 'stormbow', tier: 2, scrollOnly: true },
-  { a: 'yumi', b: 'shrine', out: 'oraclebow', tier: 2, scrollOnly: true },
+  { a: 'kunai', b: 'frost', out: 'frostblade', tier: 1, unlock: 17 },
+  { a: 'bamboo', b: 'bomb', out: 'thornwall', tier: 1, unlock: 21 },
+  { a: 'paddy', b: 'fan', out: 'windmill', tier: 1, unlock: 26 },
+  { a: 'paddy', b: 'frost', out: 'icepaddy', tier: 1, unlock: 31 },
+  { a: 'paddy', b: 'bomb', out: 'fertile', tier: 1, unlock: 36 },
+  { a: 'kunai', b: 'fan', out: 'flurry', tier: 1, unlock: 41 },
+  { a: 'kunai', b: 'bomb', out: 'clusterduck', tier: 1, unlock: 46 },
+  { a: 'bamboo', b: 'fan', out: 'windbreak', tier: 1, unlock: 51 },
+  { a: 'bamboo', b: 'frost', out: 'icewall', tier: 1, unlock: 55 },
+  { a: 'bamboo', b: 'naginata', out: 'bulwark', tier: 2, unlock: 60 },
+  { a: 'frost', b: 'bomb', out: 'frostmine', tier: 2, unlock: 65 },
+  { a: 'kunai', b: 'naginata', out: 'embermonk', tier: 2, unlock: 70 },
+  { a: 'paddy', b: 'naginata', out: 'harvester', tier: 2, unlock: 75 },
+  { a: 'paddy', b: 'yumi', out: 'longfield', tier: 2, unlock: 80 },
+  { a: 'kunai', b: 'yumi', out: 'ironsight', tier: 2, unlock: 84 },
+  { a: 'bamboo', b: 'yumi', out: 'palisade', tier: 2, unlock: 89 },
+  { a: 'fan', b: 'frost', out: 'snowfan', tier: 2, unlock: 94 },
+  { a: 'fan', b: 'bomb', out: 'shrapnel', tier: 2, unlock: 99 },
+  // --- scroll-only: Epic, Legendary, Mythic
+  { a: 'fan', b: 'yumi', out: 'windherald', tier: 3, scrollOnly: true },
+  { a: 'yumi', b: 'bomb', out: 'bombardier', tier: 3, scrollOnly: true },
+  { a: 'paddy', b: 'shrine', out: 'harvest', tier: 3, scrollOnly: true },
+  { a: 'paddy', b: 'drum', out: 'festival', tier: 3, scrollOnly: true },
+  { a: 'kunai', b: 'drum', out: 'stormblade', tier: 3, scrollOnly: true },
+  { a: 'kunai', b: 'shrine', out: 'foxblade', tier: 3, scrollOnly: true },
+  { a: 'bamboo', b: 'drum', out: 'warfence', tier: 3, scrollOnly: true },
+  { a: 'bamboo', b: 'shrine', out: 'sacredgrove', tier: 3, scrollOnly: true },
+  { a: 'fan', b: 'naginata', out: 'windblade', tier: 3, scrollOnly: true },
+  { a: 'frost', b: 'naginata', out: 'glacier', tier: 3, scrollOnly: true },
+  { a: 'frost', b: 'yumi', out: 'icicle', tier: 3, scrollOnly: true },
+  { a: 'bomb', b: 'naginata', out: 'sapper', tier: 3, scrollOnly: true },
+  { a: 'fan', b: 'drum', out: 'stormfan', tier: 4, scrollOnly: true },
+  { a: 'fan', b: 'shrine', out: 'prayerfan', tier: 4, scrollOnly: true },
+  { a: 'frost', b: 'drum', out: 'hailstorm', tier: 4, scrollOnly: true },
+  { a: 'frost', b: 'shrine', out: 'winterfox', tier: 4, scrollOnly: true },
+  { a: 'bomb', b: 'drum', out: 'thunderkeg', tier: 4, scrollOnly: true },
+  { a: 'bomb', b: 'shrine', out: 'foxfire', tier: 4, scrollOnly: true },
+  { a: 'naginata', b: 'yumi', out: 'sentinel', tier: 4, scrollOnly: true },
+  { a: 'naginata', b: 'drum', out: 'warlord', tier: 5, scrollOnly: true },
+  { a: 'naginata', b: 'shrine', out: 'templeguard', tier: 5, scrollOnly: true },
+  { a: 'yumi', b: 'drum', out: 'stormbow', tier: 5, scrollOnly: true },
+  { a: 'yumi', b: 'shrine', out: 'oraclebow', tier: 5, scrollOnly: true },
+  { a: 'drum', b: 'shrine', out: 'gravebell', tier: 5, scrollOnly: true },
+  { a: 'bulwark', b: 'frost', out: 'tidewarden', tier: 5, scrollOnly: true, t2: true },
 ];
 /* A recipe opens either by reaching its campaign level or by buying its scroll.
    The scroll is the only way past the ladder, so it prices itself up each time
@@ -1435,13 +1443,13 @@ const scrollPool = () => FUSIONS.filter(f => f.scrollOnly && !(S.scrolls && S.sc
 /* Rarer fusions are rarer to pull. Weights per tier, before luck; Fortune's
    Favour shifts weight off the common end and onto the top two exactly as it
    does for crates, so the upgrade means the same thing everywhere. */
-const TIER_NAME = ['Common', 'Uncommon', 'Rare', 'Mythic'];
-const TIER_COL = ['#8d99a8', '#5fb37a', '#5b8fd6', '#d78fff'];
-const TIER_W = [0, 62, 30, 8];
+/* Weights for a scroll draw. Only tiers 3-5 are in the pool, so the lower
+   entries are never consulted. */
+const TIER_W = [0, 0, 0, 62, 30, 8];
 function scrollWeights() {
   const w = TIER_W.slice();
-  const shift = Math.min(w[1], S.up.luck * 4);
-  w[1] -= shift; w[2] += shift * .6; w[3] += shift * .4;
+  const shift = Math.min(w[3], S.up.luck * 4);
+  w[3] -= shift; w[4] += shift * .6; w[5] += shift * .4;
   return w;
 }
 function rollScroll(pool) {
@@ -2751,7 +2759,8 @@ function render() {
     if (fuse) hoverLabel = {
       t: dupe ? U[fuse.out].kanji + ' ALREADY FIELDED' : 'FUSE → ' + U[fuse.out].kanji + ' ' + U[fuse.out].name,
       x: colX(c), y: hitTop(r) + 20, col: dupe ? '#ff9a8a' : ok ? '#8fe8f7' : '#7fa8b8' };
-    if (sealed) hoverLabel = { t: 'SEALED — LEVEL ' + sealed.unlock, x: colX(c), y: hitTop(r) + 20, col: '#9a86b8' };
+    if (sealed) hoverLabel = { t: sealed.scrollOnly ? 'SEALED — 巻物 SCROLL ONLY' : 'SEALED — LEVEL ' + sealed.unlock,
+      x: colX(c), y: hitTop(r) + 20, col: '#9a86b8' };
   }
 
   // ---- what the tide is actually marching on: the flock's nests, one per
@@ -3408,7 +3417,7 @@ function openCrate(c) {
     el.className = 'pull n' + p.rar;
     el.style.animationDelay = (i * .13) + 's';
     el.innerHTML = `<canvas></canvas>` +
-      `<div class="pt" style="color:${['#8d99a8', '#5fb37a', '#5b8fd6', '#d78fff'][p.rar]}">${RARITY[p.rar]}</div>` +
+      `<div class="pt" style="color:${RAR_COL[p.rar]}">${RARITY[p.rar]}</div>` +
       `<div class="pn">${p.d.name}</div>` +
       `<div class="new">${p.kind === 'new' ? 'NEW!' : p.kind === 'star' ? '★'.repeat(p.at) : '+' + p.at + ' 点'}</div>`;
     thumb(p.d.id, el.querySelector('canvas'));
@@ -3451,9 +3460,9 @@ function buyScroll() {
   const out = U[f.out];
   revealCards.innerHTML = '';
   const el = document.createElement('div');
-  el.className = 'pull n3';
+  el.className = 'pull n' + f.tier;
   el.innerHTML = `<canvas></canvas>` +
-    `<div class="pt" style="color:${TIER_COL[f.tier]}">${TIER_NAME[f.tier]} RECIPE</div>` +
+    `<div class="pt" style="color:${RAR_COL[f.tier]}">${RARITY[f.tier]} RECIPE</div>` +
     `<div class="pn">${out.kanji} ${out.name}</div>` +
     `<div class="new">${U[f.a].kanji} + ${U[f.b].kanji}</div>`;
   thumb(f.out, el.querySelector('canvas'));
@@ -3556,11 +3565,12 @@ function renderCodex() {
         `<div class="rn">${got ? out.kanji + ' ' + out.name : '???'}</div>` +
         `<div class="rb">${got ? out.blurb
           : open ? 'Available now. Drop one unit onto another on the board to find it.'
-            : 'Sealed. Reach level ' + f.unlock + ' to make this combination possible.'}</div>` +
+            : f.scrollOnly ? 'Sealed. This one is never handed out by the campaign — a 巻物 scroll is the only way to it.'
+              : 'Sealed. Reach level ' + f.unlock + ' to make this combination possible.'}</div>` +
         (got ? `<div class="uchips">${unitStats(out).slice(0, 4).map(t => `<span class="chip">${t}</span>`).join('')}</div>` : '') +
-        `<div class="tag">${got ? 'DISCOVERED ×' + found[f.out]
+        `<div class="tag" style="color:${RAR_COL[f.tier]}">${RARITY[f.tier].toUpperCase()} · ${got ? 'DISCOVERED ×' + found[f.out]
           : open ? (f.t2 ? 'UNSEALED · TIER 2 — needs a fused unit' : 'UNSEALED — GO FIND IT')
-            : 'SEALED · LEVEL ' + f.unlock}</div>` +
+            : f.scrollOnly ? '巻物 SCROLL ONLY' : 'SEALED · LEVEL ' + f.unlock}</div>` +
       `</div>`;
     const cvs = el.querySelectorAll('canvas');
     if (got) { thumb(f.a, cvs[0]); thumb(f.b, cvs[1]); thumb(f.out, cvs[2]); }

@@ -189,37 +189,44 @@ nothing, so the paddy hybrids keep their economy and take thorns or an aura
 instead of a chill. A generator asserts every field against that table rather
 than trusting it.
 
-**Fusions have rarity, and the two ways of getting them do not overlap.** A
-fusion's tier is the sum of its parents' rarities — fusing two rare units gives
-something rare, which needs no explaining to a player. Everything at sum 2 or
-below is **earned by playing**: 21 recipes on the campaign ladder, spread from
-level 2 to 99. Everything above is **scroll-only**: 25 recipes with no level
-gate at all, reachable only by buying them.
+**One rarity ladder, six rungs, shared by units and fusions.** It used to stop
+at Epic — fine while only crate units had a rarity, until fusions arrived with
+their own four names ending in Mythic. Index 3 then meant Epic in one place and
+Mythic in another, and Legendary existed nowhere.
 
-| | Earned by playing | Scroll only |
+`Common · Uncommon · Rare · Epic · Legendary · Mythic`
+
+A fusion's rung is the sum of its parents' rarities, which spans exactly that
+range — fusing two Epic units gives something Mythic, and nobody needs it
+explained. The campaign/scroll split then says itself: **up to Rare is earned by
+playing, Epic and above is scroll-only.**
+
+| | Earned by playing | 巻物 Scroll only |
 | --- | --- | --- |
-| Common | 12 | — |
-| Uncommon | 9 | 12 |
-| Rare | — | 11 |
-| Mythic | — | 2 |
+| Common | 3 | — |
+| Uncommon | 9 | — |
+| Rare | 9 | — |
+| Epic | — | 12 |
+| Legendary | — | 7 |
+| Mythic | — | 6 |
+| **Total** | **21** | **25** |
 
-The two sets are disjoint on purpose, so a scroll can never sell you something
-the ladder was going to hand you anyway.
+The two sets are disjoint on purpose: a scroll can never sell you something the
+ladder was going to hand you anyway.
 
 **巻物 — the fusion scroll.** Opens one sealed recipe and marks it discovered,
-so the codex shows what the money bought. The draw is weighted by tier, and
-Fortune's Favour shifts it exactly as it does for crates — so the upgrade means
-the same thing everywhere. Measured over 4,000 rolls:
+so the codex shows what the money bought. The draw is weighted by rung, and
+Fortune's Favour shifts it exactly as it does for crates. Measured over 4,000
+rolls:
 
-| Luck | Uncommon | Rare | Mythic |
+| Luck | Epic | Legendary | Mythic |
 | --- | --- | --- | --- |
-| 0 | 67.8% | 30.7% | 1.4% |
-| 4 | 54.9% | 42.4% | 2.7% |
-| 8 | 38.0% | 57.4% | 4.6% |
+| 0 | 74.1% | 21.4% | 4.5% |
+| 4 | 61.0% | 29.3% | 9.8% |
+| 8 | 43.4% | 41.2% | 15.4% |
 
-At 1,500 点 rising 250 per scroll owned, the full set of 25 costs 112,500 —
-about one and a half campaigns of income at a maxed coin multiplier. A
-completionist goal, not a weekend one.
+At 1,500 点 rising 250 per scroll owned, all 25 cost 112,500 — about one and a
+half campaigns at a maxed multiplier. A completionist goal, not a weekend one.
 
 Dupes pulled from crates feed a second axis: each duplicate adds a permanent
 **★ star** to that unit (+6% damage and HP each, max 5), so crates never dead-end.
