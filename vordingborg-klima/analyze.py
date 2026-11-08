@@ -70,7 +70,7 @@ piv["År"] = piv.mean(axis=1)
 lines += ["### Afvigelse fra 10-års snittet pr. måned (middeltemperatur, °C)", "",
           "Positiv = varmere end 10-års snittet for den måned. 2026 er medtaget til sammenligning "
           "(indgår ikke i snittet; november er ufuldstændig). Kolonnen \"År\" for 2026 er snittet af de foreliggende måneder.", "",
-          piv.map(lambda v: "" if pd.isna(v) else f"{v:+.1f}").to_markdown(stralign="right"), ""]
+          piv.map(lambda v: "" if pd.isna(v) else f"{v:+.1f}").to_markdown(stralign="right", disable_numparse=True), ""]
 
 # Ekstremer fra døgndata
 Dd = pd.DataFrame(daily)
