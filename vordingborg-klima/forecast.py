@@ -86,6 +86,17 @@ out["frost_by_month"] = {str(k): round(float(v), 1) for k, v in fc["pfrost"].gro
 (HERE / "data" / "forecast.json").write_text(json.dumps(out, ensure_ascii=False))
 print(json.dumps({k: out[k] for k in ["last_obs", "params", "months", "frost_by_month"]}, ensure_ascii=False, indent=1))
 
+# sne (fra sne.py)
+spec_s = importlib.util.spec_from_file_location("sne", HERE / "sne.py")
+sne = importlib.util.module_from_spec(spec_s)
+with contextlib.redirect_stdout(io.StringIO()):
+    spec_s.loader.exec_module(sne)
+out["snow_seasons"] = [{"v": r["Vinter"], "days": int(r["Snedage"]), "max": float(r["Max cm"]),
+                        "first": str(r["Første snedag"])} for _, r in sne.R.iterrows()]
+out["snow_half"] = [[lbl, float(sne.p.get(o, 0))] for lbl, o in zip(sne.ptab["Periode"], sne.order)]
+cur = sne.df[sne.df["vinter"] == season_now] if (season_now := sne.season(sne.df.index.max())) else None
+out["snow_now"] = {"season": season_now, "days": int((cur.cm >= 1).sum()), "last": str(sne.df.index.max().date())}
+
 # byg den interaktive graf
 tpl = (HERE / "prognose_template.html").read_text()
 (HERE / "prognose.html").write_text(tpl.replace("/*DATA*/null", json.dumps(out, ensure_ascii=False)))

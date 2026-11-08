@@ -17,6 +17,7 @@
   --s-min: #1baf7a;
   --band: rgba(42, 120, 214, 0.14);
   --today: #12202a;
+  --snow: #5598e7;
   --f-display: "Fraunces", Georgia, "Times New Roman", serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
@@ -25,13 +26,13 @@
   :root:not([data-theme="light"]) {
     --bg: #0f1519; --surface: #172026; --fg: #e9eff2; --fg-2: #b3c0c8; --fg-3: #84939c;
     --rule: #2a363e; --grid: #222d34; --s-mean: #3987e5; --s-max: #d95926; --s-min: #199e70;
-    --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; color-scheme: dark;
+    --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; --snow: #6da7ec; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1519; --surface: #172026; --fg: #e9eff2; --fg-2: #b3c0c8; --fg-3: #84939c;
   --rule: #2a363e; --grid: #222d34; --s-mean: #3987e5; --s-max: #d95926; --s-min: #199e70;
-  --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; color-scheme: dark;
+  --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; --snow: #6da7ec; color-scheme: dark;
 }
 body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--f-body); }
 main { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px;
@@ -70,6 +71,13 @@ td.pos { color: var(--s-max); } td.neg { color: var(--s-mean); }
 .method { color: var(--fg-2); max-width: 70ch; font-size: 15px; }
 .method ul { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 6px; }
 code { font: 13px var(--f-mono); }
+.snow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.snow-grid > div { min-width: 0; }
+.chart-card h3 { font: 600 15px/1.3 var(--f-body); margin: 0 4px 2px; }
+.chart-card .sub { font-size: 13px; color: var(--fg-3); margin: 0 4px 10px; }
+.snow-facts { display: flex; flex-wrap: wrap; gap: 8px 28px; color: var(--fg-2); margin: 0 0 16px; padding: 0; list-style: none; }
+.snow-facts b { color: var(--fg); font-variant-numeric: tabular-nums; }
+
 </style>
 
 <main>
@@ -105,6 +113,24 @@ code { font: 13px var(--f-mono); }
     </div>
   </section>
 
+  <section>
+    <h2>Hvornår kommer sneen?</h2>
+    <p class="lede" id="snowLede"></p>
+    <ul class="snow-facts" id="snowFacts"></ul>
+    <div class="snow-grid">
+      <div class="chart-card">
+        <h3>Chance for sne på jorden</h3>
+        <p class="sub">Andel af dagene med mindst 1 cm sne, 2011–2026</p>
+        <div class="chart-wrap" id="wrapHalf"><svg id="chHalf" role="img" aria-label="Søjlediagram over chancen for snedække pr. halve måned fra november til april"></svg><div class="tip" hidden></div></div>
+      </div>
+      <div class="chart-card">
+        <h3>Snedage pr. vinter</h3>
+        <p class="sub">Dage med mindst 1 cm sne. Seneste hele vinter er fremhævet.</p>
+        <div class="chart-wrap" id="wrapSeason"><svg id="chSeason" role="img" aria-label="Søjlediagram over antal snedage i hver vinter fra 2011/12 til 2025/26"></svg><div class="tip" hidden></div></div>
+      </div>
+    </div>
+  </section>
+
   <section class="method">
     <h2>Sådan er buddet lavet</h2>
     <ul>
@@ -112,6 +138,7 @@ code { font: 13px var(--f-mono); }
       <li><strong>Trend:</strong> +0,3 °C pr. årti, svarende til den observerede opvarmning i Danmark de seneste årtier. Ti års data er for kort til at måle trenden sikkert lokalt.</li>
       <li><strong>Aktuelt vejr:</strong> dagens afvigelse fra sæsonkurven halveres på cirka 3 dage. Efter et par uger er buddet derfor bare det klimatologiske gennemsnit.</li>
       <li><strong>Usikkerhed:</strong> båndet er 80 %-intervallet for en enkelt dag ud fra den historiske spredning på samme tid af året. Frostdage er det forventede antal dage med døgnmin under 0 °C.</li>
+      <li><strong>Sne:</strong> DMI's beregnede snedybde for Vordingborg Kommune. En snedag er en dag med mindst 1 cm sne på jorden. Snedelen er historik og ikke en prognose.</li>
       <li>Det er ikke en vejrudsigt. For de næste 10 dage er DMI's prognoser langt bedre.</li>
     </ul>
   </section>
@@ -248,4 +275,75 @@ function draw() {
 }
 draw();
 let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(draw, 80); }).observe(wrap);
+
+// ---------- sne ----------
+const MONTHS_DA = {jan:"januar",feb:"februar",mar:"marts",apr:"april",okt:"oktober",nov:"november",dec:"december"};
+(function snowText() {
+  const S = DATA.snow_seasons, n = S.length;
+  const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length % 2 ? b[(b.length - 1) / 2] : (b[b.length / 2 - 1] + b[b.length / 2]) / 2; };
+  const days = S.map(s => s.days);
+  const doy = s => { const t = d(s); const ref = new Date(t.getMonth() >= 6 ? t.getFullYear() : t.getFullYear() - 1, 6, 1, 12); return Math.round((t - ref) / 864e5); };
+  const firsts = S.filter(s => s.first).map(s => doy(s.first));
+  const fm = new Date(2025, 6, 1, 12); fm.setDate(fm.getDate() + Math.round(med(firsts)));
+  const best = DATA.snow_half.reduce((a, b) => b[1] > a[1] ? b : a);
+  const most = S.reduce((a, b) => b.days > a.days ? b : a), deep = S.reduce((a, b) => b.max > a.max ? b : a);
+  const now = DATA.snow_now;
+  document.getElementById("snowLede").textContent =
+    `Sne er sjælden ved Vordingborg, fordi havet holder vintrene milde. Den første sne kommer typisk omkring ${fm.getDate()}. ${MON_LONG[fm.getMonth()]}, men den bedste chance er i januar og første halvdel af februar. ` +
+    (now.days === 0 ? `Vinteren ${now.season} har endnu ikke haft sne (pr. ${dLabel(d(now.last))}).` : `Vinteren ${now.season} har indtil nu haft ${now.days} snedage.`);
+  const facts = [
+    ["Typisk første snedag", `${fm.getDate()}. ${MON_LONG[fm.getMonth()]}`],
+    ["Snedage pr. vinter (median)", String(med(days))],
+    ["Mest snerige vinter", `${most.v} · ${most.days} dage`],
+    ["Største snedybde", `${fmt(deep.max)} cm · ${deep.v}`],
+  ];
+  document.getElementById("snowFacts").innerHTML = facts.map(([k, v]) => `<li>${k}: <b>${v}</b></li>`).join("");
+})();
+
+function bars(svgId, wrapId, items, opts) {
+  const svg = document.getElementById(svgId), wrap = document.getElementById(wrapId), tip = wrap.querySelector(".tip");
+  const W = Math.max(280, wrap.clientWidth), H = 220, m = { l: 34, r: 6, t: 10, b: opts.rotate ? 44 : 26 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const yMax = opts.yMax, step = opts.step;
+  const y = v => m.t + (1 - v / yMax) * (H - m.t - m.b);
+  for (let v = 0; v <= yMax; v += step) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--fg-3)" : "var(--grid)", "stroke-width": 1 });
+    el("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }).textContent = v + opts.unit;
+  }
+  const bw = (W - m.l - m.r) / items.length, gap = Math.max(2, bw * 0.28);
+  items.forEach((it, i) => {
+    const x0 = m.l + i * bw + gap / 2, w = bw - gap, top = y(it.v), base = y(0), r = Math.min(4, w / 2, base - top);
+    const p = it.v > 0 ? `M${x0} ${base}V${top + r}Q${x0} ${top} ${x0 + r} ${top}H${x0 + w - r}Q${x0 + w} ${top} ${x0 + w} ${top + r}V${base}Z` : "";
+    if (p) el("path", { d: p, fill: it.hl ? "var(--s-mean)" : "var(--snow)" });
+    if (it.label && (i % opts.every === 0)) {
+      const lx = x0 + w / 2, ly = H - m.b + 14;
+      const tx = el("text", { x: lx, y: ly, "text-anchor": opts.rotate ? "end" : "middle", transform: opts.rotate ? `rotate(-40 ${lx} ${ly})` : "" });
+      tx.textContent = it.label;
+    }
+    const hit = el("rect", { x: m.l + i * bw, y: m.t, width: bw, height: H - m.t - m.b, fill: "transparent" });
+    const show = () => {
+      tip.innerHTML = it.tip; tip.hidden = false;
+      const r2 = svg.getBoundingClientRect(), cx = (x0 + w / 2) / W * r2.width, tw = tip.offsetWidth;
+      tip.style.left = Math.max(0, Math.min(r2.width - tw, cx - tw / 2)) + "px"; tip.style.top = "0px";
+    };
+    hit.addEventListener("pointerenter", show); hit.addEventListener("pointerdown", show);
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; });
+  });
+}
+function drawSnow() {
+  const narrow = document.getElementById("wrapHalf").clientWidth < 420;
+  const half = DATA.snow_half.filter(h => !/okt/.test(h[0]));
+  bars("chHalf", "wrapHalf", half.map(([lbl, v]) => {
+    const [per, mon] = lbl.split(" ");
+    return { v, label: per.startsWith("1.") ? mon : "", tip: `<b>${per.replace("slut", "slutningen af")} ${MONTHS_DA[mon]}</b><div class="row"><span>Sne på jorden</span><span>${Math.round(v)} % af dagene</span></div>` };
+  }), { yMax: 40, step: 10, unit: "%", every: 1 });
+  const S = DATA.snow_seasons, maxD = Math.max(...S.map(s => s.days));
+  bars("chSeason", "wrapSeason", S.map((s, i) => ({
+    v: s.days, hl: i === S.length - 1, label: s.v.replace(/^20/, "").replace("/", "/"),
+    tip: `<b>Vinteren ${s.v}</b><div class="row"><span>Snedage</span><span>${s.days}</span></div><div class="row"><span>Mest sne</span><span>${fmt(s.max)} cm</span></div><div class="muted">${s.first ? "Første snedag: " + dLabel(d(s.first)) : "Ingen snedage"}</div>`
+  })), { yMax: Math.ceil(maxD / 10) * 10 + (maxD % 10 === 0 ? 10 : 0), step: 10, unit: "", every: narrow ? 2 : 1, rotate: true });
+}
+drawSnow();
+let rz2; new ResizeObserver(() => { clearTimeout(rz2); rz2 = setTimeout(drawSnow, 80); }).observe(document.getElementById("wrapHalf"));
 </script>
