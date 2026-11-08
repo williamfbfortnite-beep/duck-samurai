@@ -1,0 +1,251 @@
+<title>Vordingborg temperaturprognose</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: én kolonne, fortællende overskrift → nøgletal → stor graf → månedstabel → metode */
+:root {
+  --bg: #f6f8f9;
+  --surface: #ffffff;
+  --fg: #12202a;
+  --fg-2: #4a5a66;
+  --fg-3: #7b8a95;
+  --rule: #dde4e8;
+  --grid: #e9eef1;
+  --s-mean: #2a78d6;
+  --s-max: #eb6834;
+  --s-min: #1baf7a;
+  --band: rgba(42, 120, 214, 0.14);
+  --today: #12202a;
+  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1519; --surface: #172026; --fg: #e9eff2; --fg-2: #b3c0c8; --fg-3: #84939c;
+    --rule: #2a363e; --grid: #222d34; --s-mean: #3987e5; --s-max: #d95926; --s-min: #199e70;
+    --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1519; --surface: #172026; --fg: #e9eff2; --fg-2: #b3c0c8; --fg-3: #84939c;
+  --rule: #2a363e; --grid: #222d34; --s-mean: #3987e5; --s-max: #d95926; --s-min: #199e70;
+  --band: rgba(57, 135, 229, 0.22); --today: #e9eff2; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--f-body); }
+main { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 32px; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); }
+h1 { font: 600 clamp(28px, 4.6vw, 44px)/1.1 var(--f-display); margin: 10px 0 12px; text-wrap: balance; }
+h2 { font: 600 22px/1.2 var(--f-display); margin: 0 0 12px; text-wrap: balance; }
+.lede { color: var(--fg-2); max-width: 65ch; margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; display: grid; gap: 4px; align-content: start; }
+.tile .k { font-size: 13px; color: var(--fg-2); }
+.tile .v { font: 500 30px/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 13px; color: var(--fg-3); }
+.chart-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 20px 16px 12px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--fg-2); margin: 0 4px 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 0; border-top: 2px solid; }
+.sw.dash { border-top-style: dashed; }
+.sw.band { height: 10px; border: 0; background: var(--band); border-radius: 2px; }
+.chart-wrap { position: relative; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { fill: var(--fg-3); font: 11px var(--f-mono); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 170px; color: var(--fg); }
+.tip b { font-weight: 600; display: block; margin-bottom: 4px; }
+.tip .row { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.tip .row i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.tip .muted { color: var(--fg-3); font-size: 12px; margin-top: 4px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font: 500 12px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--fg-3); }
+td.pos { color: var(--s-max); } td.neg { color: var(--s-mean); }
+.method { color: var(--fg-2); max-width: 70ch; font-size: 15px; }
+.method ul { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 6px; }
+code { font: 13px var(--f-mono); }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">Vordingborg Kommune · DMI Climate Data · data til og med <span id="lastobs"></span></div>
+    <h1>Temperaturen det næste år i Vordingborg</h1>
+    <p class="lede">Statistisk bedste bud på døgnets middel-, max- og min-temperatur frem til november 2027. De første par uger trækkes buddet mod det aktuelle vejr. Derefter følger det den typiske årsrytme fra 2016–2026 plus en lille opvarmningstrend. Det blå bånd viser, hvor 8 ud af 10 dage forventes at lande.</p>
+  </header>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="chart-card">
+    <div class="legend">
+      <span><i class="sw" style="border-color:var(--s-mean)"></i>Middel, målt</span>
+      <span><i class="sw dash" style="border-color:var(--s-mean)"></i>Middel, bedste bud</span>
+      <span><i class="sw band"></i>80 % af dagene</span>
+      <span><i class="sw" style="border-color:var(--s-max)"></i>Døgnmax (målt: 7-dages snit)</span>
+      <span><i class="sw" style="border-color:var(--s-min)"></i>Døgnmin (målt: 7-dages snit)</span>
+    </div>
+    <div class="chart-wrap" id="wrap">
+      <svg id="chart" role="img" aria-label="Graf over målt og forventet døgntemperatur i Vordingborg fra januar 2026 til november 2027"></svg>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Måned for måned</h2>
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead><tr><th>Måned</th><th>Bedste bud, middel</th><th>Døgnmax</th><th>Døgnmin</th><th>10-års snit</th><th>Forskel</th><th>Frostdage (forventet)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="method">
+    <h2>Sådan er buddet lavet</h2>
+    <ul>
+      <li><strong>Sæsonkurve:</strong> en glat årskurve tilpasset alle døgnmålinger fra januar 2016 til i dag (kommuneværdier for Vordingborg, huller udfyldt med station 06147 Vindebæk Kyst).</li>
+      <li><strong>Trend:</strong> +0,3 °C pr. årti, svarende til den observerede opvarmning i Danmark de seneste årtier. Ti års data er for kort til at måle trenden sikkert lokalt.</li>
+      <li><strong>Aktuelt vejr:</strong> dagens afvigelse fra sæsonkurven halveres på cirka 3 dage. Efter et par uger er buddet derfor bare det klimatologiske gennemsnit.</li>
+      <li><strong>Usikkerhed:</strong> båndet er 80 %-intervallet for en enkelt dag ud fra den historiske spredning på samme tid af året. Frostdage er det forventede antal dage med døgnmin under 0 °C.</li>
+      <li>Det er ikke en vejrudsigt. For de næste 10 dage er DMI's prognoser langt bedre.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+const MON = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+const MON_LONG = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
+const fmt = v => (v == null || isNaN(v)) ? "–" : v.toFixed(1).replace(".", ",").replace("-", "−");
+const sgn = v => (v > 0 ? "+" : "") + fmt(v);
+const d = s => new Date(s + "T12:00:00");
+const dLabel = t => `${t.getDate()}. ${MON_LONG[t.getMonth()]} ${t.getFullYear()}`;
+
+document.getElementById("lastobs").textContent = dLabel(d(DATA.last_obs));
+
+// ---------- tiles ----------
+(function tiles() {
+  const fc = DATA.fc;
+  const avg = (a, b, i) => fc.slice(a, b).reduce((s, r) => s + r[i], 0) / (b - a);
+  const months = DATA.months;
+  const cold = months.reduce((a, b) => (b.mean < a.mean ? b : a));
+  const warm = months.reduce((a, b) => (b.mean > a.mean ? b : a));
+  const frostWinter = Object.entries(DATA.frost_by_month).reduce((s, [k, v]) => s + (k < "2027-07" ? v : 0), 0);
+  const name = m => { const [y, mm] = m.m.split("-"); return `${MON_LONG[+mm - 1]} ${y}`; };
+  const t = [
+    ["Næste 7 dage, middel", fmt(avg(0, 7, 1)) + " °C", `døgnmax ${fmt(avg(0, 7, 4))} · døgnmin ${fmt(avg(0, 7, 5))} °C`],
+    ["Koldeste måned", fmt(cold.mean) + " °C", `${name(cold)} · døgnmin ${fmt(cold.min)} °C`],
+    ["Varmeste måned", fmt(warm.mean) + " °C", `${name(warm)} · døgnmax ${fmt(warm.max)} °C`],
+    ["Frostdage denne vinter", "≈ " + Math.round(frostWinter), "forventet antal nætter under 0 °C"],
+  ];
+  document.getElementById("tiles").innerHTML = t.map(([k, v, s]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+})();
+
+// ---------- table ----------
+(function table() {
+  const tb = document.querySelector("#tbl tbody");
+  tb.innerHTML = DATA.months.map(m => {
+    const [y, mm] = m.m.split("-");
+    const diff = m.mean - m.avg10;
+    const partial = m.nobs > 0;
+    const frost = DATA.frost_by_month[m.m] ?? 0;
+    return `<tr class="${partial ? "partial" : ""}"><td>${MON_LONG[+mm - 1]} ${y}${partial ? ` <span style="color:var(--fg-3)">(${m.nobs} dage målt)</span>` : ""}</td>
+      <td>${fmt(m.mean)} °C</td><td>${fmt(m.max)}</td><td>${fmt(m.min)}</td><td>${fmt(m.avg10)}</td>
+      <td class="${diff >= 0.05 ? "pos" : diff <= -0.05 ? "neg" : ""}">${sgn(diff)}</td><td>${frost < 0.5 ? "0" : Math.round(frost)}</td></tr>`;
+  }).join("");
+})();
+
+// ---------- chart ----------
+const svg = document.getElementById("chart"), wrap = document.getElementById("wrap"), tip = document.getElementById("tip");
+const NS = "http://www.w3.org/2000/svg";
+const hist = DATA.hist.map(r => ({ t: d(r[0]), mean: r[1], max: r[2], min: r[3] }));
+const fc = DATA.fc.map(r => ({ t: d(r[0]), mean: r[1], lo: r[2], hi: r[3], max: r[4], min: r[5], clim: r[6] }));
+const all = hist.concat(fc);
+const roll = (arr, k, key) => arr.map((_, i) => {
+  const s = arr.slice(Math.max(0, i - k + 1), i + 1).map(r => r[key]).filter(v => v != null);
+  return s.reduce((a, b) => a + b, 0) / s.length;
+});
+const hMax7 = roll(hist, 7, "max"), hMin7 = roll(hist, 7, "min");
+
+function draw() {
+  const W = Math.max(320, wrap.clientWidth), narrow = W < 600;
+  const H = narrow ? 300 : 420, m = { l: 34, r: 8, t: 10, b: 28 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = "";
+  const t0 = all[0].t.getTime(), t1 = all[all.length - 1].t.getTime();
+  const yMin = -10, yMax = 32;
+  const x = t => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r);
+  const y = v => m.t + (yMax - v) / (yMax - yMin) * (H - m.t - m.b);
+  const el = (n, a, p = svg) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+  const path = (pts) => pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("");
+
+  for (let v = -10; v <= 30; v += 5) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--fg-3)" : "var(--grid)", "stroke-width": 1, "stroke-dasharray": v === 0 ? "2 3" : "" });
+    el("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }).textContent = v + "°";
+  }
+  // month ticks
+  for (let dt = new Date(all[0].t.getFullYear(), all[0].t.getMonth(), 1); dt.getTime() <= t1; dt.setMonth(dt.getMonth() + 1)) {
+    const tx = x(dt.getTime());
+    if (tx < m.l) continue;
+    el("line", { x1: tx, x2: tx, y1: H - m.b, y2: H - m.b + 4, stroke: "var(--fg-3)" });
+    const every = narrow ? 3 : 1;
+    if (dt.getMonth() % every === 0) {
+      const lbl = dt.getMonth() === 0 ? String(dt.getFullYear()) : MON[dt.getMonth()];
+      el("text", { x: tx + 3, y: H - m.b + 16, "font-weight": dt.getMonth() === 0 ? 600 : 400 }).textContent = lbl;
+    }
+  }
+  // band
+  const band = fc.map(r => [x(r.t), y(r.hi)]).concat(fc.slice().reverse().map(r => [x(r.t), y(r.lo)]));
+  el("path", { d: path(band) + "Z", fill: "var(--band)", stroke: "none" });
+  // history lines
+  el("path", { d: path(hist.map((r, i) => [x(r.t), y(hMax7[i])])), fill: "none", stroke: "var(--s-max)", "stroke-width": 1.5, "stroke-linejoin": "round" });
+  el("path", { d: path(hist.map((r, i) => [x(r.t), y(hMin7[i])])), fill: "none", stroke: "var(--s-min)", "stroke-width": 1.5, "stroke-linejoin": "round" });
+  el("path", { d: path(hist.map(r => [x(r.t), y(r.mean)])), fill: "none", stroke: "var(--s-mean)", "stroke-width": 1.25, "stroke-linejoin": "round", opacity: 0.9 });
+  // forecast lines (connect from last observation)
+  const lastH = hist[hist.length - 1];
+  const fcL = (key, start) => [[x(lastH.t), y(start)]].concat(fc.map(r => [x(r.t), y(r[key])]));
+  el("path", { d: path(fcL("max", hMax7[hMax7.length - 1])), fill: "none", stroke: "var(--s-max)", "stroke-width": 1.5, "stroke-dasharray": "5 4" });
+  el("path", { d: path(fcL("min", hMin7[hMin7.length - 1])), fill: "none", stroke: "var(--s-min)", "stroke-width": 1.5, "stroke-dasharray": "5 4" });
+  el("path", { d: path(fcL("mean", lastH.mean)), fill: "none", stroke: "var(--s-mean)", "stroke-width": 2, "stroke-dasharray": "6 4" });
+  // today marker
+  const tx = x(lastH.t.getTime());
+  el("line", { x1: tx, x2: tx, y1: m.t, y2: H - m.b, stroke: "var(--today)", "stroke-width": 1, opacity: 0.5 });
+  el("text", { x: tx + 6, y: m.t + 12, style: "fill:var(--fg-2)" }).textContent = "i dag";
+  el("text", { x: tx - 6, y: m.t + 12, "text-anchor": "end" }).textContent = "målt";
+  el("text", { x: tx + 6, y: m.t + 26 }).textContent = "bedste bud →";
+
+  // hover
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--fg-3)", "stroke-width": 1, visibility: "hidden" });
+  const dot = el("circle", { r: 4.5, fill: "var(--s-mean)", stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" });
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  function show(clientX) {
+    const r = svg.getBoundingClientRect(), sx = (clientX - r.left) * (W / r.width);
+    const tt = t0 + (sx - m.l) / (W - m.l - m.r) * (t1 - t0);
+    let i = Math.round((tt - t0) / 864e5); i = Math.max(0, Math.min(all.length - 1, i));
+    const p = all[i], isF = i >= hist.length, px = x(p.t.getTime());
+    cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", px); dot.setAttribute("cy", y(p.mean)); dot.setAttribute("visibility", "visible");
+    const row = (c, k, v) => `<div class="row"><span><i style="background:${c}"></i>${k}</span><span>${fmt(v)} °C</span></div>`;
+    tip.innerHTML = `<b>${dLabel(p.t)}</b>` +
+      row("var(--s-mean)", isF ? "Middel (bud)" : "Middel", p.mean) +
+      row("var(--s-max)", "Døgnmax", p.max) + row("var(--s-min)", "Døgnmin", p.min) +
+      (isF ? `<div class="muted">80 %: ${fmt(p.lo)} til ${fmt(p.hi)} °C</div>` : `<div class="muted">målt</div>`);
+    tip.hidden = false;
+    const left = px / W * r.width, tw = tip.offsetWidth;
+    tip.style.left = Math.min(r.width - tw, Math.max(0, left + 12 + tw > r.width ? left - tw - 12 : left + 12)) + "px";
+    tip.style.top = "8px";
+  }
+  const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); };
+  hit.addEventListener("pointermove", e => show(e.clientX));
+  hit.addEventListener("pointerdown", e => show(e.clientX));
+  hit.addEventListener("pointerleave", hide);
+}
+draw();
+let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(draw, 80); }).observe(wrap);
+</script>
