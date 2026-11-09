@@ -1,6 +1,6 @@
 # Temperaturstatistik – Vordingborg Kommune (0390)
 
-Kilde: DMI Climate Data API, hentet 2026-11-08. Statistikken bygger på de 10 hele kalenderår 2016–2025.
+Kilde: DMI Climate Data API, data til og med 2026-11-08. Statistikken bygger på de 10 hele kalenderår 2016–2025.
 
 ## 1. Gennemsnitstemperatur pr. måned (10-års snit 2016–2025)
 

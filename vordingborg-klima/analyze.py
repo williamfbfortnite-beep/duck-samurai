@@ -25,7 +25,7 @@ def combined(p, res):
     return out, src, bias
 
 lines = ["# Temperaturstatistik – Vordingborg Kommune (0390)", "",
-         f"Kilde: DMI Climate Data API, hentet {pd.Timestamp.today():%Y-%m-%d}. "
+         f"Kilde: DMI Climate Data API, data til og med {load('kommune', 'mean_temp', 'day').index.max():%Y-%m-%d}. "
          f"Statistikken bygger på de 10 hele kalenderår {Y0}–{Y1}.", ""]
 
 monthly, daily, notes = {}, {}, []
