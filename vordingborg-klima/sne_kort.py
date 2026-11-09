@@ -21,6 +21,11 @@ for cid in days.index:
     out["cells"].append({"id": cid, "n": near(poly), "p": [[round(a, 3), round(b, 3)] for a, b in poly[:-1]],
                          "d": [int(v) for v in days.loc[cid]], "m": [round(float(v), 1) for v in mx.loc[cid]]})
 out["munis"] = {k: [round(v[0], 3), round(v[1], 3)] for k, v in munis.items()}
+# byer fra GeoNames (CC BY 4.0), kun steder inden for kortets udstrækning
+byer = json.loads((HERE / "data/dk_byer.json").read_text())
+allp = np.array([p for c in cells.values() for p in c])
+x0, y0 = allp.min(axis=0); x1, y1 = allp.max(axis=0)
+out["places"] = [b for b in byer if x0 <= b[1] <= x1 and y0 <= b[2] <= y1]
 tpl = (HERE / "sne_kort_template.html").read_text()
 (HERE / "sne_kort.html").write_text(tpl.replace("/*DATA*/null", json.dumps(out, ensure_ascii=False, separators=(",", ":"))))
 print("ok", len(out["cells"]))

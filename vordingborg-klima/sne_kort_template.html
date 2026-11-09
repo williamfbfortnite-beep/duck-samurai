@@ -72,6 +72,29 @@ ol.rank li.me .b { background: var(--hl); }
 .gap { border-top: 1px dashed var(--rule); margin: 4px 0; }
 .home { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--fg-2); font-size: 14px; }
 .home b { color: var(--fg); }
+.search { position: relative; flex: 1 1 280px; max-width: 420px; }
+.search input { width: 100%; box-sizing: border-box; font: 15px var(--f-body); color: var(--fg); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 12px 9px 36px; }
+.search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.search svg.ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; }
+.search ul { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14); max-height: 320px; overflow-y: auto; }
+.search li { padding: 7px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+.search li[aria-selected="true"], .search li:hover { background: var(--bg); }
+.search li small { color: var(--fg-3); font-size: 12px; white-space: nowrap; }
+.search li.empty { color: var(--fg-3); cursor: default; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pick { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px 24px; align-items: center; }
+@media (max-width: 700px) { .pick { grid-template-columns: 1fr; } }
+.pick h2 { margin: 0; }
+.pick .where { color: var(--fg-3); font-size: 13px; }
+.pick .nums { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 8px; }
+.pick .nums div { display: grid; }
+.pick .nums b { font: 500 26px/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
+.pick .nums span { font-size: 13px; color: var(--fg-2); }
+.pick .note { margin: 8px 0 0; color: var(--fg-2); font-size: 14px; }
+.pick .strip-cap { font-size: 13px; color: var(--fg-2); margin-bottom: 4px; }
+.pick .clear { justify-self: start; font: 600 13px var(--f-body); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; margin-top: 8px; }
+.pick svg text { font: 8px var(--f-mono); fill: var(--fg-3); stroke: none; }
+.credit { font-size: 13px; color: var(--fg-3); }
 .method { color: var(--fg-2); max-width: 70ch; font-size: 15px; }
 .method ul { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 6px; }
 </style>
@@ -84,6 +107,12 @@ ol.rank li.me .b { background: var(--hl); }
   </header>
 
   <div class="controls">
+    <div class="search">
+      <label for="q" class="sr">Søg efter by eller kommune</label>
+      <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="var(--fg-3)" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="var(--fg-3)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="Søg by eller kommune, fx Stege" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="qlist">
+      <ul id="qlist" role="listbox" hidden></ul>
+    </div>
     <div class="seg" role="group" aria-label="Vælg mål">
       <button type="button" id="mDays" aria-pressed="true">Snedage</button>
       <button type="button" id="mMax" aria-pressed="false">Største snedybde</button>
@@ -92,6 +121,8 @@ ol.rank li.me .b { background: var(--hl); }
       <select id="season"></select>
     </label>
   </div>
+
+  <section class="card pick" id="pick" hidden></section>
 
   <div class="layout">
     <section class="card">
@@ -114,6 +145,7 @@ ol.rank li.me .b { background: var(--hl); }
       <li><strong>Data:</strong> DMI's daglige snedybde i et 10×10 km-grid over hele landet, november–april i 15 vintre (2011/12–2025/26).</li>
       <li><strong>Snedage:</strong> dage med mindst 1 cm sne på jorden. <strong>Største snedybde:</strong> den største snedybde i løbet af vinteren. Gennemsnittet er taget over de 15 vintre.</li>
       <li>DMI har ikke snefald (cm nysne) som griddata, så kortet viser sne på jorden. Det er et godt mål for, hvor sneen falder og bliver liggende.</li>
+      <li>Byer og steder i søgningen kommer fra <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a> (CC BY 4.0). En by får værdien fra det 10 km-felt, den ligger i.</li>
       <li>Kommunetallene er gennemsnit af de felter, hvis midtpunkt ligger nærmest kommunens midtpunkt. Det er en tilnærmelse.</li>
     </ul>
   </section>
@@ -175,7 +207,7 @@ function muniStats() {
   return Object.entries(acc).map(([n, v]) => [n, v.reduce((a, b) => a + b, 0) / v.length]).sort((a, b) => b[1] - a[1]);
 }
 
-function render() {
+var render = function render() {
   const vals = C.map(val), hi = Math.max(...vals), lo = 0;
   const top = Math.ceil(hi / 5) * 5 || 5;
   paths.forEach((p, i) => p.setAttribute("fill", color((vals[i] - lo) / (top - lo))));
@@ -232,5 +264,127 @@ bD.addEventListener("click", () => setM("d")); bM.addEventListener("click", () =
 sel.addEventListener("change", () => { season = +sel.value; render(); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
 new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// ---------- søgning ----------
+const gPick = document.createElementNS(NS, "g"); svg.appendChild(gPick);
+const norm = s => s.toLowerCase().replace(/aa/g, "å").normalize("NFD").replace(/[̀-ͯ]/g, "");
+const KOM = [...new Set(C.map(c => c.n).concat(Object.keys(DATA.munis)))];
+const INDEX = KOM.map(n => ({ t: "k", name: n, key: norm(n), pop: 1e9 }))
+  .concat(DATA.places.map(p => ({ t: "b", name: p[0], lon: p[1], lat: p[2], pop: p[3], kom: p[4], key: norm(p[0]) })));
+const centroid = c => [c.p.reduce((a, p) => a + p[0], 0) / c.p.length, c.p.reduce((a, p) => a + p[1], 0) / c.p.length];
+function inside(pt, poly) {
+  let ins = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) ins = !ins;
+  }
+  return ins;
+}
+function nearestCell(pt) {
+  let best = -1, bd = Infinity;
+  C.forEach((c, i) => { const [x, y] = centroid(c); const d = ((x - pt[0]) * kx) ** 2 + (y - pt[1]) ** 2; if (d < bd) { bd = d; best = i; } });
+  return { i: best, dist: Math.sqrt(bd) * 111 };
+}
+function cellsFor(item) {
+  if (item.t === "b") {
+    const pt = [item.lon, item.lat];
+    let i = C.findIndex(c => inside(pt, c.p));
+    if (i < 0) { const n = nearestCell(pt); if (n.dist > 15) return []; i = n.i; }
+    return [i];
+  }
+  const ids = C.map((c, i) => c.n === item.name ? i : -1).filter(i => i >= 0);
+  if (ids.length) return ids;
+  const m = DATA.munis[item.name]; return m ? [nearestCell(m).i] : [];
+}
+let picked = null;
+const q = document.getElementById("q"), list = document.getElementById("qlist"), pick = document.getElementById("pick");
+let hits = [], active = -1;
+function search(s) {
+  const k = norm(s.trim()); if (!k) return [];
+  const sc = it => (it.key === k ? 0 : it.key.startsWith(k) ? 1 : it.key.includes(" " + k) ? 2 : it.key.includes(k) ? 3 : 9);
+  return INDEX.map(it => [sc(it), it]).filter(x => x[0] < 9)
+    .sort((a, b) => a[0] - b[0] || (b[1].t === "k") - (a[1].t === "k") || b[1].pop - a[1].pop || a[1].name.localeCompare(b[1].name, "da"))
+    .slice(0, 8).map(x => x[1]);
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function showList() {
+  hits = search(q.value); active = hits.length ? 0 : -1;
+  if (!q.value.trim()) { list.hidden = true; q.setAttribute("aria-expanded", "false"); return; }
+  list.innerHTML = hits.length ? hits.map((h, i) => `<li role="option" id="opt${i}" data-i="${i}" aria-selected="${i === active}"><span>${esc(h.name)}</span><small>${h.t === "k" ? "Kommune" : (h.kom ? esc(h.kom) + " Kommune" : "By")}</small></li>`).join("")
+    : `<li class="empty">Ingen by eller kommune hedder "${esc(q.value.trim())}"</li>`;
+  list.hidden = false; q.setAttribute("aria-expanded", "true");
+  q.setAttribute("aria-activedescendant", active >= 0 ? "opt" + active : "");
+}
+function setActive(i) {
+  active = (i + hits.length) % hits.length;
+  list.querySelectorAll("li[role=option]").forEach((li, k) => li.setAttribute("aria-selected", k === active));
+  const li = list.querySelector(`#opt${active}`); li && li.scrollIntoView({ block: "nearest" });
+  q.setAttribute("aria-activedescendant", "opt" + active);
+}
+function choose(item) {
+  picked = item; q.value = item.name; list.hidden = true; q.setAttribute("aria-expanded", "false"); renderPick();
+}
+q.addEventListener("input", showList);
+q.addEventListener("focus", () => q.value && showList());
+q.addEventListener("keydown", e => {
+  if (list.hidden && e.key === "ArrowDown") { showList(); return; }
+  if (e.key === "ArrowDown" && hits.length) { e.preventDefault(); setActive(active + 1); }
+  else if (e.key === "ArrowUp" && hits.length) { e.preventDefault(); setActive(active - 1); }
+  else if (e.key === "Enter" && active >= 0) { e.preventDefault(); choose(hits[active]); }
+  else if (e.key === "Escape") { list.hidden = true; q.setAttribute("aria-expanded", "false"); }
+});
+list.addEventListener("pointerdown", e => { const li = e.target.closest("li[data-i]"); if (li) { e.preventDefault(); choose(hits[+li.dataset.i]); } });
+document.addEventListener("pointerdown", e => { if (!e.target.closest(".search")) { list.hidden = true; q.setAttribute("aria-expanded", "false"); } });
+
+function renderPick() {
+  gPick.innerHTML = "";
+  if (!picked) { pick.hidden = true; return; }
+  const ids = cellsFor(picked);
+  if (!ids.length) {
+    pick.hidden = false;
+    pick.innerHTML = `<div><h2>${esc(picked.name)}</h2><p class="note">Stedet ligger uden for DMI's grid, så der er ingen snedata her.</p><button class="clear" type="button" id="clr">Ryd søgning</button></div>`;
+    document.getElementById("clr").onclick = clearPick; return;
+  }
+  ids.forEach(i => {
+    const e = document.createElementNS(NS, "path"); e.setAttribute("d", paths[i].getAttribute("d"));
+    e.setAttribute("fill", "none"); e.setAttribute("stroke", "var(--hl)"); e.setAttribute("stroke-width", ids.length > 1 ? 2 : 3); gPick.appendChild(e);
+  });
+  if (picked.t === "b") {
+    const [x, y] = px([picked.lon, picked.lat]);
+    const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 6);
+    c.setAttribute("fill", "var(--hl)"); c.setAttribute("stroke", "var(--surface)"); c.setAttribute("stroke-width", 2.5); gPick.appendChild(c);
+    if (!LABELS.some(l => l[0] === picked.name)) {
+      const t = document.createElementNS(NS, "text"); t.setAttribute("x", x + 10); t.setAttribute("y", y - 8); t.textContent = picked.name; gPick.appendChild(t);
+    }
+  }
+  const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const perSeason = S.map((_, s) => ({ d: mean(ids.map(i => C[i].d[s])), m: mean(ids.map(i => C[i].m[s])) }));
+  const cur = season < 0 ? { d: mean(perSeason.map(x => x.d)), m: mean(perSeason.map(x => x.m)) } : perSeason[season];
+  const v = metric === "d" ? cur.d : cur.m;
+  const share = C.filter(c => val(c) < v).length / C.length * 100;
+  const ms = muniStats(), kom = picked.t === "k" ? picked.name : (picked.kom || C[ids[0]].n), kr = ms.findIndex(m => m[0] === kom);
+  const when = season < 0 ? "pr. vinter i gennemsnit" : "i vinteren " + S[season];
+  const where = picked.t === "k" ? `Kommune · ${ids.length} felter på 10×10 km` : `${picked.kom ? esc(picked.kom) + " Kommune" : "By"}${picked.pop ? " · " + picked.pop.toLocaleString("da-DK") + " indbyggere" : ""}`;
+  // mini søjler pr. vinter
+  const Wm = 360, Hm = 70, bw = Wm / S.length, mx = Math.max(1, ...perSeason.map(x => metric === "d" ? x.d : x.m));
+  const bars = perSeason.map((x, i) => {
+    const vv = metric === "d" ? x.d : x.m, h = vv / mx * (Hm - 16);
+    return `<rect x="${(i * bw + 2).toFixed(1)}" y="${(Hm - 14 - h).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${Math.max(h, vv > 0 ? 1 : 0).toFixed(1)}" rx="2" fill="${i === season ? "var(--hl)" : "var(--accent)"}"><title>${S[i]}: ${fmt(vv)}${metric === "d" ? " snedage" : " cm"}</title></rect>`;
+  }).join("");
+  pick.hidden = false;
+  pick.innerHTML = `<div>
+      <h2>${esc(picked.name)}</h2><div class="where">${where}</div>
+      <div class="nums"><div><b>${fmt(cur.d)}</b><span>snedage ${when}</span></div><div><b>${fmt(cur.m)} cm</b><span>største snedybde</span></div></div>
+      <p class="note">${metric === "d" ? "Flere snedage" : "Mere sne"} end ${Math.round(share)} % af Danmark.${kr >= 0 ? ` ${esc(kom)} Kommune er nr. ${kr + 1} af ${ms.length}.` : ""}</p>
+      <button class="clear" type="button" id="clr">Ryd søgning</button>
+    </div>
+    <div><div class="strip-cap">${metric === "d" ? "Snedage" : "Største snedybde (cm)"} i hver vinter</div>
+      <svg viewBox="0 0 ${Wm} ${Hm}" role="img" aria-label="Søjler for hver vinter fra ${S[0]} til ${S[S.length - 1]}">${bars}
+      <text x="0" y="${Hm - 2}">${S[0]}</text><text x="${Wm}" y="${Hm - 2}" text-anchor="end">${S[S.length - 1]}</text></svg></div>`;
+  document.getElementById("clr").onclick = clearPick;
+}
+function clearPick() { picked = null; q.value = ""; renderPick(); q.focus(); }
+const _render = render;
+render = function () { _render(); renderPick(); };
 render();
 </script>
