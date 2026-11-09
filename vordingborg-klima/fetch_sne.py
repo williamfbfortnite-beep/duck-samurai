@@ -1,10 +1,12 @@
-"""Henter snedata for Vordingborg: kommuneværdi (0390) og manuel snestation 31185 Køng."""
+"""Henter snedata for Vordingborg: kommuneværdi (0390), snestation 31185 Køng og 31259 Borre/Neble på Møn."""
 import csv, json, urllib.parse, urllib.request
 from pathlib import Path
 API = "https://opendataapi.dmi.dk/v2/climateData/collections"
 OUT = Path(__file__).parent / "data"
 SRC = {"kommune": ("municipalityValue", {"municipalityId": "0390"}),
-       "koeng": ("stationValue", {"stationId": "31185"})}
+       "koeng": ("stationValue", {"stationId": "31185"}),
+       # Møn: 31259 Borre (østlige Møn) til nov. 2019, derefter Neble (vestlige Møn)
+       "borre_neble": ("stationValue", {"stationId": "31259"})}
 for name, (coll, key) in SRC.items():
     for p in ["snow_depth", "snow_cover"]:
         q = {**key, "parameterId": p, "timeResolution": "day",
