@@ -37,12 +37,12 @@
 body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--f-body); }
 main { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 32px; }
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
 .eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); }
 h1 { font: 600 clamp(28px, 4.6vw, 44px)/1.1 var(--f-display); margin: 10px 0 12px; text-wrap: balance; }
 h2 { font: 600 22px/1.2 var(--f-display); margin: 0 0 12px; text-wrap: balance; }
 .lede { color: var(--fg-2); max-width: 65ch; margin: 0; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; }
 .tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; display: grid; gap: 4px; align-content: start; }
 .tile .k { font-size: 13px; color: var(--fg-2); }
 .tile .v { font: 500 30px/1.1 var(--f-mono); font-variant-numeric: tabular-nums; }
@@ -67,11 +67,20 @@ table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nu
 th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
 th { font: 500 12px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--fg-3); }
+@media (max-width: 600px) {
+  table { font-size: 13px; }
+  th, td { padding: 7px 6px; }
+  th { white-space: normal; font-size: 10px; letter-spacing: .02em; vertical-align: bottom; }
+  td:first-child { white-space: normal; min-width: 6.5em; }
+  #tbl th:nth-child(5), #tbl td:nth-child(5), th .wide { display: none; }
+  .tile .v { font-size: 24px; }
+  h1 { font-size: 28px; }
+}
 td.pos { color: var(--s-max); } td.neg { color: var(--s-mean); }
 .method { color: var(--fg-2); max-width: 70ch; font-size: 15px; }
 .method ul { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 6px; }
 code { font: 13px var(--f-mono); }
-.snow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.snow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; }
 .snow-grid > div { min-width: 0; }
 .chart-card h3 { font: 600 15px/1.3 var(--f-body); margin: 0 4px 2px; }
 .chart-card .sub { font-size: 13px; color: var(--fg-3); margin: 0 4px 10px; }
@@ -107,7 +116,7 @@ code { font: 13px var(--f-mono); }
     <h2>Måned for måned</h2>
     <div class="table-wrap">
       <table id="tbl">
-        <thead><tr><th>Måned</th><th>Bedste bud, middel</th><th>Døgnmax</th><th>Døgnmin</th><th>10-års snit</th><th>Forskel</th><th>Frostdage (forventet)</th></tr></thead>
+        <thead><tr><th>Måned</th><th>Bud, middel</th><th>Døgnmax</th><th>Døgnmin</th><th>10-års snit</th><th>Forskel</th><th>Frost&shy;dage<span class="wide"> (forventet)</span></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
