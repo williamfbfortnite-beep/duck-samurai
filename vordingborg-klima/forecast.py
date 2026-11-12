@@ -97,6 +97,11 @@ out["snow_half"] = [[lbl, float(sne.p.get(o, 0))] for lbl, o in zip(sne.ptab["Pe
 cur = sne.df[sne.df["vinter"] == season_now] if (season_now := sne.season(sne.df.index.max())) else None
 out["snow_now"] = {"season": season_now, "days": int((cur.cm >= 1).sum()), "last": str(sne.df.index.max().date())}
 
+# snevejr (sne eller slud) på Møn, fra snevejr.py
+sv_path = HERE / "data" / "snevejr_prognose.json"
+if sv_path.exists():
+    out["sleet"] = json.loads(sv_path.read_text())
+
 # byg den interaktive graf
 tpl = (HERE / "prognose_template.html").read_text()
 (HERE / "prognose.html").write_text(tpl.replace("/*DATA*/null", json.dumps(out, ensure_ascii=False)))

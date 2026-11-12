@@ -131,6 +131,21 @@ code { font: 13px var(--f-mono); }
     </div>
   </section>
 
+  <section id="snevejr">
+    <h2>Snevejr på Møn: sne eller slud</h2>
+    <p class="lede" id="svLede"></p>
+    <div class="tiles" id="svTiles" style="margin-top:16px"></div>
+    <div class="chart-card" style="margin-top:16px">
+      <h3>Chance for snevejr hver dag resten af vinteren</h3>
+      <p class="sub">Sandsynlighed for sne eller slud på Møn. De første dage bygger på DMI's ensemble-prognose, resten på de 15 seneste vintre.</p>
+      <div class="legend">
+        <span><i class="sw band" style="background:var(--s-max);opacity:.85"></i>DMI-prognose</span>
+        <span><i class="sw band" style="background:var(--snow)"></i>Typisk for årstiden</span>
+      </div>
+      <div class="chart-wrap" id="wrapSv"><svg id="chSv" role="img" aria-label="Daglig sandsynlighed for sne eller slud på Møn fra i dag til slutningen af april"></svg><div class="tip" hidden></div></div>
+    </div>
+  </section>
+
   <section class="method">
     <h2>Sådan er buddet lavet</h2>
     <ul>
@@ -139,6 +154,7 @@ code { font: 13px var(--f-mono); }
       <li><strong>Aktuelt vejr:</strong> dagens afvigelse fra sæsonkurven halveres på cirka 3 dage. Efter et par uger er buddet derfor bare det klimatologiske gennemsnit.</li>
       <li><strong>Usikkerhed:</strong> båndet er 80 %-intervallet for en enkelt dag ud fra den historiske spredning på samme tid af året. Frostdage er det forventede antal dage med døgnmin under 0 °C.</li>
       <li><strong>Sne:</strong> DMI's beregnede snedybde for Vordingborg Kommune. En snedag er en dag med mindst 1 cm sne på jorden. Snedelen er historik og ikke en prognose.</li>
+      <li><strong>Snevejr:</strong> en dag tæller, når DMI's station Vindebæk Kyst på Møn mindst to gange registrerer sne, slud eller snebyger, og døgnets laveste temperatur er højst 3 °C. Sneen behøver ikke blive liggende.</li>
       <li>Det er ikke en vejrudsigt. For de næste 10 dage er DMI's prognoser langt bedre.</li>
     </ul>
   </section>
@@ -346,4 +362,60 @@ function drawSnow() {
 }
 drawSnow();
 let rz2; new ResizeObserver(() => { clearTimeout(rz2); rz2 = setTimeout(drawSnow, 80); }).observe(document.getElementById("wrapHalf"));
+
+// ---------- snevejr (sne eller slud) ----------
+(function sleet() {
+  const SV = DATA.sleet; if (!SV) { document.getElementById("snevejr").hidden = true; return; }
+  const dd = s => { const t = d(s); return `${t.getDate()}. ${MON_LONG[t.getMonth()]}`; };
+  const hs = Object.values(SV.hist_per_season).sort((a, b) => a - b), med = hs[Math.floor(hs.length / 2)];
+  document.getElementById("svLede").textContent =
+    `Her tæller slud også med, og sneen behøver ikke blive liggende. Derfor er der langt flere snevejrsdage end dage med sne på jorden: typisk ${med} pr. vinter på Møn, mod 15 dage med snedække. ` +
+    `Ingen af de næste dage ser ud til at give snevejr, og weekenden bliver mild. Derefter er det årstiden, der bestemmer chancen.`;
+  const tiles = [
+    ["Første snevejrsdag, bedste bud", dd(SV.first_after_today_median), `halvdelen af vintrene mellem ${dd(SV.first_after_today_q25)} og ${dd(SV.first_after_today_q75)}`],
+    ["Chance for snevejr før 1. december", Math.round(SV.p_before["30-11"] * 100) + " %", `før midt i december: ${Math.round(SV.p_before["15-12"] * 100)} %`],
+    ["Snevejrsdage resten af vinteren", "≈ " + Math.round(SV.expected_total), `tidligere vintre: ${hs[0]} til ${hs[hs.length - 1]}`],
+    ["Flest i", "januar og februar", `cirka ${Math.round(SV.monthly[Object.keys(SV.monthly).find(k => k.endsWith("-01"))] || 0)} dage i hver måned`],
+  ];
+  document.getElementById("svTiles").innerHTML = tiles.map(([k, v, s]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v" style="font-size:24px">${v}</div><div class="s">${s}</div></div>`).join("");
+})();
+function drawSleet() {
+  const SV = DATA.sleet; if (!SV) return;
+  const svg = document.getElementById("chSv"), wrap = document.getElementById("wrapSv"), tip = wrap.querySelector(".tip");
+  const W = Math.max(300, wrap.clientWidth), H = 220, m = { l: 34, r: 6, t: 10, b: 26 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const days = SV.days, n = days.length, yMax = 0.5;
+  const y = v => m.t + (1 - Math.min(v, yMax) / yMax) * (H - m.t - m.b);
+  for (let v = 0; v <= yMax + 1e-9; v += 0.1) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--fg-3)" : "var(--grid)", "stroke-width": 1 });
+    el("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }).textContent = Math.round(v * 100) + "%";
+  }
+  const bw = (W - m.l - m.r) / n;
+  days.forEach(([ds, p, src], i) => {
+    const x0 = m.l + i * bw, h = y(0) - y(p);
+    el("rect", { x: x0 + bw * 0.1, y: y(p), width: Math.max(1, bw * 0.8), height: Math.max(h, 0.5), fill: src === "model" ? "var(--s-max)" : "var(--snow)", rx: Math.min(2, bw * 0.3) });
+    const t = d(ds);
+    if (t.getDate() === 1 || i === 0) {
+      el("line", { x1: x0, x2: x0, y1: H - m.b, y2: H - m.b + 4, stroke: "var(--fg-3)" });
+      if (t.getDate() === 1) el("text", { x: x0 + 3, y: H - m.b + 16 }).textContent = t.getMonth() === 0 ? String(t.getFullYear()) : MON[t.getMonth()];
+    }
+  });
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--fg-3)", visibility: "hidden" });
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  const show = e => {
+    const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) * W / r.width;
+    const i = Math.max(0, Math.min(n - 1, Math.floor((sx - m.l) / bw))), [ds, p, src] = days[i], cx = m.l + (i + 0.5) * bw;
+    cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b>${dLabel(d(ds))}</b><div class="row"><span>Chance for sne eller slud</span><span>${Math.round(p * 100)} %</span></div><div class="muted">${src === "model" ? "DMI's ensemble-prognose" : "Typisk for datoen, 2011–2026"}</div>`;
+    tip.hidden = false;
+    const tw = tip.offsetWidth, left = cx / W * r.width;
+    tip.style.left = Math.max(0, Math.min(r.width - tw, left + 12 + tw > r.width ? left - tw - 12 : left + 12)) + "px"; tip.style.top = "0px";
+  };
+  hit.addEventListener("pointermove", show); hit.addEventListener("pointerdown", show);
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+}
+drawSleet();
+let rz3; new ResizeObserver(() => { clearTimeout(rz3); rz3 = setTimeout(drawSleet, 80); }).observe(document.getElementById("wrapSv"));
 </script>
