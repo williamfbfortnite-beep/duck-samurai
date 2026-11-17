@@ -1,5 +1,6 @@
 """Henter snedata for Vordingborg: kommuneværdi (0390), snestation 31185 Køng og 31259 Borre/Neble på Møn."""
 import csv, json, urllib.parse, urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 API = "https://opendataapi.dmi.dk/v2/climateData/collections"
 OUT = Path(__file__).parent / "data"
@@ -10,7 +11,7 @@ SRC = {"kommune": ("municipalityValue", {"municipalityId": "0390"}),
 for name, (coll, key) in SRC.items():
     for p in ["snow_depth", "snow_cover"]:
         q = {**key, "parameterId": p, "timeResolution": "day",
-             "datetime": "2009-07-01T00:00:00Z/2026-11-09T00:00:00Z", "limit": 300000}
+             "datetime": f"2009-07-01T00:00:00Z/{datetime.now(timezone.utc) + timedelta(days=1):%Y-%m-%dT00:00:00Z}", "limit": 300000}
         try:
             with urllib.request.urlopen(f"{API}/{coll}/items?" + urllib.parse.urlencode(q), timeout=120) as r:
                 feats = json.load(r).get("features", [])

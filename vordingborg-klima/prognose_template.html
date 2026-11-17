@@ -379,7 +379,8 @@ let rz2; new ResizeObserver(() => { clearTimeout(rz2); rz2 = setTimeout(drawSnow
   const hs = Object.values(SV.hist_per_season).sort((a, b) => a - b), med = hs[Math.floor(hs.length / 2)];
   document.getElementById("svLede").textContent =
     `Her tæller slud også med, og sneen behøver ikke blive liggende. Derfor er der langt flere snevejrsdage end dage med sne på jorden: typisk ${med} pr. vinter på Møn, mod 15 dage med snedække. ` +
-    `Ingen af de næste dage ser ud til at give snevejr, og weekenden bliver mild. Derefter er det årstiden, der bestemmer chancen.`;
+    (() => { const md = SV.days.filter(x => x[2] === "model"), mx = Math.max(0, ...md.map(x => x[1]));
+      return md.length ? `DMI's ensemble-prognose dækker til og med ${dd(md[md.length - 1][0])} og giver højst ${Math.round(mx * 100)} % chance pr. dag. Derefter er det årstiden, der bestemmer chancen.` : "Chancen bygger på årstiden."; })();
   const tiles = [
     ["Første snevejrsdag, bedste bud", dd(SV.first_after_today_median), `halvdelen af vintrene mellem ${dd(SV.first_after_today_q25)} og ${dd(SV.first_after_today_q75)}`],
     ["Chance for snevejr før 1. december", Math.round(SV.p_before["30-11"] * 100) + " %", `før midt i december: ${Math.round(SV.p_before["15-12"] * 100)} %`],

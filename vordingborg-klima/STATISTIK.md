@@ -1,6 +1,6 @@
 # Temperaturstatistik – Vordingborg Kommune (0390)
 
-Kilde: DMI Climate Data API, data til og med 2026-11-08. Statistikken bygger på de 10 hele kalenderår 2016–2025.
+Kilde: DMI Climate Data API, data til og med 2026-11-17. Statistikken bygger på de 10 hele kalenderår 2016–2025.
 
 ## 1. Gennemsnitstemperatur pr. måned (10-års snit 2016–2025)
 
@@ -39,7 +39,7 @@ Positiv = varmere end 10-års snittet for den måned. 2026 er medtaget til samme
 | 2023 |  +1.6 |  +0.5 |  -0.2 |  -0.7 |  -0.7 |  +0.4 |  -0.4 |  -0.8 |  +1.8 |  +0.1 |  -1.0 |  -0.6 | +0.0 |
 | 2024 |  -0.9 |  +1.8 |  +1.0 |  +0.5 |  +1.3 |  -0.8 |  -0.2 |  +0.6 |  +0.6 |  +0.4 |  +0.1 |  +1.3 | +0.5 |
 | 2025 |  +0.5 |  -0.9 |  +1.2 |  +1.9 |  -0.1 |  -0.6 |  +0.8 |  -0.5 |  +0.5 |  -0.2 |  -0.1 |  +1.2 | +0.3 |
-| 2026 |  -2.3 |  -3.0 |  +1.0 |  -0.0 |  +0.4 |  +0.8 |  +0.4 |  -0.4 |  +0.2 |  +0.7 |  +0.6 |       | -0.1 |
+| 2026 |  -2.3 |  -3.0 |  +1.0 |  -0.0 |  +0.4 |  +0.8 |  +0.4 |  -0.4 |  +0.2 |  +0.7 |  +0.1 |       | -0.2 |
 
 ### Ekstremer og tærskeldage fra døgndata (2016–2025)
 

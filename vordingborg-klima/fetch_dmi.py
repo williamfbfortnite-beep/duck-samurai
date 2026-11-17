@@ -1,5 +1,6 @@
 """Henter temperaturdata for Vordingborg Kommune (0390) fra DMI Climate Data API."""
 import csv, json, sys, urllib.parse, urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 API = "https://opendataapi.dmi.dk/v2/climateData/collections"
@@ -9,7 +10,7 @@ STATION = "06147"
 MUNI = "0390"
 PARAMS = ["mean_temp", "mean_daily_max_temp", "mean_daily_min_temp"]
 RES = ["day", "month"]
-START, END = "2015-12-31T00:00:00Z", "2026-11-09T00:00:00Z"
+START, END = "2015-12-31T00:00:00Z", f"{datetime.now(timezone.utc) + timedelta(days=1):%Y-%m-%dT00:00:00Z}"
 OUT = Path(__file__).parent / "data"
 
 def fetch(source, param, res):
